@@ -767,6 +767,7 @@ class OperationsContext(object):
 
 if __name__ == "__main__":
 	app = wx.App(0)
+	guiconfig.load_icons()
 	frame = ManageTopicsFrame(None)
 	frame.Show()
 	app.MainLoop()
