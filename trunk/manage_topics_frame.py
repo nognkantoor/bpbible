@@ -11,7 +11,8 @@ from xrc.manage_topics_xrc import xrcManageTopicsFrame
 from xrc.xrc_util import attach_unknown_control
 from gui import guiutil
 from manage_topics_operations import (ManageTopicsOperations,
-		CircularDataException, PASSAGE_SELECTED, TOPIC_SELECTED)
+		CircularDataException, BaseOperationsContext,
+		PASSAGE_SELECTED, TOPIC_SELECTED)
 
 class ManageTopicsFrame(xrcManageTopicsFrame):
 	def __init__(self, parent):
@@ -31,7 +32,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		self._paste_available_changed()
 		self._undo_available_changed()
 		self._selected_topic = None
-		self.item_selected_type = TOPIC_SELECTED
+		self.is_passage_selected = False
 		self._selected_passage = None
 		self._init_passage_list_ctrl_headers()
 		self._setup_passage_list_ctrl()
@@ -450,12 +451,12 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		self.PopupMenu(menu)
 
 	def _topic_tree_got_focus(self, event):
-		self.item_selected_type = TOPIC_SELECTED
+		self.is_passage_selected = False
 		self._change_item_details_topic(self.selected_topic)
 		event.Skip()
 
 	def _passage_list_got_focus(self, event):
-		self.item_selected_type = PASSAGE_SELECTED
+		self.is_passage_selected = True
 		self._change_item_details_passage(self.selected_passage)
 		event.Skip()
 
@@ -740,7 +741,7 @@ class TopicPassageDropTarget(wx.PyDropTarget):
 			self._topic_tree.on_drop_passage(passage_entry, x, y, result)
 		return result
 
-class OperationsContext(object):
+class OperationsContext(BaseOperationsContext):
 	"""Provides a context for passage list manager operations.
 
 	This gives access to which passage and topic are currently selected in
@@ -750,19 +751,13 @@ class OperationsContext(object):
 		self._frame = frame
 
 	def get_selected_topic(self):
-		#return self._frame._get_tree_selected_topic()
 		return self._frame.selected_topic
 
 	def get_selected_passage(self):
 		return self._frame.selected_passage
 
-	def get_selected_item(self):
-		item_selected_type = self._frame.item_selected_type
-		if item_selected_type == PASSAGE_SELECTED:
-			item = self.get_selected_passage()
-		elif item_selected_type == TOPIC_SELECTED:
-			item = self.get_selected_topic()
-		return (item, item_selected_type)
+	def is_passage_selected(self):
+		return self._frame.is_passage_selected
 
 if __name__ == "__main__":
 	app = wx.App(0)
