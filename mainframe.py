@@ -114,7 +114,6 @@ class MainFrame(wx.Frame, AuiLayer):
 		self.bible_observers = ObserverList([
 			lambda event: self.bibletext.SetReference(event.ref),
 			self.set_title
-		
 		])
 
 		self.all_observers = ObserverList([
@@ -124,7 +123,6 @@ class MainFrame(wx.Frame, AuiLayer):
 			),
 
 			lambda:self.dictionarytext.reload(),
-			lambda:self.genbooktext.reload()
 		])
 
 		biblemgr.bible.observers += self.bible_version_changed
@@ -453,7 +451,6 @@ class MainFrame(wx.Frame, AuiLayer):
 			self.on_close += remove_observer
 			version_changed()
 			
-		# TODO: only refresh if settings are changed
 		self.bible_observers += self.search_panel.versepreview.RefreshUI
 
 	def create_aui_items(self):
@@ -1023,7 +1020,7 @@ class MainFrame(wx.Frame, AuiLayer):
 
 		for frame in self.frames:
 			name = self.get_pane_for_frame(frame).name 
-			self.aui_callbacks[name] = frame.update_title
+			self.aui_callbacks[name] = frame.on_shown
 
 		self.set_bible_ref(settings["bibleref"], LOADING_SETTINGS,
 				userInput=False)
