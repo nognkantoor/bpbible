@@ -11,8 +11,7 @@ from xrc.manage_topics_xrc import xrcManageTopicsFrame
 from xrc.xrc_util import attach_unknown_control
 from gui import guiutil
 from manage_topics_operations import (ManageTopicsOperations,
-		CircularDataException, BaseOperationsContext,
-		PASSAGE_SELECTED, TOPIC_SELECTED)
+		CircularDataException, BaseOperationsContext)
 
 class ManageTopicsFrame(xrcManageTopicsFrame):
 	def __init__(self, parent):
@@ -332,7 +331,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		passage_entry = PassageEntry(None)
 		dialog = PassageEntryDialog(self, passage_entry)
 		if dialog.ShowModal() == wx.ID_OK:
-			self._operations_manager.insert_item(passage_entry, PASSAGE_SELECTED)
+			self._operations_manager.insert_item(passage_entry)
 		dialog.Destroy()
 	
 	def _on_close(self, event):
@@ -610,8 +609,7 @@ class TopicTree(wx.TreeCtrl):
 		parent = self.GetParent()
 		self._topic_frame._safe_paste(
 			lambda: self._topic_frame._operations_manager.do_copy(
-				drag_topic, TOPIC_SELECTED,
-				drop_topic, keep_original=False
+				drag_topic, drop_topic, keep_original=False
 			)
 		)
 
@@ -635,8 +633,7 @@ class TopicTree(wx.TreeCtrl):
 		drop_topic = self.GetPyData(drop_target)
 		keep_original = (drag_result != wx.DragMove)
 		self._topic_frame._operations_manager.do_copy(
-				passage_entry, PASSAGE_SELECTED,
-				drop_topic, keep_original
+				passage_entry, drop_topic, keep_original
 			)
 
 	def _get_item_children(self, item=None, recursively=False):
@@ -762,6 +759,7 @@ class OperationsContext(BaseOperationsContext):
 if __name__ == "__main__":
 	app = wx.App(0)
 	guiconfig.load_icons()
+	__builtins__._ = lambda str: str
 	frame = ManageTopicsFrame(None)
 	frame.Show()
 	app.MainLoop()
