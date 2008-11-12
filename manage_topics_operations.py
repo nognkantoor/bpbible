@@ -318,74 +318,59 @@ def _test():
 	False
 
 	>>> def _add_subtopic(topic1, topic2, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.selected_topic = topic1
+	... 	operations_manager_context.set_selected_topic(topic1)
 	... 	operations_manager.insert_item(topic2, TOPIC_SELECTED)
 	...
-	>>> def _remove_subtopic(topic2, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.is_passage_selected = False
-	... 	operations_manager_context.selected_topic = topic2
+	>>> def _remove_subtopic(topic, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
+	... 	operations_manager_context.set_selected_topic(topic)
 	... 	operations_manager.delete()
 	...
 	>>> def _add_passage(topic, passage, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.selected_topic = topic
+	... 	operations_manager_context.set_selected_topic(topic)
 	... 	operations_manager.insert_item(passage, PASSAGE_SELECTED)
 	...
 	>>> def _remove_passage(topic, passage, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.is_passage_selected = True
-	... 	operations_manager_context.selected_passage = passage
-	... 	operations_manager_context.selected_topic = topic
+	... 	operations_manager_context.set_selected_passage(passage)
 	... 	operations_manager.delete()
 	...
 	>>> def _move_passage(passage, target_topic, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.is_passage_selected = True
-	... 	operations_manager_context.selected_passage = passage
-	... 	operations_manager_context.selected_topic = None
+	... 	operations_manager_context.set_selected_passage(passage)
 	... 	operations_manager.cut()
-	... 	operations_manager_context.selected_topic = target_topic
+	... 	operations_manager_context.set_selected_topic(target_topic)
 	... 	operations_manager.paste()
 	...
 	>>> def _move_current_passage(passage, new_index, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.selected_passage = passage
-	... 	operations_manager_context.selected_topic = passage.parent
+	... 	operations_manager_context.set_selected_passage(passage)
 	... 	operations_manager.move_current_passage(new_index)
 	...
 	>>> def _move_topic(topic, target_topic, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.is_passage_selected = False
-	... 	operations_manager_context.selected_passage = None
-	... 	operations_manager_context.selected_topic = topic
+	... 	operations_manager_context.set_selected_topic(topic)
 	... 	operations_manager.cut()
-	... 	operations_manager_context.selected_topic = target_topic
+	... 	operations_manager_context.set_selected_topic(target_topic)
 	... 	operations_manager.paste()
 	...
 	>>> def _copy_topic(topic, target_topic, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.is_passage_selected = False
-	... 	operations_manager_context.selected_passage = None
-	... 	operations_manager_context.selected_topic = topic
+	... 	operations_manager_context.set_selected_topic(topic)
 	... 	operations_manager.copy()
-	... 	operations_manager_context.selected_topic = target_topic
+	... 	operations_manager_context.set_selected_topic(target_topic)
 	... 	operations_manager.paste()
 	...
 	>>> def _copy_passage(passage, target_topic, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.is_passage_selected = True
-	... 	operations_manager_context.selected_passage = passage
-	... 	operations_manager_context.selected_topic = None
+	... 	operations_manager_context.set_selected_passage(passage)
 	... 	operations_manager.copy()
-	... 	operations_manager_context.selected_topic = target_topic
+	... 	operations_manager_context.set_selected_topic(target_topic)
 	... 	operations_manager.paste()
 	...
 	>>> def _set_topic_name(topic, name, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.selected_topic = topic
-	... 	operations_manager_context.is_passage_selected = False
+	... 	operations_manager_context.set_selected_topic(topic)
 	... 	operations_manager.set_topic_name(name)
 	...
 	>>> def _set_topic_details(topic, name, description, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.selected_topic = topic
-	... 	operations_manager_context.is_passage_selected = False
+	... 	operations_manager_context.set_selected_topic(topic)
 	... 	operations_manager.set_item_details(name, description)
 	...
 	>>> def _set_passage_details(passage_entry, passage, comment, operations_manager_context=operations_manager_context, operations_manager=operations_manager):
-	... 	operations_manager_context.selected_passage = passage_entry
-	... 	operations_manager_context.is_passage_selected = True
+	... 	operations_manager_context.set_selected_passage(passage_entry)
 	... 	operations_manager.set_item_details(passage, comment)
 	...
 	>>> _add_subtopic(manager, topic1)
@@ -591,21 +576,42 @@ def _test():
 
 from passage_list import PassageList, PassageEntry
 
-class DummyOperationsManagerContext(object):
+class BaseOperationsContext(object):
+	def get_selected_topic(self):
+		raise NotImplementedError()
+
+	def get_selected_passage(self):
+		raise NotImplementedError()
+
+	def is_passage_selected(self):
+		raise NotImplementedError()
+
+	def get_selected_item(self):
+		if self.is_passage_selected():
+			return (self.get_selected_passage(), PASSAGE_SELECTED)
+		else:
+			return (self.get_selected_topic(), TOPIC_SELECTED)
+
+class DummyOperationsManagerContext(BaseOperationsContext):
 	"""Provides a dummy context, to be used in testing."""
 	def __init__(self):
 		self.selected_topic = None
 		self.selected_passage = None
-		self.is_passage_selected = False
+		self._is_passage_selected = False
 
 	get_selected_topic = lambda self: self.selected_topic
 	get_selected_passage = lambda self: self.selected_passage
 
-	def get_selected_item(self):
-		if self.is_passage_selected:
-			return (self.selected_passage, PASSAGE_SELECTED)
-		else:
-			return (self.selected_topic, TOPIC_SELECTED)
+	def set_selected_topic(self, topic):
+		self.selected_topic = topic
+		self._is_passage_selected = False
+
+	def set_selected_passage(self, passage):
+		self.selected_passage = passage
+		self._is_passage_selected = True
+
+	def is_passage_selected(self):
+		return self._is_passage_selected
 
 def _test_create_topic(name="", description="", create_function=None):
 	if create_function is None:
