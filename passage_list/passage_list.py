@@ -238,7 +238,7 @@ class PassageListManager(_BasePassageList):
 	def __init__(self, filename=None):
 		super(PassageListManager, self).__init__()
 		self.filename = filename
-		self.name = _("Topics")
+		self.name = "Topics"
 		self.description = ""
 
 	def save(self):
@@ -254,7 +254,7 @@ class PassageListManager(_BasePassageList):
 	topic_trail = property(get_topic_trail)
 
 	def get_full_name(self):
-		return _("None")
+		return "None"
 
 	full_name = property(get_full_name)
 
