@@ -63,14 +63,13 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		for control in self.item_details_panel.Children:
 			control.Bind(wx.EVT_KILL_FOCUS, self._item_details_panel_lost_focus)
 
-		# Not yet supported: "undo_tool", "redo_tool".
 		for tool in ("cut_tool", "copy_tool", "paste_tool",
 				"delete_tool", "undo_tool", "redo_tool"):
 			handler = lambda event, tool=tool: self._perform_toolbar_action(event, tool)
 			self.toolbar.Bind(wx.EVT_TOOL, handler, id=wx.xrc.XRCID(tool))
 
 	def _setup_topic_tree(self):
-		root = self.topic_tree.AddRoot("Topics")
+		root = self.topic_tree.AddRoot(_("Topics"))
 		self.topic_tree.SetPyData(root, self._manager)
 		self._add_sub_topics(self._manager, root)
 		self.topic_tree.Expand(root)
@@ -157,7 +156,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 	def _get_title(self):
 		"""Gets a title for the frame, based on the currently selected topic."""
 		topic = self.selected_topic
-		title = "Manage Topics"
+		title = _("Manage Topics")
 		if topic is not self._manager:
 			title = "%s - %s" % (topic.full_name, title)
 		return title
@@ -273,36 +272,36 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		self.selected_topic = self.topic_tree.GetPyData(event.Item)
 		menu = wx.Menu()
 		
-		item = menu.Append(wx.ID_ANY, "&New Topic")
+		item = menu.Append(wx.ID_ANY, _("&New Topic"))
 		self.Bind(wx.EVT_MENU,
 				lambda e: self._create_topic(self.selected_topic),
 				id=item.Id)
 		
-		item = menu.Append(wx.ID_ANY, "Add &Passage")
+		item = menu.Append(wx.ID_ANY, _("Add &Passage"))
 		self.Bind(wx.EVT_MENU,
 				lambda e: self._create_passage(),
 				id=item.Id)
 
 		menu.AppendSeparator()
 		
-		item = menu.Append(wx.ID_ANY, "Cu&t")
+		item = menu.Append(wx.ID_ANY, _("Cu&t"))
 		self.Bind(wx.EVT_MENU,
 				lambda e: self._operations_manager.cut,
 				id=item.Id)
 
-		item = menu.Append(wx.ID_ANY, "&Copy")
+		item = menu.Append(wx.ID_ANY, _("&Copy"))
 		self.Bind(wx.EVT_MENU,
 				lambda e: self._operations_manager.copy,
 				id=item.Id)
 
-		item = menu.Append(wx.ID_ANY, "&Paste")
+		item = menu.Append(wx.ID_ANY, _("&Paste"))
 		self.Bind(wx.EVT_MENU,
 				lambda e: self._safe_paste,
 				id=item.Id)
 
 		menu.AppendSeparator()
 		
-		item = menu.Append(wx.ID_ANY, "Delete &Topic")
+		item = menu.Append(wx.ID_ANY, _("Delete &Topic"))
 		self.Bind(wx.EVT_MENU,
 				lambda e: self._operations_manager.delete(),
 				id=item.Id)
@@ -318,8 +317,8 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		try:
 			operation()
 		except CircularDataException:
-			wx.MessageBox("Cannot copy the topic to one of its children.",
-					"Copy Topic", wx.OK | wx.ICON_ERROR, self)
+			wx.MessageBox(_("Cannot copy the topic to one of its children."),
+					_("Copy Topic"), wx.OK | wx.ICON_ERROR, self)
 	
 	def _create_topic(self, topic):
 		dialog = TopicCreationDialog(self, topic)
@@ -350,8 +349,8 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 			self._remove_observers(subtopic)
 	
 	def _init_passage_list_ctrl_headers(self):
-		self.passage_list_ctrl.InsertColumn(0, "Passage")
-		self.passage_list_ctrl.InsertColumn(1, "Comment")
+		self.passage_list_ctrl.InsertColumn(0, _("Passage"))
+		self.passage_list_ctrl.InsertColumn(1, _("Comment"))
 
 	def _setup_passage_list_ctrl(self):
 		self.passage_list_ctrl.DeleteAllItems()
@@ -419,31 +418,31 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		self.selected_passage = self.selected_topic.passages[event.GetIndex()]
 		menu = wx.Menu()
 		
-		item = menu.Append(wx.ID_ANY, "&Open")
+		item = menu.Append(wx.ID_ANY, _("&Open"))
 		self.Bind(wx.EVT_MENU,
 				lambda e: self._passage_activated(event),
 				id=item.Id)
 		
 		menu.AppendSeparator()
 		
-		item = menu.Append(wx.ID_ANY, "Cu&t")
+		item = menu.Append(wx.ID_ANY, _("Cu&t"))
 		self.Bind(wx.EVT_MENU,
 				lambda e: self._operations_manager.cut,
 				id=item.Id)
 
-		item = menu.Append(wx.ID_ANY, "&Copy")
+		item = menu.Append(wx.ID_ANY, _("&Copy"))
 		self.Bind(wx.EVT_MENU,
 				lambda e: self._operations_manager.copy,
 				id=item.Id)
 
-		item = menu.Append(wx.ID_ANY, "&Paste")
+		item = menu.Append(wx.ID_ANY, _("&Paste"))
 		self.Bind(wx.EVT_MENU,
 				lambda e: self._safe_paste,
 				id=item.Id)
 
 		menu.AppendSeparator()
 		
-		item = menu.Append(wx.ID_ANY, "&Delete")
+		item = menu.Append(wx.ID_ANY, _("&Delete"))
 		self.Bind(wx.EVT_MENU,
 				lambda e: self._operations_manager.delete,
 				id=item.Id)
@@ -464,18 +463,18 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		if new_topic is None:
 			return
 
-		self.name_label.Label = "Name:"
+		self.name_label.Label = _("Name:")
 		self.name_edit.Value = new_topic.name
-		self.description_label.Label = "Description:"
+		self.description_label.Label = _("Description:")
 		self.description_edit.Value = new_topic.description
 
 	def _change_item_details_passage(self, new_passage):
 		if new_passage is None or self.FindFocus() is self.topic_tree:
 			return
 
-		self.name_label.Label = "Passage:"
+		self.name_label.Label = _("Passage:")
 		self.name_edit.Value = str(new_passage)
-		self.description_label.Label = "Comment:"
+		self.description_label.Label = _("Comment:")
 		self.description_edit.Value = new_passage.comment
 
 	def _item_details_panel_lost_focus(self, event):
@@ -487,11 +486,11 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 			description = self.description_edit.Value
 			self._operations_manager.set_item_details(name, description)
 		except InvalidPassageError:
-			wx.MessageBox("Unrecognised passage `%s'." % name,
+			wx.MessageBox(_("Unrecognised passage `%s'.") % name,
 					"", wx.OK | wx.ICON_INFORMATION, self)
 		except MultiplePassagesError:
-			wx.MessageBox("Passage `%s' contains multiple passages.\n"
-					"Only one verse or verse range can be entered." % name,
+			wx.MessageBox(_("Passage `%s' contains multiple passages.\n"
+					"Only one verse or verse range can be entered.") % name,
 					"", wx.OK | wx.ICON_INFORMATION, self)
 
 # Specifies what type of dragging is currently happening with the topic tree.
