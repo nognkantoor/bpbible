@@ -319,6 +319,8 @@ class LinkedFrame(VerseKeyedFrame):
 		# displayed.  If the pane is hidden then it will not have been
 		# displayed.
 		self.latest_reference = ""
+		# True if the settings have changed since the pane was hidden.
+		self.settings_changed = False
 		super(LinkedFrame, self).__init__(self.panel)
 
 		self.create_toolbar()
@@ -384,8 +386,12 @@ class LinkedFrame(VerseKeyedFrame):
 			self.notify(guiconfig.mainfrm.currentverse)
 	
 	def on_shown(self, shown=None):
-		if self.linked and self.latest_reference != self.reference:
-			self.notify(self.latest_reference)
+		if shown:
+			if self.linked and self.latest_reference != self.reference:
+				self.notify(self.latest_reference)
+			elif self.settings_changed:
+				self.refresh()
+				self.settings_changed = False
 		super(LinkedFrame, self).on_shown(shown)
 
 	def bible_ref_changed(self, event):
@@ -396,7 +402,10 @@ class LinkedFrame(VerseKeyedFrame):
 				self.notify(event.ref)
 
 		elif event.settings_changed:
-			self.refresh()
+ 			if self.aui_pane.IsShown():
+				self.refresh()
+			else:
+				self.settings_changed = True
 
 	def get_window(self):
 		return self.panel
