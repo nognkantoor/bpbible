@@ -1,18 +1,19 @@
 import mozutils
-from backend.bibleinterface import biblemgr
-import sys
+#from backend.bibleinterface import biblemgr
+#import sys
 
-def pyxpcom_gui_app_doCommand(event):
+def bpbible_doCommand(event):
     item_name = event.target.id
     if item_name == "menu_FileQuitItem":
         mozutils.doQuit(forceQuit=False)
     elif item_name == "menu_About":
         arguments = None
-        window.openDialog("chrome://pyxpcom_gui_app/content/about.xul", "about", "centerscreen,modal", arguments)
+        window.openDialog("chrome://bpbible/content/about.xul", "about", "centerscreen,modal", arguments)
     elif item_name == "menu_Extensions":
         arguments = None
         window.openDialog("chrome://mozapps/content/extensions/extensions.xul?type=extensions", "about", "centerscreen,modal", arguments)		
 
+"""
 def go(event):
 	print "HERE"
 	item = document.getElementById("toolbar_location")
@@ -32,7 +33,8 @@ def go(event):
 
 		#.replace(
 #			'&', '&amp;'))#* 0 + \
-		'''
+"""
+'''
 <a href = "#1" name="1" target="1"><small><sup>1</sup></small></a> 
 The revelation of Jesus Christ, which God  
 <small><a href="bible:John 17:7-8">John 17:7-8</a> <a href="bible:John 8:26">John 8:26</a> <a href="bible:John 14:10">John 14:10</a></small> 
@@ -142,6 +144,7 @@ He made it known by sending his angel to his servant John,
 <small><sup>20</sup></small></a> As for the mystery of the seven stars that you saw in my right hand, and  
 <small><a href="bible:Rev 1:12">Rev 1:12</a></small> the seven golden lampstands, the seven stars are the angels of the seven churches, and  
 <small><a href="bible:Matt 5:14-15">Matt 5:14-15</a></small> the seven lampstands are the seven churches.'''#  <br /ss="verse_per_line"', "br /")
+"""
 		document.getElementById("browser").contentWindow.document.body.innerHTML = text
 
 	except Exception, e:
@@ -155,3 +158,4 @@ def write( msg, *args):
     tb = document.getElementById("output_box")
     tb.value = tb.value + (msg % args) + "\n"
 	
+"""

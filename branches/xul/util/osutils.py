@@ -1,14 +1,19 @@
 import os
 import sys
-import wx
 
 def is_gtk():
+	return True
+	import wx
 	return "wxGTK" in wx.PlatformInfo
 
 def is_msw():
+	return True
+	import wx
 	return "wxMSW" in wx.PlatformInfo
 
 def is_mac():
+	return True
+	import wx
 	return "wxMac" in wx.PlatformInfo
 
 def is_win2000():
@@ -38,11 +43,13 @@ def get_user_data_dir():
 	home_dir = os.path.expanduser('~')
 	if is_msw():
 		if "APPDATA" not in os.environ:
+			"""
 			import wx
 			a = wx.App()
 			wx.MessageBox(
 				"APPDATA is not set. Quitting. \nENVIRON=%s" % os.environ,
 				"Fatal Error")
+			"""
 			raise SystemExit("APPDATA is not set.\nENVIRON=%s" % os.environ)
 
 		return os.path.join(os.environ["APPDATA"], appname)
