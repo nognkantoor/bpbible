@@ -1,5 +1,5 @@
 /* XPM */
-static char * pyxpcom_gui_app_xpm[] = {
+static char * bpbible_xpm[] = {
 "32 32 70 1",
 " 	c None",
 ".	c #3672A3",
