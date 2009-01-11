@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE window SYSTEM "chrome://pyshell/locale/pyshell.dtd">
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+<window id="python_shell_window"
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        contenttitlesetting="true"
+	title="&pyshell.title;">
+
+    <browser id="pyshell" flex="1" type="content-primary" src="chrome://pyshell/content/pyshell.html"/>
+
+</window>
