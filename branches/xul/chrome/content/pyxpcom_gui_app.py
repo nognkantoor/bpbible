@@ -9,3 +9,6 @@ def pyxpcom_gui_app_doCommand(event):
     elif item_name == "menu_About":
         arguments = None
         window.openDialog("chrome://pyxpcom_gui_app/content/about.xul", "about", "centerscreen,modal", arguments)
+
+def run_dom_inspector():
+	window.open("chrome://inspector/content/inspector.xul", "", "chrome");

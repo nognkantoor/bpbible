@@ -2,8 +2,21 @@ content  pyxpcom_gui_app                content/
 skin     pyxpcom_gui_app  standard/1.0  skin/standard/
 locale   pyxpcom_gui_app  en-US         locale/en-US/
 locale   branding         en-US         locale/en-US/brand/
+
 # PyShell setup.
 content  pyshell  pyshell/content/
 skin pyshell classic/1.0 pyshell/skin/
 locale pyshell en-US pyshell/locale/en-US/
 overlay chrome://pyxpcom_gui_app/content/pyxpcom_gui_app.xul chrome://pyshell/content/overlay-bpbible.xul
+
+# DOM Inspector setup.
+content  inspector                       jar:inspector.jar!/content/inspector/ xpcnativewrappers=no
+locale   inspector           en-US       jar:inspector.jar!/locale/en-US/inspector/
+skin     inspector           modern/1.0  jar:inspector.jar!/skin/modern/inspector/
+skin     inspector           classic/1.0 jar:inspector.jar!/skin/classic/inspector/
+
+overlay  chrome://inspector/content/popupOverlay.xul   chrome://inspector/content/viewers/dom/popupOverlay.xul
+overlay  chrome://inspector/content/commandOverlay.xul chrome://inspector/content/viewers/styleRules/commandOverlay.xul
+overlay  chrome://inspector/content/keysetOverlay.xul  chrome://inspector/content/viewers/dom/keysetOverlay.xul
+overlay  chrome://inspector/content/popupOverlay.xul   chrome://inspector/content/viewers/styleRules/popupOverlay.xul
+overlay  chrome://inspector/content/commandOverlay.xul chrome://inspector/content/viewers/dom/commandOverlay.xul
