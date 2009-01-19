@@ -39,7 +39,12 @@ Important: Note the script-type value is set to Python in the window settings.
         <menupopup id="menu_ToolsPopup">
         	<menuitem id="my_item"
                   	label="Does nothing"
-                  	accesskey="D" />
+					/>
+        	<menuitem id="dom_inspector"
+                  	label="DOM Inspector"
+                  	accesskey="D"
+					oncommand="run_dom_inspector()"/>
+
         </menupopup>
       </menu>
       <menu id="menu_help" label="&help.label;" accesskey="&help.accesskey;">
