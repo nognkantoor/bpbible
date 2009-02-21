@@ -1,6 +1,11 @@
 /* Important! Need to import the global skin to get default styling. */
 @import url("chrome://global/skin/");
+@import url("chrome://pyxpcom_gui_app/skin/html.css");
 
 window {
   background-color    : silver;
+}
+
+br.verse_per_line	{
+	display: none;
 }
