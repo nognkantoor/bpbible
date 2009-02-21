@@ -2,7 +2,7 @@ from util.configmgr import config_manager
 
 SECTION_NAME = "Topics"
 topic_settings = config_manager.add_section(SECTION_NAME)
-topic_settings.add_item("display_tags", True, item_type=bool)
+topic_settings.add_item("display_tags", False, item_type=bool)
 topic_settings.add_item("last_selected_topic", [], item_type="pickle")
 
 class Settings(object):
