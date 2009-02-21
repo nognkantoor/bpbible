@@ -50,7 +50,7 @@ class Template(VerseTemplate):
 class SmartBody(object):
 	whitespace = "(<INDENT-BLOCK-(START|END)[^>]*>)|(<br( [^>]*)?>)|(<p( [^>]*)?>)|(<!P>)"
 	included_whitespace = "(%s)(%s|\s)*" % (whitespace, whitespace)
-	vpl_text = '<br class="verse_per_line">'
+	vpl_text = '<br class="verse_per_line" />'
 	
 	incl_whitespace_start = re.compile("^" + included_whitespace, re.IGNORECASE)
 	incl_whitespace_end = re.compile(included_whitespace + "$", re.IGNORECASE)
