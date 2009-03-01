@@ -1,13 +1,13 @@
-content  pyxpcom_gui_app                content/
-skin     pyxpcom_gui_app  standard/1.0  skin/standard/
-locale   pyxpcom_gui_app  en-US         locale/en-US/
+content  bpbible                content/
+skin     bpbible  standard/1.0  skin/standard/
+locale   bpbible  en-US         locale/en-US/
 locale   branding         en-US         locale/en-US/brand/
 
 # PyShell setup.
 content  pyshell  pyshell/content/
 skin pyshell classic/1.0 pyshell/skin/
 locale pyshell en-US pyshell/locale/en-US/
-overlay chrome://pyxpcom_gui_app/content/pyxpcom_gui_app.xul chrome://pyshell/content/overlay-bpbible.xul
+overlay chrome://bpbible/content/bpbible.xul chrome://pyshell/content/overlay-bpbible.xul
 
 # DOM Inspector setup.
 content  inspector                       jar:inspector.jar!/content/inspector/ xpcnativewrappers=no

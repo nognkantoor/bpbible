@@ -13,10 +13,25 @@ Important: Note the script-type value is set to Python in the window settings.
 
 <window id="bpbible"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+		xmlns:html="http://www.w3.org/1999/xhtml"
+		xmlns:h="http://www.w3.org/1999/xhtml"
         title="&bpbible.title;"
         style="width: 700px; height: 500px;"
         script-type="application/x-python"
-        persist="screenX screenY width height">
+        persist="screenX screenY width height"
+		onload="do_load();">
+
+  <script type="application/x-javascript">
+	
+	
+	function initialize() {
+	window.dump("HI");
+	
+	  	//FirebugChrome.initialize();
+  	alert("Boing");
+		
+		}
+  </script>
 
   <script type="application/x-python" src="chrome://bpbible/content/bpbible.py"/>
 
@@ -32,8 +47,28 @@ Important: Note the script-type value is set to Python in the window settings.
                     key="key_exit"/>
         </menupopup>
       </menu>
+      <menu id="menu_tools" label="&tools.label;" accesskey="&tools.accesskey;">
+	  	<!-- Replicate the Firefox popup exactly, so that we can use
+		the overlays of PyShell and similar extensions.
+		-->
+        <menupopup id="menu_ToolsPopup">
+        	<menuitem id="my_item"
+                  	label="Does nothing"
+					/>
+        	<menuitem id="dom_inspector"
+                  	label="DOM Inspector"
+                  	accesskey="D"
+					oncommand="run_dom_inspector()"/>
+
+        </menupopup>
+      </menu>
       <menu id="menu_help" label="&help.label;" accesskey="&help.accesskey;">
         <menupopup id="popup_help">
+          <menuitem id="menu_Extensions"
+                    label="&helpAbout.label;"
+                    accesskey="&helpAbout.accesskey;"
+                    oncommand="bpbible_doCommand(event)"/>
+		  
           <menuitem id="menu_About"
                     label="&helpAbout.label;"
                     accesskey="&helpAbout.accesskey;"
@@ -42,23 +77,27 @@ Important: Note the script-type value is set to Python in the window settings.
       </menu>
     </menubar>
 
-    <!-- Uncomment for a toolbar widget. -->
-    <!--<toolbar id="toolbar_explorer" mode="icons">-->
-    <!--</toolbar>-->
+    <toolbar id="toolbar_explorer" mode="icons">
+		<textbox id="toolbar_location" value="Genesis 1" onkeypress="handle_location_keypress(event);"/>
+		<button oncommand="go(event)"
+			label="Go"/>
+    </toolbar>
 
   </toolbox>
 
-  <label id="url_label" value="URL: "/>
-  <textbox id="url_textbox" value="http://www.python.org/" />
-  <button id="url_button" label="Go" />
-
-  <browser id="browser"
-           flex="1"
-           src="http://www.python.org/" />
-
-  <statusbar>
-    <!-- mozutils gets imported into scope through bpbible.py -->
-    <statusbarpanel id="statuspanel" flex="1" onclick="mozutils.doAlert('Hello from Python')"/>
-  </statusbar>
+  <vbox id="appcontent" flex="1">
+<html:html xmlns="http://www.w3.org/1999/xhtml" style="width: 100%;">
+<body id="bodycontent"></body>
+</html:html>
+<!--
+<browser id="browser" style="width: 100%;"/>
+-->
+  </vbox>
+   
+            <statusbar id="status-bar">
+                <statusbarpanel id="statusbar-display" flex="1"
+					script-type="application/javascript" 
+					onclick="initialize()"/>
+            </statusbar>  
 
 </window>

@@ -6,6 +6,9 @@
 <!ENTITY fileExit.label         "Exit">
 <!ENTITY fileExit.accesskey     "X">
 
+<!ENTITY tools.label             "Tools">
+<!ENTITY tools.accesskey         "T">
+
 <!ENTITY help.label             "Help">
 <!ENTITY help.accesskey         "H">
 
