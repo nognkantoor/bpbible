@@ -1,6 +1,7 @@
 import mozutils
 from backend.bibleinterface import biblemgr
 import sys
+from util.debug import dump
 
 def pyxpcom_gui_app_doCommand(event):
 	item_name = event.target.id
@@ -24,6 +25,7 @@ def go(event):
 def lookup_reference():
 	item = document.getElementById("toolbar_location")
 	assert item
+	dump("Looking up reference: %s" % item.value)
 
 	text = biblemgr.bible.GetChapter(
 		item.value
