@@ -7,6 +7,8 @@ def is_gtk():
 	return "wxGTK" in wx.PlatformInfo
 
 def is_msw():
+	if sys.platform == "linux2":
+		return False
 	return True
 	import wx
 	return "wxMSW" in wx.PlatformInfo
