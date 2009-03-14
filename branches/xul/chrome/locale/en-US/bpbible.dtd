@@ -17,3 +17,5 @@
 
 <!ENTITY helpAbout.label        "About">
 <!ENTITY helpAbout.accesskey    "A">
+
+<!ENTITY moduleSelector.title    "Books">

@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://bpbible/skin/bpbible.css" type="text/css"?>
+
+<!DOCTYPE window SYSTEM "chrome://bpbible/locale/bpbible.dtd">
+
+<window id="module_selector"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+		xmlns:html="http://www.w3.org/1999/xhtml"
+        title="&moduleSelector.title;"
+        style="width: 900px; height: 750px;"
+        script-type="application/x-python"
+        persist="screenX screenY width height"
+		onload="load_module_tree_view(); lookup_reference();">
+
+  <script type="application/x-python" src="chrome://bpbible/content/module_selector.py"/>
+  <script type="application/x-python" src="chrome://bpbible/content/bpbible.py"/>
+
+  <hbox id="content" flex="1">
+  	<vbox flex="1" style="width: 300px;">
+    <tree id="module_tree" flex="1" hidecolumnpicker="true" style="width: 300px;">
+      <treecols>
+		<treecol id="maincolumn" flex="1"  primary="true" />
+      </treecols>
+      <treechildren id="module_tree_base">
+      </treechildren>
+    </tree>
+	</vbox>
+
+	<!--<splitter></splitter>-->
+	<!--<splitter collapse="before" ><grippy /></splitter>-->
+
+	<!-- Bible content. -->
+  	<vbox id="appcontent" flex="1">
+    <toolbar id="toolbar_explorer" mode="icons" style="width:300px;">
+		<textbox id="toolbar_location" value="Genesis 1" onkeypress="handle_location_keypress(event);"/>
+		<button oncommand="load_reference()" label="Go"/>
+    </toolbar>
+	<html:html xmlns="http://www.w3.org/1999/xhtml" style="width:400px;">
+		<body id="bodycontent"></body>
+	</html:html>
+  	</vbox>
+  </hbox>
+</window>

@@ -2,6 +2,7 @@ import mozutils
 from backend.bibleinterface import biblemgr
 import sys
 from util.debug import dump
+import util.dom_util
 
 def bpbible_doCommand(event):
 	item_name = event.target.id
@@ -33,10 +34,12 @@ def lookup_reference():
 	set_browser_text(text)
 
 def set_browser_text(text):
-	document.getElementById("bodycontent").innerHTML = text
+	document.getElementById("bodycontent").innerHTML = text.replace("<!P>", "&lt;!P&gt;")
 
 def do_load():
+	util.dom_util.document = document
 	lookup_reference()
+	window.open('chrome://bpbible/content/module_selector.xul', '', 'chrome');
 
 def run_dom_inspector():
 	window.open("chrome://inspector/content/inspector.xul", "", "chrome");
