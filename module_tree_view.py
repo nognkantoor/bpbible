@@ -1,23 +1,18 @@
-import wx
 from backend.bibleinterface import biblemgr
 from swlib.pysw import SW
-from gui.filterable_tree import TreeItem, FilterableTree
+from gui.tree_view import TreeItem, BasicTreeView
+from util import _, languages
 from util.observerlist import ObserverList
 from util.unicode import to_unicode
 from util.debug import dprint, ERROR
 
-from moduleinfo import ModuleInfo
-from util import languages
-from wx.lib.customtreectrl import CustomTreeCtrl, \
-	TR_AUTO_CHECK_CHILD, TR_AUTO_CHECK_PARENT, TR_HAS_VARIABLE_ROW_HEIGHT
-
-
-class ModuleTree(FilterableTree):
-	def __init__(self, parent):
-		super(ModuleTree, self).__init__(parent, None)
+class ModuleTreeView(BasicTreeView):
+	def __init__(self):
+		super(ModuleTreeView, self).__init__()
 		
 		self.on_module_choice = ObserverList()
 		self.on_category_choice = ObserverList()
+		self.top_level_items = []
 
 		self.module_types = (
 			(_("Bibles"), biblemgr.bible),
@@ -25,7 +20,6 @@ class ModuleTree(FilterableTree):
 			(_("Dictionaries"), biblemgr.dictionary),
 			(_("Other books"), biblemgr.genbook),
 		)
-		
 
 		self.on_selection += self.on_version_tree
 		self.recreate()
@@ -35,49 +29,31 @@ class ModuleTree(FilterableTree):
 		return _("Find Book...")
 
 	def bind_events(self):
-		super(ModuleTree, self).bind_events()
-		# ### Nasty hack ###
-		# It seems that whenever all items are deleted, we get called by
-		# sel_changed in a bad state, from which calling GetPyData crashes it.
-		# So whenever an item is deleted, unbind all events.
-		self.tree.Bind(wx.EVT_TREE_DELETE_ITEM, lambda evt:(evt.Skip(),
-													self.unbind_events()))
+		super(ModuleTreeView, self).bind_events()
 		
-		self.tree.Bind(wx.EVT_TREE_ITEM_MENU, self.version_tree_menu)
+		#self.tree.Bind(wx.EVT_TREE_ITEM_MENU, self.version_tree_menu)
 	
 	def unbind_events(self):
-		if not super(ModuleTree, self).unbind_events():
+		if not super(ModuleTreeView, self).unbind_events():
 			return
 
 		self.tree.Unbind(wx.EVT_TREE_ITEM_MENU)
 		self.tree.Unbind(wx.EVT_TREE_DELETE_ITEM)
 		
 	def on_version_tree(self, item):
-		item_data = self.tree.GetPyData(item).data
-
-		parent = self.tree.GetItemParent(item)
-		assert parent, "Item hadn't a parent!!!"
-
-		parent_data = self.tree.GetPyData(parent)
-		parent_data = parent_data.data
-
-		if isinstance(item_data, SW.Module):
-			self.on_module_choice(item_data, parent_data)
+		if isinstance(item.data, SW.Module):
+			self.on_module_choice(item.data, item.parent.data)
 		else:
-			self.on_category_choice(item_data, parent_data)
+			self.on_category_choice(item.data, item.parent.data)
 		
 	def recreate(self):
-		self.model = TreeItem("Hidden root")
-		
 		self.add_first_level_groups()
 
-		for tree_item in self.model.children:
+		for tree_item in self.top_level_items:
 			self.add_children(tree_item)
 
-		if self.search.Value:
-			self.filter(self.search.Value)
-		else:
-			self.create()
+		self.setup(self.top_level_items)
+		self.expand_all()
 		
 	def version_tree_tooltip(self, event):
 		item = event.GetItem()
@@ -102,7 +78,8 @@ class ModuleTree(FilterableTree):
 	def add_menu_items(self, data, menu):
 		def make_event(module):	
 			def show_information(event):
-				ModuleInfo(self, module).ShowModal()
+				#ModuleInfo(self, module).ShowModal()
+				pass
 
 			return show_information
 	
@@ -117,7 +94,7 @@ class ModuleTree(FilterableTree):
 	
 	def add_first_level_groups(self):
 		for text, book in self.module_types:
-			self.model.add_child(text, data=book, filterable=False)	
+			self.top_level_items.append(TreeItem(text, data=book, filterable=False))
 
 	def add_children(self, tree_item):
 		modules = tree_item.data.GetModules()
@@ -133,22 +110,13 @@ class ModuleTree(FilterableTree):
 
 		tree_item.add_child(text, data=module)
 	
-class PathModuleTree(ModuleTree):
-	def CreateTreeCtrl(self, parent, style):
-		tree = wx.lib.customtreectrl.CustomTreeCtrl(parent, 
-			style=style^wx.TR_LINES_AT_ROOT|TR_AUTO_CHECK_CHILD|TR_AUTO_CHECK_PARENT|TR_HAS_VARIABLE_ROW_HEIGHT|wx.SUNKEN_BORDER)
-
-		#tree.EnableSelectionGradient(False)
-		#tree.EnableSelectionVista(True)
-		return tree
-	
+class PathModuleTreeView(ModuleTreeView):
 	def AppendItemToTree(self, parent, text):
 		return self.tree.AppendItem(parent, text, ct_type=1)
 		
-	
 	def add_first_level_groups(self):
 		for path, mgr, modules in reversed(biblemgr.mgrs):
-			self.model.add_child(path, data=mgr)
+			self.top_level_items.append(TreeItem(path, data=mgr))
 	
 	def add_children(self, tree_item):
 		for path, mgr, modules in reversed(biblemgr.mgrs):
@@ -161,7 +129,7 @@ class PathModuleTree(ModuleTree):
 		else:
 			dprint(ERROR, "Did not find mgr in list", mgr)
 	
-class LanguageModuleTree(ModuleTree):
+class LanguageModuleTreeView(ModuleTreeView):
 	def add_first_level_groups(self):
 		language_mappings = {}
 		self.data = {}
@@ -175,19 +143,9 @@ class LanguageModuleTree(ModuleTree):
 		
 		for lang, mapping in sorted(language_mappings.items(), 
 			key=lambda (lang, mapping): mapping):
-			self.model.add_child(mapping, data=lang)
+			self.top_level_items.append(TreeItem(mapping, data=lang))
 	
 	def add_children(self, tree_item):
 		for mod in sorted(self.data[tree_item.data], 
 							key=lambda mod:mod.Name()):
 			self.add_module(tree_item, mod)
-	
-if __name__ == '__main__':
-	from util import i18n
-	i18n.initialize()
-
-	a = wx.App(0)
-	f = wx.Frame(None)
-	tree = PathModuleTree(f)
-	f.Show()
-	a.MainLoop()
