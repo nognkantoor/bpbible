@@ -94,4 +94,7 @@ class overridableproperty(object):
 	def __delete__(self, obj):
 		return delattr(obj, self.storage)
 
+# Dummy i18n until we support it for XULRunner.
+def _(x):
+	return x
 
