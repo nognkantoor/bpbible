@@ -169,7 +169,7 @@ class BasicTreeView(object):
 	def getImageSrc(self, index, column): pass
 	def getProgressMode(self, index, column): pass
 	def getCellValue(self, index, column): pass
-	def cycleHeader(self, col, elem): pass
+	def cycleHeader(self, col): pass
 	def selectionChanged(self): pass
 	def cycleCell(self, index, column): pass
 	def performAction(self, action): pass
