@@ -16,11 +16,8 @@ def lookup_reference():
 	item = document.getElementById("toolbar_location")
 	assert item
 	dump("Looking up reference: %s" % item.value)
-
-	text = biblemgr.bible.GetChapter(
-		item.value
-	)
-	set_browser_text(text)
+	browser = document.getElementById("browser")
+	browser.setAttribute("src", "bpbible://%s/!%s" % (biblemgr.bible.mod.Name(), item.value))
 
 def set_browser_text(text):
 	document.getElementById("bodycontent").innerHTML = text.replace("<!P>", "&lt;!P&gt;")

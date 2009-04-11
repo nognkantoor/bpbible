@@ -1,7 +1,8 @@
 content  bpbible                content/
 skin     bpbible  standard/1.0  skin/standard/
 locale   bpbible  en-US         locale/en-US/
-locale   branding         en-US         locale/en-US/brand/
+locale   branding en-US         locale/en-US/brand/
+content  branding 				content/brand
 
 # PyShell setup.
 content  pyshell  pyshell/content/
