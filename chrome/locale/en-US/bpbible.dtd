@@ -12,6 +12,9 @@
 <!ENTITY help.label             "Help">
 <!ENTITY help.accesskey         "H">
 
+<!ENTITY extensions.label       "Extensions">
+<!ENTITY extensions.accesskey   "E">
+
 <!ENTITY sidebar.label          "Variables">
 <!ENTITY sidebarClose.tooltip   "Close the Variables sidebar">
 

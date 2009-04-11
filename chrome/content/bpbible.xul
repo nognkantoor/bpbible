@@ -10,9 +10,12 @@ Important: Note the script-type value is set to Python in the window settings.
            This will default all script handling to Python, so the oncommand
            and similar events are actually Python scripts!
 -->
-
+<!--
+We set windowtype here for XUSH... pretending to be firefox.
+-->
 <window id="bpbible"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"		
 		xmlns:html="http://www.w3.org/1999/xhtml"
 		xmlns:h="http://www.w3.org/1999/xhtml"
         title="&bpbible.title;"
@@ -20,18 +23,6 @@ Important: Note the script-type value is set to Python in the window settings.
         script-type="application/x-python"
         persist="screenX screenY width height"
 		onload="do_load();">
-
-  <script type="application/x-javascript">
-	
-	
-	function initialize() {
-	window.dump("HI");
-	
-	  	//FirebugChrome.initialize();
-  	alert("Boing");
-		
-		}
-  </script>
 
   <script type="application/x-python" src="chrome://bpbible/content/bpbible.py"/>
 
@@ -66,8 +57,8 @@ Important: Note the script-type value is set to Python in the window settings.
       <menu id="menu_help" label="&help.label;" accesskey="&help.accesskey;">
         <menupopup id="popup_help">
           <menuitem id="menu_Extensions"
-                    label="&helpAbout.label;"
-                    accesskey="&helpAbout.accesskey;"
+                    label="&extensions.label;"
+                    accesskey="&extensions.accesskey;"
                     oncommand="bpbible_doCommand(event)"/>
 		  
           <menuitem id="menu_About"
@@ -87,12 +78,9 @@ Important: Note the script-type value is set to Python in the window settings.
   </toolbox>
 
   <vbox id="appcontent" flex="1">
-<html:html xmlns="http://www.w3.org/1999/xhtml" style="width: 100%;">
-<body id="bodycontent"></body>
-</html:html>
-<!--
-<browser id="browser" style="width: 100%;"/>
--->
+
+	<browser disablehistory="true"
+		src="bpbible://bpbible/!Gen 3:15" id="browser" style="width: 100%;"  flex = "1" type="content"/>
   </vbox>
    
             <statusbar id="status-bar">
