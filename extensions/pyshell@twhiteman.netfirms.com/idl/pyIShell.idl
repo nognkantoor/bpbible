@@ -1,7 +1,4 @@
-<?xml version="1.0"?>
-
-<!--
- **** BEGIN LICENSE BLOCK *****
+/* **** BEGIN LICENSE BLOCK *****
  *  Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *  
  *  The contents of this file are subject to the Mozilla Public License
@@ -36,29 +33,17 @@
  *  the terms of any one of the MPL, the GPL or the LGPL.
  *  
  * **** END LICENSE BLOCK *****
--->
+ */
 
-<!DOCTYPE window SYSTEM "chrome://pyshell/locale/pyshell.dtd">
+#include "nsISupports.idl"
+#include "nsIVariant.idl"
 
-<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
-<?xml-stylesheet href="chrome://pyshell/skin/pyshell.css" type="text/css"?>
-
-<overlay id="overlay"
-         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-
-    <script type="application/x-javascript">
-      <![CDATA[
-        function pyshell_launch() {
-            window.openDialog("chrome://pyshell/content/pyshell.xul", "_blank", "all=no,width=500,height=400,scrollbars=yes,resizable=yes,dialog=no");
-        }
-      ]]>
-    </script>
-
-    <menupopup id="menu_ToolsPopup">
-        <menuitem id="pyshell_menuitem"
-                  label="&pyshell_menuitem.label;"
-                  accesskey="&pyshell_menuitem.accesskey;"
-                  oncommand="pyshell_launch();"/>
-    </menupopup>
-
-</overlay>
+[scriptable, uuid(25fe37f5-dccd-4d85-a8dc-003221129838)]
+interface pyIShell: nsISupports {
+    // attributes, constants, methods, ...
+    nsIVariant evalPythonString(in wstring code);
+    void getCompletionsForName(in wstring name,
+                               in wstring prefix,
+                               out unsigned long count,
+                               [array, size_is(count), retval] out wstring completions);
+};
