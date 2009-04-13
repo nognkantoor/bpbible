@@ -33,6 +33,3 @@ def do_load():
 	util.dom_util.document = document
 	lookup_reference()
 	window.open('chrome://bpbible/content/module_selector.xul', '', 'chrome');
-
-def run_dom_inspector():
-	window.open("chrome://inspector/content/inspector.xul", "", "chrome");
