@@ -4,12 +4,6 @@ locale   bpbible  en-US         locale/en-US/
 locale   branding en-US         locale/en-US/brand/
 content  branding 				content/brand
 
-# PyShell setup.
-content  pyshell  pyshell/content/
-skin pyshell classic/1.0 pyshell/skin/
-locale pyshell en-US pyshell/locale/en-US/
-overlay chrome://bpbible/content/bpbible.xul chrome://pyshell/content/overlay-bpbible.xul
-
 # DOM Inspector setup.
 content  inspector                       jar:inspector.jar!/content/inspector/ xpcnativewrappers=no
 locale   inspector           en-US       jar:inspector.jar!/locale/en-US/inspector/
