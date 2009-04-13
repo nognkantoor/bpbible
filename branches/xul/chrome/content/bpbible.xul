@@ -69,13 +69,6 @@ We set windowtype here for XUSH... pretending to be firefox.
              the overlays of PyShell and similar extensions.
         -->
         <menupopup id="menu_ToolsPopup">
-          <menuitem id="my_item"
-                    label="Does nothing"
-          />
-          <menuitem id="dom_inspector"
-                    label="DOM Inspector"
-                    accesskey="D"
-                    oncommand="run_dom_inspector()"/>
 
         </menupopup>
       </menu>
