@@ -69,7 +69,8 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		self.topic_tree.Bind(wx.EVT_KEY_UP, self._on_char)
 
 		for tool in ("add_topic_tool", "add_passage_tool", "cut_tool", 
-			"copy_tool", "paste_tool", "delete_tool", "undo_tool", "redo_tool"):
+			"copy_tool", "copy_text_tool", "paste_tool", "delete_tool",
+			"undo_tool", "redo_tool"):
 			handler = lambda event, tool=tool: self._perform_toolbar_action(event, tool)
 			self.toolbar.Bind(wx.EVT_TOOL, handler, id=wx.xrc.XRCID(tool))
 
@@ -245,6 +246,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 			"add_passage_tool": 
 				lambda: self._create_passage(self.selected_topic),			
 			"copy_tool":	self._operations_manager.copy,
+			"copy_text_tool":	self._copy_as_text,
 			"cut_tool":		self._operations_manager.cut,
 			"paste_tool":	self._safe_paste,
 			"delete_tool":	self._delete,
@@ -312,6 +314,28 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		
 		self.topic_tree.PopupMenu(menu)
 
+	def _copy_as_text(self):
+		guiconfig.mainfrm.copy(self._get_current_topic_text())
+
+	def _get_current_topic_text(self):
+		if self.selected_topic is None:
+			return u""
+		text = self.selected_topic.full_name + u"\n" + self.selected_topic.description.strip()
+
+		passage_text = u"\n".join(self._passage_entry_text(passage_entry)
+				for passage_entry in self.selected_topic.passages)
+		if passage_text:
+			text += u"\n\n" + passage_text
+	
+		return text.strip()
+
+	def _passage_entry_text(self, passage_entry):
+		"""Gets the text for the given passage entry with its comment."""
+		text = passage_entry.passage.GetBestRange(userOutput=True)
+		if passage_entry.comment:
+			text = u"%s: %s" % (text, passage_entry.comment.strip())
+		return text
+
 	@guiutil.frozen
 	def _safe_paste(self, operation=None):
 		"""A wrapper around the operations manager paste operation that
@@ -367,6 +391,8 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 	def _remove_observers(self, parent_topic):
 		parent_topic.add_subtopic_observers.remove(self._add_new_topic_node)
 		parent_topic.remove_subtopic_observers.remove(self._remove_topic_node)
+		parent_topic.name_changed_observers.remove(self._rename_topic_node)
+
 		for subtopic in parent_topic.subtopics:
 			self._remove_observers(subtopic)
 	
@@ -630,7 +656,7 @@ def _passage_str(passage_entry, short=False):
 	if not passage_entry.passage:
 		return u""
 
-	return VerseList([passage_entry.passage]).GetBestRange(userOutput=True, short=short)
+	return passage_entry.passage.GetBestRange(userOutput=True, short=short)
 
 # Specifies what type of dragging is currently happening with the topic tree.
 # This is needed since it has to select and unselect topics when dragging and
@@ -955,6 +981,7 @@ class TopicDetailsPanel(xrcTopicDetailsPanel):
 class PassageDetailsPanel(xrcPassageDetailsPanel):
 	def __init__(self, parent, operations_manager):
 		super(PassageDetailsPanel, self).__init__(parent)
+		self.passage_preview.show_reference_string = True
 		self.passage = None
 		self.last_passage_text = u""
 		self.passage_verse_key = None
@@ -1056,14 +1083,9 @@ class PassageDetailsPanel(xrcPassageDetailsPanel):
 		self.last_passage_text = passage_text
 
 		passages = VerseList(passage_text, userInput=True)
-		if len(passages) == 1:
-			self.passage_verse_key = passages[0]
+		if len(passages) >= 1:
+			self.passage_verse_key = passages
 			return True
-		elif len(passages) > 1:
-			wx.MessageBox(_(u"Passage `%s' contains multiple passages.\n"
-					"Only one verse or verse range can be entered.") % passage_text,
-					"", wx.OK | wx.ICON_INFORMATION, self)
-			return False
 		else:
 			wx.MessageBox(_(u"Unrecognised passage `%s'.") % passage_text,
 					"", wx.OK | wx.ICON_INFORMATION, self)

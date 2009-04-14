@@ -13,6 +13,7 @@ class GuessVerseFrame(xrcGuessVerseFrame):
 			body=u"$text", headings=""
 		)
 
+		self.show_answer_button.Bind(wx.EVT_BUTTON, self.on_show_answer)
 		self.guess_button.Bind(wx.EVT_BUTTON, self.on_guess)
 		self.books.AppendItems([unicode(book) for book in UserVK.books])
 		self.books.Selection = 0
@@ -24,14 +25,22 @@ class GuessVerseFrame(xrcGuessVerseFrame):
 		randomnum = random.randint(1, 31102)
 		self.key = VK("Gen 1:%d" % randomnum)
 		self.user_key = UserVK(self.key)
-		self.reference_frame.SetReference(self.key.text)
+		self.reference_frame.SetReference(self.key.getText())
+
+	def on_show_answer(self, event):
+		wx.MessageBox(
+			_("The verse was %s") % UserVK(self.key).getText(),
+			parent=self
+		)
+
+		self.new_guess()
 
 	def on_guess(self, event):
 		won = self.user_key.getBookName() == self.books.StringSelection
 		if won:
 			wx.MessageBox(
 				_("Yes, you are right. The verse was %s")
-					% UserVK(self.key).text,
+					% UserVK(self.key).getText(),
 				_("Correct"),
 				parent=self
 			)
@@ -41,7 +50,8 @@ class GuessVerseFrame(xrcGuessVerseFrame):
 			wx.MessageBox(
 				_("No, you are wrong. Try again."), 
 				_("Try again."),
-				parent=self
+				parent=self,
+				style=wx.OK | wx.ICON_ERROR,
 			)
 
 if __name__ == '__main__':

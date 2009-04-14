@@ -98,7 +98,10 @@ sword_paths_file += "sword.conf"
 raw = False
 
 def name():
-	return _("BPBible")
+	# Note that the string BPBible is *not* translated, since it is the
+	# application trade name and must be preserved in all languages in any
+	# place it occurs (including this one).
+	return "BPBible"
 
 def MODULE_MISSING_STRING():
 	return _("""<b>This book is not set.</b><br>
@@ -169,6 +172,8 @@ u'<small><sup>$versenumber</sup></small></glink> $text $tags')
 
 bible_template = SmartVerseTemplate(body=body)
 
+bible_template_without_headings = SmartVerseTemplate(body=body, headings=u'')
+
 #, footer="<br>$range ($version)")
 
 
@@ -188,7 +193,9 @@ current_verse_template = SmartVerseTemplate(body)
 
 # TODO: do we want this to have tags? I'd guess not
 verse_compare_template = VerseTemplate(
-	u"<sup>$versenumber</sup> $text ",
+	u'<glink href="nbible:$internal_reference">'
+	u'<small><sup>$versenumber</sup></small></glink> $text ',
+	
 	header=u"<p><b>(<a href='%s:$version'>$version</a>)"
 	u"</b> " % BIBLE_VERSION_PROTOCOL
 )

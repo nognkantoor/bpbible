@@ -1,5 +1,6 @@
 from string import Template as str_template
 import re
+from swlib.pysw import process_digits
 
 class VerseTemplate(object):
 	"""VerseTemplate is a class which defines templates for Bible Text""" 
@@ -55,15 +56,15 @@ class SmartBody(object):
 	incl_whitespace_start = re.compile("^" + included_whitespace, re.IGNORECASE)
 	incl_whitespace_end = re.compile(included_whitespace + "$", re.IGNORECASE)
 	incl_whitespace_br_start = re.compile(
-		"(?P<ws>%s)%s" % (included_whitespace, vpl_text),
+		u"(?P<ws>%s)%s" % (included_whitespace, vpl_text),
 		re.IGNORECASE
 	)
 	incl_whitespace_br_end = re.compile(
-		"%s(?P<ws>%s)" % (vpl_text, included_whitespace),
+		u"%s(?P<ws>%s)" % (vpl_text, included_whitespace),
 		re.IGNORECASE
 	)
 	
-	empty_versenumber = re.compile("<glink href=[^>]+><small><sup></sup></small></glink>\s?")
+	empty_versenumber = re.compile(u"<glink href=[^>]+><small><sup></sup></small></glink>\s?")
 	
 	def __init__(self, body, verse_per_line=True):
 		self.body = body
@@ -71,17 +72,18 @@ class SmartBody(object):
 	
 	def safe_substitute(self, dict):
 		text = dict.pop("text")
-		if dict["versenumber"] == 0 and not text or text == "<br />":
-			return ""
+		verse_0 = dict["versenumber"] == process_digits("0", userOutput=True)
+		if verse_0 and not text or text == "<br />":
+			return u""
 		
-		if dict["versenumber"] == 0:
-			dict["versenumber"] = ""
+		if verse_0:
+			dict["versenumber"] = u""
 			
 		
 		whitespace = []
 		def collect(match):
 			whitespace.append(match.group(0))
-			return ""
+			return u""
 
 		# float leading whitespace out to the front
 		text = self.incl_whitespace_start.sub(collect, text)
@@ -94,22 +96,22 @@ class SmartBody(object):
 		
 		dict["text"] = text
 
-		ret = "%s%s%s%s\n" % (
-			''.join(leading_whitespace),
+		ret = u"%s%s%s%s\n" % (
+			u''.join(leading_whitespace),
 			self.body.safe_substitute(dict),
-			''.join(whitespace),
+			u''.join(whitespace),
 			self.vpl_text * self.verse_per_line,			
 		)
 		
 		# remove empty verse number
-		ret = self.empty_versenumber.sub("", ret)
+		ret = self.empty_versenumber.sub(u"", ret)
 		
 
 		return ret
 	
 	def finalize(self, text):
-		return self.incl_whitespace_br_start.sub(r"\g<ws>", 
-			self.incl_whitespace_br_end.sub(r"\g<ws>", text)
+		return self.incl_whitespace_br_start.sub(ur"\g<ws>", 
+			self.incl_whitespace_br_end.sub(ur"\g<ws>", text)
 		)
 	
 	@property

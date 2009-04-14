@@ -142,6 +142,11 @@ class IndexedText(object):
 		self.create_index_against_text(module, key)
 
 		module.setKey(old_key)
+		
+		# IMPORTANT: clear the error indicator
+		# otherwise the highlighted search frame may end up blank the first
+		# time the user uses it!
+		module.Error()
 
 	def extract_strongs(self, text):
 		# put offset in an array, so that we can write to it in the callback
@@ -150,18 +155,18 @@ class IndexedText(object):
 		
 		# TODO use \1
 		expr = re.compile(
-			u"([%s])([^%s]*)[%s]([^%s]*)[%s]" % (
+			u"([%s])([^%s]*)[%s]\s*([^%s]*?)\s*[%s]" % (
 				(process_text.special_chars,) * 5),
 			re.UNICODE
 		)
 		def replace(match):
 			o = offset[0]
-			type, number, text = match.group(1, 2, 3)
+			all, type, number, text = match.group(0, 1, 2, 3)
 
 			#text = expr.sub(replace, text)
 			
-			new_offset = (o + len(number) + 3)
-			start = match.start() - o
+			new_offset = (o + len(all) - len(text))
+			#start = match.start() - o
 			collectors[type].collect(number, text, 
 				match.start() - o, match.end() - new_offset)
 			offset[0] = new_offset

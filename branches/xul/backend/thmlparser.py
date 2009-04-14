@@ -51,11 +51,7 @@ class ThMLParser(filterutils.ParserBase):
 			refList = self.u.lastTextNode.c_str()
 		
 			items = []
-			vkey = SW.VerseKey.castTo(self.u.key)
-			if (vkey):
-				last = GetVerseStr(vkey.getText())
-			else:
-				last = ""
+			last = GetVerseStr(self.u.key.getText())
 			for item in refList.split(";"):
 				vref = item
 				vref = GetBestRange(vref, context=last)
@@ -71,8 +67,8 @@ class ThMLParser(filterutils.ParserBase):
 
 		# <sync type="Strongs" value="G1985" />
 		if ("type" not in attributes or attributes["type"]!="Strongs" or 
-			"value" not in attributes or 
-			not filterutils.filter_settings["strongs_headwords"]):
+			"value" not in attributes):
+			#not filterutils.filter_settings["strongs_headwords"]):
 			self.success = SW.INHERITED
 			return
 			

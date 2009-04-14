@@ -1,7 +1,7 @@
 import wx.combo
 import wx
 from swlib.pysw import GetVerseStr, BookData, ChapterData
-from swlib.pysw import VK, UserVK, VerseParsingError
+from swlib.pysw import VK, UserVK, VerseParsingError, process_digits
 from swlib import pysw
 from gui.treecombo import LazyTreeCombo
 		
@@ -28,12 +28,14 @@ class VerseTree(LazyTreeCombo):
 	def has_children(self, item):
 		data = self.get_data(item)
 		if not self.with_verses:
-			return isinstance(data, BookData) 
+			if pysw.LIB_SUPPORTS_SINGLE_CHAPTER_BOOKS and len(data) == 1:
+				return False
+
+			return isinstance(data, BookData)
 
 		return isinstance(data, (BookData, ChapterData))
 
 	def format_tree(self, item):
-		print `self.get_data(item)`
 		return "%s" % self.get_data(item)
 	
 	def format_combo(self, item):
@@ -43,14 +45,27 @@ class VerseTree(LazyTreeCombo):
 
 		elif isinstance(data, ChapterData):
 			parent_data = self.get_data(self.tree.GetItemParent(item))
-			return "%s %s" % (parent_data, data)
+			if len(parent_data) == 1 and pysw.LIB_SUPPORTS_SINGLE_CHAPTER_BOOKS:
+				return "%s" % parent_data
+
+			return pysw.process_digits("%s %s" % (parent_data, data),
+				userOutput=True)
 
 		parent = self.tree.GetItemParent(item)
 		parent_data = self.get_data(parent)
-		grandparent_data = self.get_data(self.tree.GetItemParent(parent))
-		print `grandparent_data`
+		if isinstance(parent_data, BookData):
+			# if our parent is book data, and we aren't chapter data, then
+			# this is a single chapter book
+			return pysw.process_digits("%s %s" % (parent_data, data),
+				userOutput=True)
+			
 
-		return "%s %s:%s " % (grandparent_data, parent_data, data)
+		grandparent_data = self.get_data(self.tree.GetItemParent(parent))
+
+		return pysw.process_digits(
+			"%s %s:%s " % (grandparent_data, parent_data, data),
+			userOutput=True)
+
 	
 	def set_current_verse(self, event):
 		self.currentverse = event.ref
@@ -79,9 +94,16 @@ class VerseTree(LazyTreeCombo):
 					
 
 		verse_key = UserVK(VK(self.currentverse))
+		single_chapter_book = pysw.LIB_SUPPORTS_SINGLE_CHAPTER_BOOKS \
+			and verse_key.getChapterMax() == 1
 
 		book, chapter = verse_key.getBookName(), verse_key.Chapter()
 		verse = verse_key.Verse()
+		chapter = process_digits(str(chapter), userOutput=True)
+		verse = process_digits(str(verse), userOutput=True)
+		if single_chapter_book:
+			chapter = verse
+		
 
 		item, cookie = self.tree.GetFirstChild(root)
 		while item:
@@ -92,7 +114,7 @@ class VerseTree(LazyTreeCombo):
 
 		assert item, book + " not found!"
 		
-		if was_book: 
+		if was_book or (single_chapter_book and not self.with_verses): 
 			return item
 
 		self.tree.Expand(item)
@@ -100,27 +122,30 @@ class VerseTree(LazyTreeCombo):
 		item2, cookie = self.tree.GetFirstChild(item)
 
 		while item2:
-			data = self.get_data(item2)
-			if data.chapter_number == chapter:
+			data = unicode(self.get_data(item2))
+			if data == chapter:
 				# if : isn't in there, we take it as a chapter reference
-				if not self.with_verses or ":" not in text:
+				if not self.with_verses or  ":" not in text \
+						or single_chapter_book:
 					return item2
 				else:
 					break
 
 			item2, cookie = self.tree.GetNextChild(item, cookie)
 		
-		assert item2, "Chapter '%d' not found in %s" % (chapter, book)
+		assert item2, "Chapter '%s' not found in %s" % (chapter, book)
+		assert not single_chapter_book, "Single chapter books, but chapterMax == 1?!?"
+
 
 		self.tree.Expand(item2)
 		
 		item3, cookie = self.tree.GetFirstChild(item2)
 
 		while item3:
-			data = self.get_data(item3)
+			data = unicode(self.get_data(item3))
 			if data == verse:
 				return item3
 
 			item3, cookie = self.tree.GetNextChild(item2, cookie)
 		
-		assert item3, "Verse '%d' not found in %s %s" % (verse, book, chapter)
+		assert item3, "Verse '%s' not found in %s %s" % (verse, book, chapter)

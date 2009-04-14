@@ -2,6 +2,7 @@ import Sword as SW
 import os
 import re
 import sys
+import string
 from util.debug import *
 from util.unicode import to_str, to_unicode
 from util import is_py2exe
@@ -44,7 +45,11 @@ for a in dir(SW):
 	if(a[:2]=="SW"):
 		setattr(SW, a[2:], getattr(SW, a))
 
+LIB_1512_COMPAT = SW.Version().currentVersion > SW.Version("1.5.11")
+SW_HAS_MDB = hasattr(SW.Mgr, "loadMDBDir")
+print "SVN; SWORD 1.5.12 compatible" if LIB_1512_COMPAT else "1.5.11 compatible"
 
+locale_dir = "locales/locales.d" + ("/SWORD_1512" if LIB_1512_COMPAT else "")
 if hasattr(sys, "SW_dont_do_stringmgr"):
 	dprint(WARNING, "Skipping StringMgr initialization")
 else:
@@ -79,17 +84,38 @@ else:
 	
 	# we don't own this, the system string mgr holder does
 	m.thisown = False
-	SW.StringMgr.setSystemStringMgr(m)
+	have_set_locale_dir = False
+	try:
+		SW.StringMgr.setSystemStringMgr(m, locale_dir)
+		have_set_locale_dir = True
+	except TypeError, e:
+		if LIB_1512_COMPAT:
+			print "Don't we have those patches???", e
+
+		SW.StringMgr.setSystemStringMgr(m)
 	
 # *only* after we've set the system string mgr can we set the system 
 # locale mgr...
 locale_mgr = SW.LocaleMgr.getSystemLocaleMgr()
-locale_mgr.loadConfigDir("locales/locales.d")
+if not have_set_locale_dir:
+	locale_mgr.loadConfigDir(locale_dir)
+	have_set_locale_dir = True
 
 #if locale_mgr.getLocale("bpbible"):
 #	locale_mgr.setDefaultLocaleName("bpbible")
 #else:
 #	dprint(WARNING, "bpbible locale not found")
+try:
+	vk = SW.VerseKey()
+	vk.ParseVerseList("", "", False, False)
+	LIB_SUPPORTS_SINGLE_CHAPTER_BOOKS = True
+	
+except (TypeError, NotImplementedError), e:
+	if LIB_1512_COMPAT:
+		print "Extended ParseVerseList not supported???", e
+	LIB_SUPPORTS_SINGLE_CHAPTER_BOOKS = False
+		
+del vk
 
 
 class VerseParsingError(Exception): 
@@ -108,11 +134,12 @@ def set_vk_chapter_checked(self, chapter):
 	if 0 < chapter <= chapters:
 		self.Chapter(chapter)
 	else:
-		raise VerseParsingError(_("There are only %(chapters)d chapters "
+		raise VerseParsingError(process_digits(
+			_("There are only %(chapters)d chapters "
 			"in %(book)s (given %(given)d)") % dict(
 				chapters=chapters, book=self.getBookName(), 
 				given=chapter
-			)
+			), userOutput=True)
 		)
 	
 def set_vk_verse_checked(self, verse):
@@ -125,11 +152,12 @@ def set_vk_verse_checked(self, verse):
 	if 0 < verse <= verses:
 		self.Verse(verse)
 	else:
-		raise VerseParsingError(_("There are only %(verses)d verses in "
+		raise VerseParsingError(process_digits(
+			_("There are only %(verses)d verses in "
 			"%(book)s %(chapter)s (given %(given)d)") % dict(
 				verses=verses, book=self.getBookName(),
 				chapter=chapter, given=verse
-			)
+			), userOutput=True)
 		)
 
 class VK(SW.VerseKey):#, object):
@@ -174,12 +202,53 @@ class VK(SW.VerseKey):#, object):
 	"""
 
 	encoding = "ascii"
-	def __init__(self, key=(), raiseError=True):
+	def __init__(self, key=(), raiseError=True, headings=False):
+		assert isinstance(raiseError, bool), "raiseError wasn't bool"
+		if headings:
+			SW.VerseKey.__init__(self)
+			self.Headings(1)
+			
+			if isinstance(key, tuple):
+				min, max = key
+				tmp_lk = self.ParseVerseList(min)
+				if tmp_lk.Count():
+					k = tmp_lk.GetElement(0)
+					vk = SW.VerseKey.castTo(k)
+					if not vk:
+						print "WARNING: not vk"
+						self.LowerBound(k.getText())
+					else:
+						self.LowerBound_VK(vk)
+
+				tmp_lk = self.ParseVerseList(max, min, True)
+				if tmp_lk.Count():
+					k = tmp_lk.GetElement(0)					
+					vk = SW.VerseKey.castTo(k)
+					if not vk:
+						print "WARNING: not vk"
+						self.UpperBound(k.getText())
+						
+					else:
+						if vk.isBoundSet():
+							self.UpperBound_VK(vk.UpperBound())
+						else:
+							self.UpperBound_VK(vk)
+
+				self.setPosition(TOP)
+				
+			else:
+				assert isinstance(key, SW.VerseKey)
+				self.copyFrom(key)
+			return
+
 		if isinstance(key, basestring):
 			#if not KeyExists(key):
 			#	raise VerseParsingError, key
+			#print key
 			SW.VerseKey.__init__(self, key.encode(self.encoding))
+			#print "TESTING", key
 			if raiseError and self.Error():
+				#print "RAISING ERROR"
 				raise VerseParsingError, key
 			return
 			
@@ -237,14 +306,19 @@ class VK(SW.VerseKey):#, object):
 		self.decrement(amount)
 		return self
 	
+	if not LIB_SUPPORTS_SINGLE_CHAPTER_BOOKS:
+		def ParseVerseList(self, a, b="", c=False, d=False):
+			return SW.VerseKey.ParseVerseList(self, a, b, c)
+				
+
 	def get_text(self):
 		return self.__str__()
 	
-	def set_text(self, value):
+	def set_text(self, value, raiseError=True):
 		if(isinstance(value, basestring)):
 			self.ClearBounds()
 
-			if not KeyExists(value, self):
+			if raiseError and not KeyExists(value, self):
 				raise VerseParsingError, value
 				
 			self.setText(value.encode(self.encoding))
@@ -252,11 +326,12 @@ class VK(SW.VerseKey):#, object):
 			self.ClearBounds()
 			
 			top, bottom = value
-			if not KeyExists(top, self):
-				raise VerseParsingError, top
+			if raiseError:
+				if not KeyExists(top, self):
+					raise VerseParsingError, top
 		
-			if not KeyExists(bottom, self):
-				raise VerseParsingError, bottom
+				if not KeyExists(bottom, self):
+					raise VerseParsingError, bottom
 
 			self.UpperBound(bottom)
 			self.LowerBound(top)
@@ -300,8 +375,8 @@ class VK(SW.VerseKey):#, object):
 				return num
 			if(upper.Testament()==lower.Testament()):
 				num-=lower.Book()-upper.Book()
-				uc=upper.getChapterCount(upper.Testament(), upper.Book())
-				lc=upper.getChapterCount(lower.Testament(), lower.Book())
+				uc=upper.chapterCount(upper.Testament(), upper.Book())
+				lc=upper.chapterCount(lower.Testament(), lower.Book())
 		return 1
 
 	def __iter__(self):
@@ -360,6 +435,36 @@ class VK(SW.VerseKey):#, object):
 		vk.this = item.this
 		return vk
 
+	UpperBound_VK = SW.VerseKey.UpperBound
+	LowerBound_VK = SW.VerseKey.LowerBound
+
+	def LowerBound_VK_1511(self, key):
+		SW.VerseKey.LowerBound(self, key.getText())
+
+	def UpperBound_VK_1511(self, key):
+		SW.VerseKey.UpperBound(self, key.getText())
+
+	def UpperBound_1512(self, to=None):
+		if to is None:
+			return super(VK, self).UpperBound()
+		
+		vk.setBounds
+		super(VK, self).UpperBound(SW.VerseKey(to))
+		
+	def LowerBound_1512(self, to=None):
+		if to is None:
+			return super(VK, self).LowerBound()
+		
+		super(VK, self).LowerBound(SW.VerseKey(to))
+	
+	if LIB_1512_COMPAT:
+		LowerBound = LowerBound_1512
+		UpperBound = UpperBound_1512
+	else:
+		LowerBound_VK = LowerBound_VK_1511
+		UpperBound_VK = UpperBound_VK_1511
+		
+		
 	#def UpperBound(self, to=None):
 	#	if to is not None:
 	#		return self._get(self.UpperBound(to))
@@ -376,7 +481,25 @@ class VK(SW.VerseKey):#, object):
 		return ord(SW.VerseKey.Error(self))
 	
 	def set_chapter(self, value):
-		self.Chapter(value)
+		if value != 0 or self.Headings() == '\x01':
+			self.Chapter(value)
+			return
+
+		b = ord(self.Book())-1
+		t = ord(self.Testament())
+		if b == 0 and t >= 1:
+			self.Testament(t-1)
+			b = self.bookCount(t-1)
+
+		self.Book(b)
+
+		err = self.Error()
+		if err: 
+			# do it again to set the error
+			self.Book(b)
+			return
+
+		self.Chapter(self.chapterCount(ord(self.Testament()), b))
 	
 	def get_chapter(self):
 		return self.Chapter()
@@ -385,14 +508,12 @@ class VK(SW.VerseKey):#, object):
 	
 	set_chapter_checked = set_vk_chapter_checked
 	set_verse_checked = set_vk_verse_checked
+	
+	def chapter_str(self):
+		return str(self.Chapter())
 
 	def get_book_chapter(self):
-		return u"%s %d" % (self.getBookName(), self.Chapter())
-
-		
-
-			
-	
+		return u"%s %s" % (self.getBookName(), self.chapter_str())
 
 	# horrible swig magic...
 	__swig_setmethods__	 = {"text":set_text, "chapter":set_chapter}
@@ -402,7 +523,7 @@ class VK(SW.VerseKey):#, object):
 	__swig_getmethods__ = {}
 	for _s in [SW.VerseKey]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
 	__getattr__ = lambda self, name: SW._swig_getattr(self, VK, name)
-	
+
 class EncodedVK(VK):
 
 	def getInternalVK(self):
@@ -424,7 +545,7 @@ class EncodedVK(VK):
 		if text is None:
 			return super(EncodedVK, self).UpperBound()
 
-		super(EncodedVK, self).UpperBound(text.encode(self.encoding))	
+		super(EncodedVK, self).UpperBound(text.encode(self.encoding))
 	
 	def getText(self):
 		return super(EncodedVK, self).getText().decode(self.encoding)
@@ -433,8 +554,35 @@ class EncodedVK(VK):
 		return super(EncodedVK, self).getRangeText().decode(self.encoding)
 		
 		
+class LocalizedVK(EncodedVK):
+	def chapter_str(self):
+		return process_digits(str(self.Chapter()), userOutput=True)
+	
+	def get_book_chapter(self):
+		if LIB_SUPPORTS_SINGLE_CHAPTER_BOOKS:
+			if self.getChapterMax() == 1:
+				return u"%s" % (self.getBookName())
 
-class UserVK(EncodedVK):
+		return super(LocalizedVK, self).get_book_chapter()
+
+	def getText(self):
+		if LIB_SUPPORTS_SINGLE_CHAPTER_BOOKS:
+			if self.getChapterMax() == 1:
+				return u"%s %d" % (self.getBookName(), 
+					process_digits(
+						self.Verse(),
+						userOutput=True
+					))
+
+		return process_digits(
+			u"%s %d:%d" % (self.getBookName(), 
+				self.Chapter(),
+				self.Verse(),
+			),
+				userOutput=True
+			)
+		
+class UserVK(LocalizedVK):
 	def __init__(self, arg=None):
 		if isinstance(arg, SW.Key):
 			super(UserVK, self).__init__(arg)
@@ -457,12 +605,9 @@ class UserVK(EncodedVK):
 			super(UserVK, self).getBookName(), locale_dash_hack
 		)
 		
-	def getText(self):
-		return process_dash_hack(
-			super(UserVK, self).getText(), locale_dash_hack
-		)
 		
 	def getRangeText(self):
+		print "Warning - don't use getRangeText here"
 		return process_dash_hack(
 			super(UserVK, self).getRangeText(), locale_dash_hack
 		)
@@ -481,7 +626,7 @@ class UserVK(EncodedVK):
 		return localized_books
 		
 
-class AbbrevVK(EncodedVK):
+class AbbrevVK(LocalizedVK):
 	def __init__(self, arg=None):
 		if isinstance(arg, SW.Key):
 			super(AbbrevVK, self).__init__(arg)
@@ -499,11 +644,6 @@ class AbbrevVK(EncodedVK):
 	def getBookName(self):
 		return process_dash_hack(
 			super(AbbrevVK, self).getBookName(), abbrev_locale_dash_hack
-		)
-	
-	def getText(self):
-		return process_dash_hack(
-			super(AbbrevVK, self).getText(), abbrev_locale_dash_hack
 		)
 	
 	def getRangeText(self):
@@ -526,21 +666,23 @@ def check_vk_bounds(vk):
 	chapter = vk.Chapter()
 
 	if chapter > chapters:
-		raise VerseParsingError(_("There are only %(chapters)d chapters "
+		raise VerseParsingError(process_digits(
+			_("There are only %(chapters)d chapters "
 			"in %(book)s (given %(given)d)") % dict(
 				chapters=chapters, book=vk.getBookName(), given=chapter
-			)
+			), userOutput=True)
 		)
 
 	verse = vk.Verse()
 	verses = vk.verseCount(testament, book, chapter)
 	
 	if verse > verses:
-		raise VerseParsingError(_("There are only %(verses)d verses in "
+		raise VerseParsingError(process_digits(
+			_("There are only %(verses)d verses in "
 			"%(book)s %(chapter)s (given %(given)d)") % dict(
 				verses=verses, book=vk.getBookName(), 
 				chapter=chapter, given=verse
-			)
+			), userOutput=True)
 		)
 	
 
@@ -549,6 +691,7 @@ def check_vk_bounds(vk):
 #		result=SW.VerseKey.ParseVerseList(self, range, context, expand)
 #		return VerseList(result)
 
+rev_22_21 = VK("rev 22:21")
 class VerseList(list): 
 	"""A list of VK's
 
@@ -591,7 +734,7 @@ class VerseList(list):
 	
 
 	def __init__(self, args=None, context="", expand=True, raiseError=False,
-				userInput=False):
+				userInput=False, headings=False):
 		converted = False
 
 		if(isinstance(args, (list, tuple))):
@@ -611,6 +754,8 @@ class VerseList(list):
 			if userInput:
 				for matcher, replacement in self.replacements:
 					args = matcher.sub(replacement, args)
+
+				args = process_digits(args, userInput=True)
 			
 			args = to_str(args)
 			context = to_str(context)
@@ -624,6 +769,8 @@ class VerseList(list):
 				vk = i_vk
 				locale = locale_mgr.getDefaultLocaleName()
 
+			old_headings = vk.Headings(headings)
+
 			try:
 	
 				# make sure we have this set correctly
@@ -635,34 +782,33 @@ class VerseList(list):
 					locale_changed = True
 				
 				if not raiseError:
-					args = vk.ParseVerseList(args, context, expand)
+					args = vk.ParseVerseList(args, context, expand, userInput)
 
 				else:
 					an = vk.AutoNormalize(0)
 					try:
-						args = vk.ParseVerseList(args, context, expand)
+						args = vk.ParseVerseList(args, context, expand, userInput)
 						self.TestForError(s, context, orig_args)
 					finally:
 						vk.AutoNormalize(an)
 
 			finally:
+				vk.Headings(old_headings)
+
 				if locale_changed:
 					if old != locale:
 						locale_mgr.setDefaultLocaleName(old)
 						
 
 		if(isinstance(args, SW.ListKey)):
-			self.RefreshVKs(args, raiseError=raiseError, userInput=userInput)
+			self.RefreshVKs(args, raiseError=raiseError, userInput=userInput,
+				headings=headings)
 
 		else:
 			raise TypeError, `args`
 
-			
-				
-			
-
 		for a in self:
-			if a[-1]==VK("rev 22:21"):
+			if a[-1]== rev_22_21:
 				dprint(WARNING, "Possibly incorrect string. Result is", self)
 
 
@@ -696,13 +842,14 @@ class VerseList(list):
 		# wrong osisrefs: x
 		# <reference osisRef="Gen.3.5-Rev.22.21">gen 3:5 -</reference> foobar'
 		my_re = r'\s*(<reference osisRef=[^>]*>[^>]*</reference>((;|,)?\s*))+$'
+
 		osis_ref = VK.convertToOSIS(args, SW.Key(context))
 		match = re.match(my_re, osis_ref)
 
 		if not match:
 			raise VerseParsingError(_(u"Invalid Reference: %s") % orig_args)
 
-	def RefreshVKs(self, lk, raiseError=False,userInput=False):
+	def RefreshVKs(self, lk, raiseError=False,userInput=False, headings=True):
 		"""Turns a listkey into a VerseList"""
 		#TODO: error
 		l=[]
@@ -715,22 +862,32 @@ class VerseList(list):
 			if(not a):
 				continue
 			v=SW.VerseKey.castTo(a)
-			if not v:
+			if not v or not v.isBoundSet():
+				#print "HERE"
 				#1 verse only
 				key = get_a_key(userInput)
+				
+				if headings:
+					old = key.Headings(1)
+
 
 				t = a.getText()
+				#print t, `key.Headings()`
 				if "-" in t:
 					t = t.replace("-", "")
 
 				if not raiseError:
-					key.text = t.decode(key.encoding)
+					key.set_text(t.decode(key.encoding), raiseError=False)
 				else:
 					key.AutoNormalize(False)
 					key.set_text_checked(t)
 					key.AutoNormalize(True)
 
-				v = VK(key, raiseError=False)
+				v = VK(key, raiseError=False, headings=headings)
+				v.setLocale("en_US")
+				
+				if headings:
+					key.Headings(old)
 					
 
 			else:
@@ -738,15 +895,22 @@ class VerseList(list):
 					check_vk_bounds(v)
 
 				if userInput:
+					v.setLocale("en_US")
+					low = v.LowerBound()
+					
+					# bug in SWORD svn, call above for v should have set this
+					low.setLocale("en_US")
+					low_text = low.getText()
+
+					up = v.UpperBound()
+					up_text = up.getText()
+					
 					# we need to do this carefully
 					# if we just copy across the bounds get mussed when they
 					# have dashes. We don't want this happening, so set the
 					# bounds separately.
 					# Use VerseKey's getText so we don't worry about unicode
-					v = VK((
-						SW.VerseKey.getText(VK(v.LowerBound())),
-						SW.VerseKey.getText(VK(v.UpperBound())),
-					), raiseError=False)
+					v = VK((low_text, up_text), raiseError=False)
 				
 				else:
 					# if we stay inside, just use a straight copy
@@ -850,6 +1014,8 @@ class VerseList(list):
 		'Mark 15:23'
 		>>> GetBestRange("Jude 1:5")
 		'Jude 1:5'
+		>>> GetBestRange("Jude 5")
+		'Jude 1:5'
 		>>> GetBestRange("Gen 3:23,24")
 		'Genesis 3:23,24'
 		>>> GetBestRange("Gen 3:23,24;1,5")
@@ -876,6 +1042,8 @@ class VerseList(list):
 		>>> GetBestRange("Gen.4.5")
 		'Genesis 4:5'
 		"""
+
+		single_chapter_books = LIB_SUPPORTS_SINGLE_CHAPTER_BOOKS and userOutput
 		
 		def getdetails(versekey):
 			if userOutput:
@@ -902,14 +1070,25 @@ class VerseList(list):
 
 			chapter = versekey.Chapter()
 			verse = versekey.Verse()
+			userChapter, userVerse = str(chapter), str(verse)
+
+			if userOutput:
+				userChapter = process_digits(userChapter, userOutput=True)
+				userVerse = process_digits(userVerse, userOutput=True)
+			
 
 			chapter_verses = versekey.verseCount(
 				ord(versekey.Testament()), 
 				ord(versekey.Book()), 
 				chapter
 			)
+			
+			book_chapters = versekey.chapterCount(
+				ord(versekey.Testament()), 
+				ord(versekey.Book()), 
+			)
 
-			return book, chapter, verse, chapter_verses
+			return book, chapter, verse, chapter_verses, book_chapters, userChapter, userVerse
 
 		def get_bounds_details(vk):
 			if vk.isBoundSet():
@@ -925,8 +1104,8 @@ class VerseList(list):
 		for vk in self:
 			item = get_bounds_details(vk)
 			# take details of first and last for each VK
-			((book1, chapter1, verse1, verse_count1), 
-			 (book2, chapter2, verse2, verse_count2)) = item
+			((book1, chapter1, verse1, verse_count1, chapter_count1, uc1, uv1), 
+			 (book2, chapter2, verse2, verse_count2, chapter_count2, uc2, uv2)) = item
 
 			# check whether we have a chapter range
 			# this means that the first verse is verse 1 and the second one is
@@ -941,21 +1120,30 @@ class VerseList(list):
 				range += separator
 
 				if (book1, chapter1) != (book2, chapter2):
-					range += "%s %d-" % (book1, chapter1)
+					if single_chapter_books and chapter_count1 == 1:
+						range += "%s-" % book1
+					else:
+						range += "%s %s-" % (book1, uc1)
 				
 					if book1 != book2:
-						range += "%s %d" % (book2, chapter2)
+						if single_chapter_books and chapter_count2 == 1:
+							range += "%s" % book2
+						else:
+							range += "%s %s" % (book2, uc2)
 					else:
-						range += "%d" % (chapter2)
+						range += "%s" % (uc2)
 					
 				else:
-					range += "%s %d" % (book2, chapter2)
+					if single_chapter_books and chapter_count2 == 1:
+						range += "%s" % book2
+					else:
+						range += "%s %s" % (book2, uc2)
 				
 				lastbook, lastchapter, lastverse = book2, chapter2, verse2
 				continue
 				
 					
-			for idx, (book, chapter, verse, _) in enumerate(item):
+			for idx, (book, chapter, verse, _, chapters, uc, uv) in enumerate(item):
 				if (book, chapter, verse) == (lastbook, lastchapter, lastverse):
 					break
 
@@ -967,7 +1155,7 @@ class VerseList(list):
 				elif idx:
 					separator = "-"
 
-				# use comma to separate when in the same chapter				
+				# use comma to separate when in the same chapter
 				elif (book, chapter) == (lastbook, lastchapter):
 					separator = ","
 				
@@ -976,14 +1164,27 @@ class VerseList(list):
 				
 				range += separator
 
-				if book != lastbook:
-					range += "%s %d:%d" % (book, chapter, verse)
+				done = False
+				if single_chapter_books and chapters == 1:
+					if book != lastbook:
+						range += "%s %s" % (book, uv)
+						done = True
+
+					assert chapter == 1 and (done or lastchapter in (1, None)), \
+						"Changed chapter but not book when only one chapter?!?"
+
+					if not done:
+						range += "%s" % uv
+						done = True
+
+				elif book != lastbook:
+					range += "%s %s:%s" % (book, uc, uv)
 
 				elif chapter != lastchapter:
-					range += "%d:%d" % (chapter, verse)
+					range += "%s:%s" % (uc, uv)
 
-				elif verse != lastverse:
-					range += "%d" % (verse)
+				else: # verse != lastverse:
+					range += "%s" % (uv)
 
 				lastbook, lastchapter, lastverse = book, chapter, verse
 			
@@ -1080,6 +1281,26 @@ class LocalizedBookData(BookData):
 			locale.translate(self.bookname).decode(locale_encoding), 
 			locale_dash_hack
 		)
+	
+	def __iter__(self):
+		if LIB_SUPPORTS_SINGLE_CHAPTER_BOOKS and len(self.chapters) == 1:
+			l = LocalizedChapterData(
+				1, 
+				i_vk.verseCount(self.testament, self.booknumber, 1),
+			)
+
+			for a in l:
+				yield a
+			
+			return
+		
+			
+		for item in range(len(self.chapters)):
+			yield LocalizedChapterData(
+				item+1, 
+				i_vk.verseCount(self.testament, self.booknumber, item + 1),
+			)
+		
 		
 class ChapterData(object):
 	"""A class so that we can tell it is chapter data"""
@@ -1096,6 +1317,15 @@ class ChapterData(object):
 	def __str__(self):
 		return "%s" % self.chapter_number
 
+class LocalizedChapterData(ChapterData):
+	def __str__(self):
+		return process_digits(str(self.chapter_number), userOutput=True)
+
+	def __iter__(self):
+		for a in xrange(1, self.chapter_length+1):
+			yield process_digits(str(a), userOutput=True)
+
+
 books = []
 localized_books = []
 i_vk = VK()
@@ -1104,7 +1334,7 @@ i_vk.Book(1)
 while not i_vk.Error():
 	t = ord(i_vk.Testament())
 	b = ord(i_vk.Book())
-	n = i_vk.bookName(t, b)
+	n = i_vk.getBookName()
 	books.append(BookData(n, t, b))
 	localized_books.append(LocalizedBookData(n, t, b))
 	
@@ -1144,53 +1374,77 @@ locale_changed = ObserverList()
 
 def get_dash_hack(locale):
 	lookup = {}
-	for testament in range(locale.getNumBookGroupings()):
-		for book in range(locale.getNumBooks(testament)):
-			b = locale.getBook(testament, book)
-			with_dash = locale.translate(b.name).decode(locale_encoding)
-			if with_dash != b.name.decode(locale_encoding):
-				lookup[b.name.decode(locale_encoding)] = with_dash
+	for testament in range(2):#locale.getNumBookGroupings()):
+		for book in range(i_vk.bookCount(testament)):
+			book_name = locale.translate(i_vk.bookName(testament, book))
+			with_dash = locale.translate(book_name).decode(locale_encoding)
+			if with_dash != book_name.decode(locale_encoding):
+				lookup[book_name.decode(locale_encoding)] = with_dash
 	
 	return lookup
 		
-def change_locale(lang, abbrev_lang, additional=None):
-	global locale, locale_lang, locale_encoding, locale_dash_hack
-	global abbrev_locale, abbrev_locale_lang, abbrev_locale_encoding
-	global abbrev_locale_dash_hack
+def get_locale(lang, additional=None):
 	locale = locale_mgr.getLocale(lang)
 	if not locale:
-		dprint(WARNING, "Couldn't find locale %r" % lang,
-		[x.c_str() for x in locale_mgr.getAvailableLocales()])
-		locale_lang = lang
-		locale_encoding = "ascii"
-		locale = SW.Locale("")		
-		locale_dash_hack = {}
-		
-	
-	else:
-		locale_lang = lang
-		locale_encoding = locale.getEncoding()
-		locale_dash_hack = get_dash_hack(locale)
-
+		locale = SW.Locale("")
 	
 	if additional:
 		locale.augment(additional)
 
-	abbrev_locale = locale_mgr.getLocale(abbrev_lang)
-	if abbrev_locale:
-		abbrev_locale_lang = abbrev_lang
-		abbrev_locale_encoding = abbrev_locale.getEncoding()
-		abbrev_locale_dash_hack = get_dash_hack(abbrev_locale)
+	if not locale.getName() or locale.getName() == "en_US":
+		return False, SW.Locale(""), "ascii"
 	
+	return True, locale, locale.getEncoding()
+
+def change_locale(lang, abbrev_lang, additional=None):
+	global locale, locale_lang, locale_encoding, locale_dash_hack
+	global abbrev_locale, abbrev_locale_lang, abbrev_locale_encoding
+	global abbrev_locale_dash_hack
+	global locale_digits
+	locale_lang = lang	
+	worked, locale, locale_encoding = get_locale(lang, additional=additional)
+	locale_digits = None
+	if not worked:
+		dprint(WARNING, "Couldn't find locale %r" % lang,
+		[x.c_str() for x in locale_mgr.getAvailableLocales()])
+		locale_dash_hack = {}
+	
+	else:
+		assert locale_encoding, dir(locale)
+		locale_dash_hack = get_dash_hack(locale)
+		digits = locale.translate(string.digits).decode(locale_encoding)
+		if digits != string.digits:
+			assert len(digits) == 10, "digits string wasn't 10 digits long"
+			internal_to_external = dict(zip(string.digits, digits))
+			external_to_internal = dict(zip(digits, string.digits))
+			def make_replacer(mapping):
+				matcher = re.compile("[%s]" % ''.join(mapping.keys()))
+				def replace_digit(match):
+					return mapping[match.group(0)]
+
+				def replace(s):
+					return matcher.sub(replace_digit, s)
+
+				return replace
+
+			locale_digits = dict(
+				internal_to_external=make_replacer(internal_to_external),
+				external_to_internal=make_replacer(external_to_internal),
+				digits=digits,
+			)
+	
+	w, abbrev_locale, abbrev_locale_encoding = get_locale(abbrev_lang)
+	if w:
+		abbrev_locale_lang = abbrev_lang
+		abbrev_locale_dash_hack = get_dash_hack(abbrev_locale)
 	
 	else:
 		dprint(WARNING, "Couldn't find locale %r" % abbrev_lang,
 		[x.c_str() for x in locale_mgr.getAvailableLocales()])
 		abbrev_locale_lang = locale_lang
-		abbrev_locale_encoding = locale_encoding
 		abbrev_locale_dash_hack = {}
 		abbrev_locale = locale
-	
+		abbrev_locale_encoding = locale_encoding
 		
 	locale_changed(locale, lang, abbrev_locale, abbrev_lang)
 
@@ -1366,7 +1620,19 @@ def GetVerseStr(verse, context = "", raiseError=False,
 		
 	return vk[0].text
 
+def process_digits(text, userInput=False, userOutput=False):
+	assert userInput ^ userOutput, "Specify one of userInput and userOutput"
+	if not locale_digits:
+		return text
+
+	if userInput:
+		return locale_digits["external_to_internal"](text)
+	else:		
+		return locale_digits["internal_to_external"](text)
+
+		
 def process_dash_hack(text, lookup):
+	text = process_digits(text, userOutput=True)
 	for item, value in lookup.items():
 		text = text.replace(item, value)
 	
@@ -1376,11 +1642,8 @@ def abbrev_to_user(key):
 	return VK(key).text
 
 def internal_to_user(key):
-	return UserVK(VK(key)).text
+	return UserVK(VK(key)).getText()
 	
-def user_to_internal(key):
-	return VK(UserVK(key)).text
-
 def get_a_key(userInput):
 	if userInput:
 		return u_vk
@@ -1405,9 +1668,9 @@ def BookName(text):
 	return u_vk.getBookName()
 
 def GetBestRange(text, context="", abbrev=False, raiseError=False,
-		userInput=False, userOutput=False):
+		userInput=False, userOutput=False, headings=False):
 	vl = VerseList(text, context=context, raiseError=raiseError,
-		userInput=userInput)
+		userInput=userInput, headings=headings)
 	return vl.GetBestRange(abbrev, userOutput=userOutput)
 
 class Searcher(SW.Searcher):

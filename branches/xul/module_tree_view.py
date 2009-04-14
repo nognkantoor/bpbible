@@ -105,7 +105,7 @@ class ModuleTreeView(BasicTreeView):
 		text = "%s - %s" % (
 			module.Name(), to_unicode(module.Description(), module))
 		
-		if biblemgr.modules[module.Name()] != module:
+		if biblemgr.all_modules[module.Name()] != module:
 			text += inactive_description
 
 		tree_item.add_child(text, data=module)
@@ -131,15 +131,23 @@ class PathModuleTreeView(ModuleTreeView):
 	
 class LanguageModuleTreeView(ModuleTreeView):
 	def add_first_level_groups(self):
+		def module_lang(x):
+			if x == "Greek":
+				return "grc"
+			if x == "Hebrew":
+				return "he"
+			return module.Lang()
 		language_mappings = {}
 		self.data = {}
-		for module in biblemgr.modules.values():
-			lang = module.Lang()
+		for module in biblemgr.modules.values() + ["Greek", "Hebrew"]:
+			lang = module_lang(module)
 			if lang not in language_mappings:
 				language_mappings[lang] = \
 					languages.get_language_description(lang)
 
-			self.data.setdefault(lang, []).append(module)
+			d = self.data.setdefault(lang, [])
+			if isinstance(module, SW.Module):
+				d.append(module)
 		
 		for lang, mapping in sorted(language_mappings.items(), 
 			key=lambda (lang, mapping): mapping):

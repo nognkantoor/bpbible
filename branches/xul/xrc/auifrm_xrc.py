@@ -43,6 +43,7 @@ def __gettext_strings():
     _("Set fonts...")
     _("&Language")
     _("&Exit")
+    _("Quit this program")
     _("&File")
     _("&Display")
     _("Default Layout")
@@ -63,5 +64,6 @@ def __gettext_strings():
     _("Report a problem...")
     _("Download books...")
     _("&About...")
+    _("Show about dialog")
     _("Bible")
 

@@ -37,6 +37,9 @@ from keypad import KeyPad
 from util.i18n import N_
 from util import i18n
 
+# in these languages, we don't want to use word boundaries
+# this is chinese, japanese and korean
+CJK_LANGUAGES = ("zh", "ja", "ko")
 
 
 #TODO: better status bar: text overlay
@@ -182,6 +185,9 @@ class SearchPanel(xrcSearchPanel):
 		self.versepreview.parent = self
 
 		fonts.fonts_changed += self.set_font
+		guiconfig.mainfrm.on_close += lambda:\
+			fonts.fonts_changed.remove(self.set_font)
+		
 	
 	def on_create(self, event=None):
 		self.Unbind(wx.EVT_WINDOW_CREATE)
@@ -598,12 +604,19 @@ class SearchPanel(xrcSearchPanel):
 			stemming_data = None
 			stemmer = None
 
+		lang = self.book.mod.Lang()
+		if "_" in lang:
+			lang = lang[:lang.index("_")]
+		
+		cjk = lang in CJK_LANGUAGES
 		
 		succeeded = True
 		try:
+			#### TODO: pull this out of the UI.
 			(regexes, excl_regexes), (fields, excl_fields) = separate_words(
 				key, index_word_list, stemming_data, stemmer,
-				cross_verse_search=is_word_proximity or proximity > 1
+				cross_verse_search=is_word_proximity or proximity > 1,
+				cjk_search=cjk
 			)
 
 		except SearchException, myexcept:
@@ -669,6 +682,7 @@ class SearchPanel(xrcSearchPanel):
 		search_type = COMBINED
 		self.numwords = len(regexes)
 		succeeded = True
+		maybe_show = False
 		if case_sensitive:
 			search_type |= index.CASESENSITIVE
 		
@@ -699,8 +713,17 @@ class SearchPanel(xrcSearchPanel):
 			self.hits = len(self.search_results)
 			if self.hits == 0:
 				succeeded = False
+				maybe_show = True
 
-		self.maybe_incorrect_results_label.Show(self.maybe_incorrect_results)
+		relayout = self.maybe_incorrect_results_label.IsShown() != self.maybe_incorrect_results
+		if relayout:
+			self.maybe_incorrect_results_label.Show(
+				self.maybe_incorrect_results
+			)
+		
+			self.layout_panel_1()
+		
+		maybe_show = maybe_show and self.maybe_incorrect_results
 
 		if not succeeded:
 			self.search_label.Label = (
@@ -715,7 +738,7 @@ class SearchPanel(xrcSearchPanel):
 				)
 			)
 				
-			wx.CallAfter(self.clear_list)
+			wx.CallAfter(self.clear_list, maybe_show)
 			return
 
 		self.search_results = index.RemoveDuplicates(self.search_results)
@@ -831,10 +854,12 @@ class SearchPanel(xrcSearchPanel):
 		# Update UI
 		self.insert_results()
 
-	def clear_list(self):
+	def clear_list(self, maybe_show=False):
 		self.search_button.SetLabel(_("&Search"))
 		self.show_progress_bar(False)
-		self.maybe_incorrect_results_label.Hide()
+		if not maybe_show and self.maybe_incorrect_results_label.IsShown():
+			self.maybe_incorrect_results_label.Hide()
+			self.layout_panel_1()
 
 		#Clear list
 		self.verselist.set_data([_("Reference"), _("Preview")], length=0)

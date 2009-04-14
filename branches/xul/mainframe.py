@@ -20,6 +20,7 @@ from backend import filterutils
 
 dprint(MESSAGE, "Importing frames")
 from bibleframe import BibleFrame, bible_settings
+from bookframe import BookFrame
 from bookframe import CommentaryFrame
 from bookframe import DictionaryFrame
 from displayframe import IN_MENU
@@ -62,6 +63,8 @@ import passage_list
 from error_handling import ErrorDialog
 from util.i18n import N_
 import util.i18n
+from preview_window import PreviewWindow
+
 
 settings = config_manager.add_section("BPBible")
 
@@ -147,6 +150,8 @@ class MainFrame(wx.Frame, AuiLayer):
 			biblemgr.on_after_reload.remove(self.on_modules_reloaded)
 		
 		fonts.fonts_changed += self.refresh_all_pages
+		self.on_close += lambda: \
+			fonts.fonts_changed.remove(self.refresh_all_pages)
 
 		
 		
@@ -172,6 +177,7 @@ class MainFrame(wx.Frame, AuiLayer):
 		dprint(MESSAGE, "Binding events")
 		
 		self.bind_events()
+		dprint(MESSAGE, "Setting up frames")
 		self.setup_frames()
 
 		self.bibleref.SetFocus()
@@ -246,8 +252,8 @@ class MainFrame(wx.Frame, AuiLayer):
 			shortHelp=_("Go to this verse"))
 			
 		self.tool_search = self.main_toolbar.AddLabelTool(wx.ID_ANY,  
-			_("Bible Search"), bmp("find.png"),
-			shortHelp=_("Search in this Bible"))
+			_("Search"), bmp("find.png"),
+			shortHelp=_("Search in the current book"))
 			
 		self.tool_copy_verses = self.main_toolbar.AddLabelTool(wx.ID_ANY,  
 			_("Copy Verses"), bmp("page_copy.png"),
@@ -323,6 +329,8 @@ class MainFrame(wx.Frame, AuiLayer):
 		if settings["maximized"]:
 			self.Maximize(True)
 				
+		filterutils.set_headwords_module_from_conf(biblemgr)
+
 		def set_mod(book, mod_name):
 			if book.ModuleExists(mod_name):
 				book.SetModule(mod_name, notify=False)
@@ -454,6 +462,9 @@ class MainFrame(wx.Frame, AuiLayer):
 	def create_aui_items(self):
 		self.version_tree = ModuleTree(self)
 		self.version_tree.on_module_choice += self.set_module
+		
+		self.preview_window = PreviewWindow(self)
+		
 
 		self.genbooktext = GenBookFrame(self, biblemgr.genbook)
 		self.bible_observers += self.genbooktext.reload
@@ -583,8 +594,7 @@ class MainFrame(wx.Frame, AuiLayer):
 		
 		self.Bind(wx.EVT_TOOL, self.BibleRefEnter, self.tool_go)
 		
-		self.Bind(wx.EVT_TOOL, lambda x: self.search_panel.show(), 
-			self.tool_search)
+		self.Bind(wx.EVT_TOOL, self.do_search, self.tool_search)
 		
 		self.Bind(wx.EVT_TOOL, lambda x:self.zoom(1),
 			self.tool_zoom_in)
@@ -668,14 +678,15 @@ class MainFrame(wx.Frame, AuiLayer):
 
 	def on_install_module(self, event):
 		fd = wx.FileDialog(self, 
-			wildcard="Installable books (*.zip)|*.zip",
+			wildcard=_("Installable books") +  " (*.zip)|*.zip",
 			style=wx.FD_DEFAULT_STYLE|wx.FD_MULTIPLE|wx.FD_MULTIPLE|wx.FD_OPEN,
-			defaultDir=settings["last_book_directory"], message="Choose books"
+			defaultDir=settings["last_book_directory"], 
+			message=_("Choose books")
 		)
 
 		if fd.ShowModal() == wx.ID_OK:
 			self.drop_target.handle_dropped_files(fd.Paths)
-			settings["last_book_directory"]	= fd.GetDirectory()
+			settings["last_book_directory"] = fd.GetDirectory()
 
 		fd.Destroy()
 			
@@ -722,16 +733,23 @@ class MainFrame(wx.Frame, AuiLayer):
 			assert False, "Language menu could not be found"
 		
 		self.language_mapping = {}
-		for text, (display_name, locale, abbrev) in util.i18n.languages.items():
+		for text, (display_name, locale, abbrev, conf) \
+			in sorted(util.i18n.languages.items(), 
+				key=lambda (text, (display_name, x, y, z)): display_name):
+			
+			worked, own_locale, own_encoding = util.i18n.get_locale(text)
+			own_key = display_name.encode(own_encoding)
+			own_trans = own_locale.translate(own_key)
+			own_trans = own_trans.decode(own_encoding)
+
 			key = display_name.encode(pysw.locale_encoding)
 			trans = pysw.locale.translate(key)
-			if key == trans:
-				trans = display_name
+			trans = trans.decode(pysw.locale_encoding)
 
-			menu_item = language_menu.AppendRadioItem(
-				wx.ID_ANY,  
-				trans.decode(pysw.locale_encoding),
-			)
+			if trans != own_trans:
+				trans += " - %s" % own_trans
+
+			menu_item = language_menu.AppendRadioItem(wx.ID_ANY, trans)
 			menu_item.Check(text == util.i18n.locale_settings["language"])
 
 			self.language_mapping[menu_item.Id] = text
@@ -818,6 +836,42 @@ class MainFrame(wx.Frame, AuiLayer):
 			item.create_item(self, menu, is_popup=is_popup)
 		return menu
 	
+	
+	def fill_headwords_menu(self):
+		self.headwords_map = {}
+		sub_menu = wx.Menu("")
+		known_headwords_modules = [
+			_("Pronunciation"),
+			_("Original Language"),
+			_("Transliterated"),
+		]
+	
+		for mod_name, module in biblemgr.headwords_modules.items() + [("", None)]:
+			if not mod_name:
+				#sub_menu.AppendSeparator()
+				headwords_desc = _("Strong's Numbers")
+			else:
+				headwords_desc = module.getConfigEntry("HeadwordsDesc")
+			
+			item = sub_menu.AppendRadioItem(wx.ID_ANY, 
+				_(headwords_desc)
+			)
+			
+			if filterutils.filter_settings["headwords_module"] == mod_name:
+				item.Check()
+			
+			self.headwords_map[item.Id] = mod_name, module
+				
+			self.Bind(wx.EVT_MENU, self.on_headwords, item)
+		
+		strongs_headwords = self.options_menu.AppendSubMenu(
+			sub_menu,
+			_("Strong's headwords"),
+#			_("Display Strong's numbers using headwords")
+		)
+	
+		
+	
 	def fill_options_menu(self):
 		while self.options_menu.MenuItems:
 			self.options_menu.DestroyItem(
@@ -870,12 +924,9 @@ class MainFrame(wx.Frame, AuiLayer):
 		if options:
 			self.options_menu.AppendSeparator()
 
-		strongs_headwords = self.options_menu.AppendCheckItem(
-			wx.ID_ANY,
-			_("Use Strong's headwords"),
-			_("Display Strong's numbers using the transliterated text")
-		)
+		self.fill_headwords_menu()
 
+	
 		cross_references = self.options_menu.AppendCheckItem(
 			wx.ID_ANY,
 			_("Expand cross-references"),
@@ -895,7 +946,6 @@ class MainFrame(wx.Frame, AuiLayer):
 		)
 		
 
-		self.Bind(wx.EVT_MENU, self.toggle_headwords, strongs_headwords)
 		self.Bind(wx.EVT_MENU, self.toggle_expand_cross_references, 
 			cross_references)
 		self.Bind(wx.EVT_MENU, self.toggle_display_tags, display_tags)
@@ -904,27 +954,38 @@ class MainFrame(wx.Frame, AuiLayer):
 			verse_per_line)
 		
 		filter_settings = config_manager["Filter"]
-		strongs_headwords.Check(filter_settings["strongs_headwords"])
 		cross_references.Check(filter_settings["footnote_ellipsis_level"])
 		display_tags.Check(passage_list.settings.display_tags)
 		verse_per_line.Check(bible_settings["verse_per_line"])
 
 	
-	def toggle_headwords(self, event):
-		config_manager["Filter"]["strongs_headwords"] = event.IsChecked()
+	def on_headwords(self, event):
+		obj = event.GetEventObject()
+		menuitem = obj.MenuBar.FindItemById(event.Id)
+		filterutils.set_headwords_module(self.headwords_map[menuitem.Id])
+
 		self.UpdateBibleUI(settings_changed=True, source=SETTINGS_CHANGED)
-		
+
 	def toggle_expand_cross_references(self, event):
 		filter_settings = config_manager["Filter"]
 	
 		filter_settings["footnote_ellipsis_level"] = \
-			event.IsChecked() *	filterutils.default_ellipsis_level
+			event.IsChecked() * filterutils.default_ellipsis_level
 
 		self.UpdateBibleUI(settings_changed=True, source=SETTINGS_CHANGED)
 
 	def toggle_display_tags(self, event):
 		passage_list.settings.display_tags = event.IsChecked()
 		self.UpdateBibleUI(settings_changed=True, source=SETTINGS_CHANGED)
+
+	def do_search(self, event):
+		"""Search in the currently selected book, defaulting to the Bible if
+		no book window is selected.
+		"""
+		selected_frame = self.get_selected_frame()
+		if selected_frame is None or not isinstance(selected_frame, BookFrame):
+			selected_frame = self.bibletext
+		selected_frame.search()
 		
 	def set_verse_per_line(self, to):
 		bible_settings["verse_per_line"] = to
@@ -1020,13 +1081,19 @@ class MainFrame(wx.Frame, AuiLayer):
 			name = self.get_pane_for_frame(frame).name 
 			self.aui_callbacks[name] = frame.on_shown
 
-		self.set_bible_ref(settings["bibleref"], LOADING_SETTINGS,
-				userInput=False)
+		dprint(MESSAGE, "Setting initial bibleref")
+		
+		self.set_bible_ref(settings["bibleref"] or "Genesis 1:1", 
+			LOADING_SETTINGS, userInput=False)
 		self.DictionaryListSelected()
 		self.version_tree.recreate()
 
 	def restart(self, event=None):
 		guiconfig.app.restarting = True
+		wx.MessageBox(
+			_("BPBible will now quickly restart to change your language."), 
+			_("Restarting")
+		)
 		self.MainFrameClose(None)
 	
 	def MainFrameClose(self, event=None):
@@ -1124,8 +1191,7 @@ class MainFrame(wx.Frame, AuiLayer):
 		self.UpdateBibleUI(settings_changed=True, source=SETTINGS_CHANGED)
 	
 	def commentary_version_changed(self, newversion):
-		#TODO get rid of this?
-		self.UpdateBibleUI(settings_changed=True, source=SETTINGS_CHANGED)
+		self.commentarytext.refresh()
 	
 	def dictionary_version_changed(self, newversion):
 		freeze_ui = guiutil.FreezeUI(self.dictionary_list)
@@ -1138,7 +1204,7 @@ class MainFrame(wx.Frame, AuiLayer):
 		if not ref:
 			ref = self.dictionary_list.GetValue().upper()
 		else:
-			self.dictionary_list.SetValue(ref)
+			self.dictionary_list.choose_item(ref)
 
 		self.dictionarytext.SetReference(ref)
 

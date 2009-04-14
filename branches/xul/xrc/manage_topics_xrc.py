@@ -119,12 +119,18 @@ def __gettext_strings():
     
     def _(str): pass
     
+    _("New topic")
+    _("New topic")
+    _("Add passage")
+    _("Add passage")
     _("Cut")
     _("Cut")
     _("Copy")
     _("Copy")
     _("Paste")
     _("Paste")
+    _("Copy the topic as text to the clipboard for use in other applications.")
+    _("Export")
     _("Delete")
     _("Delete")
     _("Undo previous action")
