@@ -34,6 +34,7 @@ bible_settings.add_item("verse_per_line", False, item_type=bool)
 class BibleFrame(VerseKeyedFrame):
 	id = N_("Bible")
 	do_convert_lgs = True
+	lg_width = 60
 
 	def __init__(self, parent):
 		self.panel = wx.Panel(parent)
@@ -255,9 +256,12 @@ class BibleFrame(VerseKeyedFrame):
 		if chapter is None:
 			data = config.MODULE_MISSING_STRING()
 			self.SetPage(data, raw=raw)
-			
-			
 
+		elif chapter == '':
+			data = '<font color="#888888"><i>%s</i></font>' % _(
+				"This chapter is empty.")
+			self.SetPage(data, raw=raw)
+			
 		else:
 			data += chapter
 

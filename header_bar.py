@@ -1,13 +1,15 @@
 import wx
 from swlib import pysw
-from swlib.pysw import SW
+from swlib.pysw import SW, process_digits
 from backend import chapter_headings
+from backend.bibleinterface import biblemgr
 from protocols import protocol_handler
 from displayframe import DisplayFrame
 from gui import guiutil
-from tooltip import Tooltip, TooltipConfig
+from tooltip import Tooltip, TooltipConfig, TooltipDisplayer
 import guiconfig
 from util.observerlist import ObserverList
+from util import osutils
 
 
 def on_headings_hover(frame, href, url, x, y):
@@ -17,22 +19,29 @@ def on_headings_hover(frame, href, url, x, y):
 	ref = url.getHostName()
 	# print ref
 
-	frame.tooltip.tooltip_config = ChapterHeadingsTooltipConfig(ref)
-
-	frame.tooltip.Start()
+	frame.show_tooltip(ChapterHeadingsTooltipConfig(ref))
 
 class ChapterHeadingsTooltipConfig(TooltipConfig):
 	"""The tooltip configuration for the headings in a chapter."""
 	def __init__(self, ref):
 		self.ref = ref
+		super(ChapterHeadingsTooltipConfig, self).__init__(
+			book=biblemgr.bible
+		)
 
 	def get_text(self):
-		vk = pysw.UserVK((self.ref, self.ref))
+		vk = pysw.UserVK(self.ref)
 		html = '<font size=+1><b><a href="nbible:%s">%s</a></b></font>' % (
 			self.ref, vk.get_book_chapter()
 		)
 	
-		html += ": %d verses<br>" % len(vk)
+		html += ": %s<br>" % (_("%s verses") % 
+			process_digits(str(
+				vk.verseCount(
+					ord(vk.Testament()), 
+					ord(vk.Book()), 
+					vk.Chapter())
+				), userOutput=True))
 	
 		html += "<ul>"
 		for vk, text in chapter_headings.get_chapter_headings(self.ref):
@@ -105,7 +114,8 @@ class ChapterItem(wx.Panel):
 		self.Refresh()
 
 	def on_enter(self, x, y):
-		self.Parent.current_target = self
+		self.Parent.current_target = self, self.ScreenRect, 1
+
 		if self.Parent.tooltip.target == self:
 			return
 
@@ -113,7 +123,15 @@ class ChapterItem(wx.Panel):
 		protocol_handler.on_hover(self.Parent, 
 			"headings:%s" % self.internal_text, x, y)
 
-	def on_leave(self, event):
+	def on_leave(self, event=None):
+		if event: event.Skip()
+		if event and osutils.is_gtk():
+			# Under GTK, we can get the notification of leave before the
+			# enter! This used to cause really annoying header bar tooltips 
+			# to pop up after moving diagonally across it quickly.
+			wx.CallAfter(self.on_leave)
+			return
+	
 		self.Parent.current_target = None
 	
 		self.Parent.tooltip.MouseOut(None)
@@ -206,8 +224,10 @@ class Line(wx.Window):
 		dc.Background = wx.Brush(get_line_colour())
 		dc.Clear()
 	
-class HeaderBar(wx.Panel):
+class HeaderBar(TooltipDisplayer, wx.Panel):
 	def __init__(self, parent, i_current_chapter, style=wx.NO_BORDER):
+		self.html_type = DisplayFrame
+		
 		super(HeaderBar, self).__init__(parent, style=style)
 		
 		self.i_current_chapter = i_current_chapter
@@ -221,18 +241,7 @@ class HeaderBar(wx.Panel):
 		self.create_item()
 		
 		self.MinSize = -1, self.item.Size[1] + 1
-
 		
-		self.tooltip = Tooltip(guiutil.toplevel_parent(self), 
-				style=wx.NO_BORDER,
-				html_type=DisplayFrame, logical_parent=self)
-		
-		# For compatibility with display frame:
-		# code in displayframe wants it to have an _tooltip member (MouseIn)
-		self._tooltip = self.tooltip
-		# and a logical_parent
-		self.logical_parent = None
-
 		if guiconfig.mainfrm:
 			guiconfig.mainfrm.add_toplevel(self.tooltip)
 

@@ -66,10 +66,12 @@ class ParseBase(object):
 				assert item.count("-") == 1, item
 				start, end = item.split("-")
 
-				# NASTY HACK: VerseKey max argument can't handle anything
-				# other than : for the chapter verse separator. It can handle
-				# book:chapter:verse, though. So quickly change all . -> :
-				end = end.replace(".", ":")
+				if not pysw.LIB_1512_COMPAT:
+					# NASTY HACK: VerseKey max argument can't handle anything
+					# other than : for the chapter verse separator. It can handle
+					# book:chapter:verse, though. So quickly change all . -> :
+					end = end.replace(".", ":")
+
 				vk = SW.VerseKey(start, end)
 				while vk.Error() == '\x00':
 					items.append(vk.getOSISRef())
@@ -86,6 +88,7 @@ class ParseThML(ParseBase):
 	strongs_re = re.compile(r"^([HG])(\d+)(!(.*))?")
 
 	def parse(self, utf8string):
+		self.first_lemma_warning = True
 		tree = etree.fromstring("%s<doc>%s</doc>" % (thml_header, utf8string))
 		self.keytext = ""
 		si = StringIO()
@@ -133,7 +136,10 @@ class ParseThML(ParseBase):
 			if lemma not in self.strongs_cache:
 				match = self.strongs_re.match(lemma)
 				if not match:
-					dprint(WARNING, "Could not match lemma", lemma)
+					if self.first_lemma_warning:
+						dprint(WARNING, "Could not match lemma", lemma)
+						self.first_lemma_warning = False
+
 					return
 
 				# normalize it - letter then padding of 4 on number
@@ -155,7 +161,6 @@ class ParseThML(ParseBase):
 	def handle_scripRef(self, node, si):
 		ref = node.attrib.get("passage")
 		if not ref:
-			ref = node
 			si2 = StringIO()
 			self._parse_children(node, si2)
 			ref = si2.getvalue()
@@ -166,7 +171,7 @@ class ParseThML(ParseBase):
 		for item in range(list.Count()):
 			i = list.GetElement(item)
 			k = SW.VerseKey_castTo(i)
-			if k:
+			if k and k.isBoundSet():
 				lb = k.LowerBound()
 				ub = k.UpperBound()
 				refs.append("%s-%s" % (lb.getOSISRef(), ub.getOSISRef()))
@@ -196,6 +201,7 @@ class ParseThML(ParseBase):
 class ParseOSIS(ParseBase):
 	headings_off = True
 	def parse(self, utf8string):
+		self.first_lemma_warning = True
 		tree = etree.fromstring("<doc>%s</doc>" % utf8string)
 		si = StringIO()
 		self._parse(tree, si)
@@ -273,6 +279,8 @@ class ParseOSIS(ParseBase):
 		"x-Robinsons": "robinson",
 		"x-Robison": "robinson",
 		"strongMorph": "strongMorph",
+		"x-StrongsMorph": "strongMorph",
+		
 	}
 	
 
@@ -291,7 +299,9 @@ class ParseOSIS(ParseBase):
 			for lemma in l.split():
 				match = self.strongs_re.match(lemma)
 				if not match:
-					dprint(WARNING, "Could not match lemma", lemma)
+					if self.first_lemma_warning:					
+						dprint(WARNING, "Could not match lemma", lemma)
+						self.first_lemma_warning = False
 					continue
 
 				# normalize it - letter then padding of 4 on number

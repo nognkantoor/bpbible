@@ -79,7 +79,7 @@ class VerseCompareFrame(LinkedFrame):
 				items.append((
 					item, 
 					list(self.book.GetReference_yield(
-						verselist, module=item, max_verses=176
+						verselist, module=item, max_verses=176, skip_linked_verses=False
 					))
 				))
 				
@@ -118,7 +118,8 @@ class VerseCompareFrame(LinkedFrame):
 					t += biblemgr.bible.templatelist[-1].\
 						headings.safe_substitute(heading_dict)
 				
-				t += "<sup>%(versenumber)d</sup> %(text)s" % body_dict
+				t += (u'<glink href="nbible:%(internal_reference)s">' 
+					u'<small><sup>%(versenumber)s</sup></small></glink> %(text)s' % body_dict)
 				t = process_html_for_module(module, t)
 
 				text.append(t)

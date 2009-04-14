@@ -28,7 +28,14 @@ class PopupList(virtuallist.VirtualListBox):
 		module = self.modules[item]
 		key = to_str(self.key, module)
 		k = SW.Key(key)
+		if hasattr(module, "hasEntry"):
+			has_key = module.hasEntry(k)
+			return has_key
+
+		print "No hasKey :(", module.Name()
+		
 		module.setKey(k)
+		
 		is_bold = bool(module.getRawEntry())
 
 		# dictionaries snap to nearest - only give if it is the same

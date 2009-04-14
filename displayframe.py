@@ -14,7 +14,7 @@ from swlib.pysw import GetBestRange, SW, VerseList
 from backend.bibleinterface import biblemgr
 from backend.verse_template import VerseTemplate
 from util import osutils
-from tooltip import Tooltip, tooltip_settings
+from tooltip import Tooltip, tooltip_settings, TextTooltipConfig, TooltipDisplayer
 from gui import htmlbase
 from gui.menu import MenuItem, Separator
 from gui.htmlbase import HtmlSelectableWindow, convert_language, convert_lgs
@@ -32,7 +32,7 @@ IN_BOTH = IN_POPUP | IN_MENU
 def process_html_for_module(module, text):
 	# process lgs individually for each block.
 	# this stops lgs flowing on to the next block
-	text = convert_lgs(text)
+	text = convert_lgs(text, width=30)
 
 	language_code, (font, size, gui) = \
 		fonts.get_font_params(module)
@@ -47,7 +47,7 @@ def process_html_for_module(module, text):
 				
 
 
-class DisplayFrame(HtmlSelectableWindow):
+class DisplayFrame(TooltipDisplayer, HtmlSelectableWindow):
 	def __init__(self, parent, style=html.HW_DEFAULT_STYLE,
 			logical_parent=None):
 		super(DisplayFrame, self).__init__(parent, style=style)
@@ -56,11 +56,9 @@ class DisplayFrame(HtmlSelectableWindow):
 		
 
 	def setup(self):
-		if not hasattr(self, "logical_parent"):
-			self.logical_parent = None
-			self.handle_links = True
-			
-		self._tooltip = None
+		self.handle_links = True
+		self.html_type = DisplayFrame
+
 		self.current_target = None
 		self.mouseout = False
 		
@@ -85,18 +83,6 @@ class DisplayFrame(HtmlSelectableWindow):
 
 		super(DisplayFrame, self).setup()
 	
-	@property
-	def tooltip(self):
-		if not self._tooltip:
-			self._tooltip = Tooltip(guiutil.toplevel_parent(self), 
-				style=wx.NO_BORDER,
-				html_type=DisplayFrame, logical_parent=self)
-			#self.Bind(wx.EVT_KILL_FOCUS, self.KillFocus)
-			
-			guiconfig.mainfrm.add_toplevel(self._tooltip)
-
-		return self._tooltip
-		
 	#def KillFocus(self, event):
 	#	self.tooltip.Stop()
 	#	event.Skip()
@@ -104,10 +90,11 @@ class DisplayFrame(HtmlSelectableWindow):
 	def MouseOut(self, event = None):
 		if event: event.Skip()
 
-		if(self._tooltip is not None and self.tooltip.timer is not None and 
-			self.tooltip.timer.IsRunning()):
+		#if(self._tooltip is not None and self.tooltip.timer is not None and 
+		#	self.tooltip.timer.IsRunning()):
 		
-			self.tooltip.Stop()
+		#	dprint(TOOLTIP, "Stopping on displayframe mouseout")
+		#	self.tooltip.Stop()
 
 		#self.current_target = None
 		self.mouseout = True
@@ -132,7 +119,13 @@ class DisplayFrame(HtmlSelectableWindow):
 		guiconfig.mainfrm.hide_tooltips(exceptions=exceptions)
 
 	def strip_text(self, word):
-		return word.strip(string.whitespace + string.punctuation)
+		return word.strip(string.whitespace + string.punctuation +
+			u'\N{RIGHT DOUBLE QUOTATION MARK}' 
+			u'\N{LEFT DOUBLE QUOTATION MARK}'
+			u'\N{EM DASH}'
+			u'\N{RIGHT SINGLE QUOTATION MARK}'
+			u'\N{LEFT SINGLE QUOTATION MARK}'
+		)
 
 	def CellClicked(self, cell, x, y, event):
 		if(self.select or event.Dragging()): 
@@ -160,9 +153,70 @@ class DisplayFrame(HtmlSelectableWindow):
 
 		link = cell.GetLink()
 		href = link.GetHref()
-		self.current_target = href
+		parent = cell.Parent
+		assert parent
 
-		if self.tooltip.target == self.current_target:
+		first = None
+		last = None
+		last_iterated = None
+		in_block = False
+		cell_found = False
+		y_level = cell.GetPosY()
+
+		child = parent.FirstChild
+		while child:
+			# skip over non-terminals, these will include font tags and colour
+			# tags
+			if child.IsTerminalCell():
+				# check we are at the right link and y level
+				#TODO: will all of a link be at the same level if sup or
+				# <font> in link? Anyway, I'm assuming it is...
+				if child.GetLink() and child.GetLink().GetHref() == href \
+					and y_level == child.GetPosY(): 
+					if not in_block:
+						first = child
+				
+					in_block = True
+
+					if cell.this == child.this:
+						cell_found = True
+
+				else:
+					if cell_found:
+						last = last_iterated
+						break
+					
+					in_block = False
+
+			last_iterated = child
+			child = child.Next
+		else:
+			assert False, "Didn't find cell!?!"
+		
+		rect = wx.Rect(first.GetPosX(), first.GetPosY(), 
+			last.GetPosX() - first.GetPosX() + last.GetWidth(),
+			last.GetPosY() - first.GetPosY() + last.GetHeight()
+		)
+
+		xx, yy = 0, 0
+		while parent:
+			rect.Offset((
+				parent.GetPosX(),
+				parent.GetPosY()
+			))
+			parent = parent.Parent
+
+		# now this value refers to somewhere on the scrolled page.
+		# so we need to find the value on the client, then turn it to a screen
+		# value...
+		xx, yy = rect.TopLeft
+		xx, yy = self.ClientToScreen(self.CalcScrolledPosition(xx, yy))
+		self.current_target = href, wx.Rect(
+			xx, yy, rect.GetWidth(), rect.GetHeight()
+		), 4
+
+		if self.current_target and self.tooltip.target and \
+				self.tooltip.target == self.current_target[0]:
 			return 
 
 		
@@ -170,7 +224,9 @@ class DisplayFrame(HtmlSelectableWindow):
 
 	@staticmethod
 	def on_hover(frame, href, url, x, y):
-		SetText = frame.tooltip.SetText
+		tooltip_config = TextTooltipConfig("", mod=frame.mod)
+		def SetText(text):
+			tooltip_config.text = text
 
 		if url.getHostName() != "passagestudy.jsp":
 			return
@@ -188,19 +244,8 @@ class DisplayFrame(HtmlSelectableWindow):
 		frame.tooltip.html.reference = frame.reference
 
 		if action == "showStrongs":
-			type = url.getParameterValue("type") #Hebrew or greek
-			value = url.getParameterValue("value") #strongs number
-			if not type or not value: 
-				return
-			#do lookup
-			type = "Strongs"+type #as module is StrongsHebrew
-			tooltipdata = dictionary.GetReferenceFromMod(type, value)
-			if tooltipdata is None:
-				tooltipdata = _("Module %s is not installed, "
-				"so you cannot view "
-				"details for this strong's number") %type
-
-			SetText(tooltipdata)
+			frame.tooltip.show_strongs_ref(frame, href, url, x, y)
+			return
 
 		elif action=="showMorph":
 			type = url.getParameterValue("type") #Hebrew or greek
@@ -210,15 +255,16 @@ class DisplayFrame(HtmlSelectableWindow):
 				tooltipdata += "<br>%s" % type
 			else:
 				value = url.getParameterValue("value") #strongs number
-				if not type or not value: 
+				module = biblemgr.get_module("Robinson")
+				if not value:
 					return
-
-				#do lookup
-				type = "Robinson" 
-				tooltipdata = dictionary.GetReferenceFromMod(type, value)
-				if tooltipdata is None:
+				
+				tooltip_config.mod = module
+				if not module:
 					tooltipdata = _("Module %s is not installed, so you "
 					"cannot view details for this morphological code") % type
+				else:
+					tooltipdata = dictionary.GetReferenceFromMod(module, value)
 
 			SetText(tooltipdata)
 
@@ -229,10 +275,12 @@ class DisplayFrame(HtmlSelectableWindow):
 			if((not type) or (not value)): 
 				dprint(WARNING, "Not type or value in showNote", href)
 				return
-			module = url.getParameterValue("module")
+			module = biblemgr.get_module(url.getParameterValue("module"))
 			passage = url.getParameterValue("passage")
-			if not passage: 
+			if not passage or not module:
 				return
+
+			tooltip_config.mod = module
 
 			if type == "n":
 				data = bible.GetFootnoteData(module, passage, value, "body")
@@ -244,8 +292,8 @@ class DisplayFrame(HtmlSelectableWindow):
 				#make this plain
 				template = VerseTemplate(
 				header="<a href='nbible:$internal_range'><b>$range</b></a><br>",
-				body = "<font color = 'blue'><sup><small>$versenumber"
-				"</small></sup></font> $text")
+				body=u'<glink href="nbible:$internal_reference">'
+					u'<small><sup>$versenumber</sup></small></glink> $text ')
 				try:
 					#no footnotes
 					if tooltip_settings["plain_xrefs"]:
@@ -287,18 +335,22 @@ class DisplayFrame(HtmlSelectableWindow):
 				dprint(WARNING, "unknown type for showRef", type, href)
 				return
 			value = url.getParameterValue("value") #passage
-			if not value: 
+			module = biblemgr.get_module(url.getParameterValue("module"))
+			if not module:
+				module = biblemgr.bible.mod
+
+			if not value:
 				return
 
-			module = url.getParameterValue("module")
+			tooltip_config.mod = module
+			
 			#make this plain
 			#template = VerseTemplate(header = "$range<br>", 
 			#body = '<font color = "blue"><small><sup>$versenumber</sup></small></font> $text')
 			template = VerseTemplate(
 				header="<a href='bible:$internal_range'><b>$range</b></a><br>", 
-				body = "<font color = 'blue'><sup><small>$versenumber"
-				"</small></sup></font> $text", 
-			)
+				body=u'<glink href="nbible:$internal_reference">'
+					u'<small><sup>$versenumber</sup></small></glink> $text ')
 
 			try:
 				if tooltip_settings["plain_xrefs"]: 
@@ -338,18 +390,14 @@ class DisplayFrame(HtmlSelectableWindow):
 			dprint(WARNING, "Unknown action", action, href)
 			return
 
-
-		frame.show_tooltip(x, y)
+		frame.show_tooltip(tooltip_config)
 	
 	@staticmethod
 	def on_hover_bible(frame, href, url, x, y):
 		scrolled_values = frame.CalcScrolledPosition(x, y) 
 		screen_x, screen_y = frame.ClientToScreen(scrolled_values)
 	
-		frame.tooltip.show_bible_refs(href, url, screen_x, screen_y)
-
-	def show_tooltip(self, x, y):
-		self.tooltip.Start()
+		frame.tooltip.show_bible_refs(frame, href, url, screen_x, screen_y)
 
 	def OnCellMouseLeave(self, cell, x, y):
 		if self._tooltip is not None:
@@ -519,7 +567,7 @@ class DisplayFrame(HtmlSelectableWindow):
 			text = self.strip_text(text)
 			guiconfig.mainfrm.UpdateDictionaryUI(text)
 
-		assert hasattr(self, "mod"), self		
+		assert hasattr(self, "mod"), self
 		font = fonts.get_module_gui_font(self.mod, default_to_None=True)
 		
 		return MenuItem("Dictionary lookup", on_lookup_click, 
@@ -654,3 +702,51 @@ class DisplayFrameXRC(DisplayFrame):
 		self.PostCreate(pre)
 		self.setup()
 
+
+class AUIDisplayFrame(DisplayFrame):
+	def restore_pane(self):
+		self.maximize_pane(False)
+	
+	def maximize_pane(self, to=True):
+		main = guiconfig.mainfrm
+		pane = self.aui_pane
+		maximized_pane = main.get_maximized_pane()
+		if to:
+			if not maximized_pane:
+				main.maximize_pane(pane)
+				
+		else:
+			if maximized_pane:
+				main.restore_maximized_pane(pane)
+		main.aui_mgr.Update()
+		wx.CallAfter(main.update_all_aui_menu_items)
+
+	def get_actions(self):
+		actions = super(AUIDisplayFrame, self).get_actions()
+		actions.update({
+			(wx.WXK_F5, wx.MOD_CMD): self.restore_pane,
+			(wx.WXK_F10, wx.MOD_CMD): self.maximize_pane,
+		})		
+		
+		return actions
+
+	def toggle_frame(self):
+		pane = guiconfig.mainfrm.get_pane_for_frame(self)
+		guiconfig.mainfrm.show_panel(pane.name, not pane.IsShown())
+	
+	def is_hidable(self):
+		return self.aui_pane.HasCloseButton()
+
+	@property
+	def aui_pane(self):
+		"""Gets the AUI pane for this frame."""
+		return guiconfig.mainfrm.get_pane_for_frame(self)
+
+	@property
+	def title(self):
+		return _(self.id)
+	
+	def get_window(self):
+		return self
+	
+		

@@ -340,6 +340,14 @@ class AuiLayer(object):
 				["Hide"]]
 			],
 			
+			[self.preview_window.get_window(),
+				self.preview_window.title,
+				self.preview_window.id,
+				[],
+				[["Right"],
+				["Layer",2],
+				["Hide"]]],
+			
 			[self.verse_compare.get_window(), 
 				self.verse_compare.title, 
 				self.verse_compare.id, 
@@ -385,13 +393,16 @@ class AuiLayer(object):
 			[self.verse_compare.get_window(), "Version Comparison"],			
 			
 			[self.history_pane, "History"],
+			[self.preview_window, "Preview",],
+			
 		]
 		items.extend([item, item.title] for item in self.searchers)
 
 
 		panes = (
 			self.bibletext, self.commentarytext, 
-			self.dictionarytext, self.genbooktext, self.verse_compare
+			self.dictionarytext, self.genbooktext, self.verse_compare,
+			self.preview_window
 		)
 
 		self.panes = [(frame, frame.id) for frame in panes]
@@ -431,6 +442,8 @@ class AuiLayer(object):
 	def maximize_pane(self, pane):
 		self.fix_pane_direction(pane)
 		self.aui_mgr.MaximizePane(pane)
+		self.on_changed()
+		
 	
 	def get_pane_for_frame(self, frame):
 		for f, pane_name in self.panes:
@@ -442,6 +455,14 @@ class AuiLayer(object):
 	def get_frame_for_pane(self, pane):
 		for f, pane_name in self.panes:
 			if pane.name == pane_name:
+				return f
+
+	def get_selected_frame(self):
+		for f, pane_name in self.panes:
+			pane = self.aui_mgr.GetPane(pane_name)
+			assert pane.IsOk(), pane_name
+			active = bool(pane.state & pane.optionActive)
+			if active:
 				return f
 
 	def create_items(self, items, use_startups=True):
@@ -696,17 +717,23 @@ class AuiLayer(object):
 		#if not toggle and pane.IsMaximized():
 		#	# restore the pane first
 		#	self.aui_mgr.RestorePane(pane)
-		pane.Show(toggle)
-		self.aui_mgr.Update()
+		changed = not (toggle and not maximized and pane.IsShown())
+		if changed:
+			pane.Show(toggle)
+
+			self.aui_mgr.Update()
+			
+
 		if panel in self.aui_callbacks:
 			self.aui_callbacks[panel](toggle)
 
-		self.on_pane_changed(panel, toggle)
+		if changed:
+			self.on_pane_changed(panel, toggle)
 
 	def restore_maximized_pane(self, pane):
 		self.restore_pane_direction(pane)
 		self.aui_mgr.RestoreMaximizedPane()
-		
+		self.on_changed()
 
 	def on_pane_changed(self, pane_name, toggle):
 		wx.CallAfter(self.update_all_aui_menu_items)

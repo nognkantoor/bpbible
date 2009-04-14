@@ -15,20 +15,34 @@ make_release = False
 new_version = None
 py2exe_opts = ""
 show_splashscreen = True
+portable_build = False
+portable_prerelease_status_number = None
 
 def handle_args():
-	opts, args = getopt.getopt(sys.argv[1:], "r", ["make-release", "compress", "no-splashscreen"])
-	if ('-r', '') in opts or ('--make-release', '') in opts:
-		global make_release
-		make_release = True
-
-	if ('--compress', '') in opts:
-		global py2exe_opts
+	opts, args = getopt.getopt(sys.argv[1:], "r", ["make-release", "compress", "no-splashscreen", "portable", "pre-release="])
+	global py2exe_opts
+	global show_splashscreen
+	if ('--portable', '') in opts:
+		global portable_build
+		portable_build = True
 		py2exe_opts += " compressed "
-
-	if ('--no-splashscreen', '') in opts:
-		global show_splashscreen
 		show_splashscreen = False
+		for o, a in opts:
+			if o == "--pre-release":
+				global portable_prerelease_status_number
+				portable_prerelease_status_number = a
+		# make_release is intentionally left False
+
+	else:
+		if ('-r', '') in opts or ('--make-release', '') in opts:
+			global make_release
+			make_release = True
+
+		if ('--compress', '') in opts:
+			py2exe_opts += " compressed "
+
+		if ('--no-splashscreen', '') in opts:
+			show_splashscreen = False
 
 	global new_version
 	if len(args) != 1:
@@ -70,13 +84,13 @@ def maybe_make_dir(dir):
 maybe_make_dir("dist")
 maybe_make_dir("%s" % src_dist.dir)
 
-paths_conf = """\
+if not portable_build:
+	paths_conf = """\
 [BPBiblePaths]
 DataPath = $DATADIR
-IndexPath = $DATADIR/indexes
-"""
-open("%s/paths.ini" % src_dist.dir, "w").write(paths_conf)
-open("dist/paths.ini", "w").write(paths_conf)
+IndexPath = $DATADIR/indexes"""
+	open("%s/paths.ini" % src_dist.dir, "w").write(paths_conf)
+	open("dist/paths.ini", "w").write(paths_conf)
 
 from config import bpbible_configuration, release_settings, splashscreen_settings
 release_settings["version"] = new_version
@@ -118,14 +132,125 @@ def build_installer():
 
 	import wx
 	wx_dir = os.path.dirname(wx.__file__)
-	os.system("copy %s installer" % os.path.join(wx_dir, "gdiplus.dll"))
-	os.system("copy %s installer" % os.path.join(wx_dir, "msvcp71.dll"))
+	global portable_build
+	if portable_build:
+		os.system("copy %s dist" % os.path.join(wx_dir, "gdiplus.dll"))
+		os.system("copy %s dist" % os.path.join(wx_dir, "msvcp71.dll"))
+		if os.path.exists("\\PortableApps\\AppCompactor\\App\\bin\\upx.exe"):
+			upx_path = "\\PortableApps\\AppCompactor\\App\\bin\\upx.exe"
+		else:
+			for path in os.environ["PATH"].split(os.pathsep):
+				tmppath = os.path.join(path, "upx.exe")
+				if os.path.exists(tmppath) and os.access(tmppath, os.X_OK):
+					upx_path = tmppath
+					break
 
-	print "Creating the installer."
-	iss_file = os.path.join("installer", "bpbible.iss")
-	iss_contents = open("%s.template" % iss_file, "r").read().replace("$APP_VERSION", new_version)
-	open(iss_file, "w").write(iss_contents)
-	os.system("iscc %s" % iss_file)
+		if os.path.exists(upx_path):
+			print "Compressing further with UPX..."
+			os.chdir("dist")
+			import glob
+			for file in glob.glob("*.exe")+glob.glob("*.dll"):
+				os.system("%s --best --compress-icons=0 --nrv2e --crp-ms=999999 -k %s" % (upx_path, file))
+				if os.system("%s -t %s" % (upx_path, file)):
+					# Broken/didn't work: rename backup to original filename
+					os.rename(file[:-1]+"~", file)
+				else:
+					# Worked: remove backup
+					if os.path.exists(file[:-1]+"~"):
+						os.remove(file[:-1]+"~")
+			os.chdir("..")
+
+		# Put together the BPBible Portable package for distribution
+		if os.path.exists("BPBiblePortable"):
+			# Remove an old copy of the directory
+			import shutil
+			shutil.rmtree("BPBiblePortable")
+
+		os.mkdir("BPBiblePortable")
+
+		# help.html - no version numbering in here, just copy it.
+		os.system("copy %s %s" % (os.path.join("make_portable", "help.html"), "BPBiblePortable"))
+
+		# App
+		os.mkdir(os.path.join("BPBiblePortable", "App"))
+		# App\readme.txt
+		open(os.path.join("BPBiblePortable", "App", "readme.txt"), "w").write("The files in this directory are necessary for BPBible Portable to function.  There is normally no need to directly access or alter any of the files within these directories.")
+
+		# App\AppInfo
+		os.mkdir(os.path.join("BPBiblePortable", "App", "AppInfo"))
+		# App\AppInfo\appicon.ico
+		os.system("copy %s %s" % (os.path.join("graphics", "bpbible.ico"), os.path.join("BPBiblePortable", "App", "AppInfo", "appicon.ico")))
+		# App\AppInfo\appinfo.ini
+		appinfo_contents = open("%s.template" % os.path.join("make_portable", "appinfo.ini"), "r").read()
+		if portable_prerelease_status_number:
+			appinfo_display_version = "%s Pre-Release %s" % (new_version, portable_prerelease_status_number)
+		else:
+			appinfo_display_version = new_version
+
+		# Make an X.X.X.X-format version number out of the version number
+		new_version_four_part = ".".join((new_version.split(".") + ["0", "0", "0"])[:4])
+
+		appinfo_contents = appinfo_contents.replace("$APPVERSION", new_version_four_part)
+		appinfo_contents = appinfo_contents.replace("$APPDISPLAYVERSION", appinfo_display_version)
+		open(os.path.join("BPBiblePortable", "App", "AppInfo", "appinfo.ini"), "w").write(appinfo_contents)
+
+		# App\BPBible
+		os.rename("dist", os.path.join("BPBiblePortable", "App", "BPBible"))
+
+		# Other
+		# Other\Help
+		os.makedirs(os.path.join("BPBiblePortable", "Other", "Help", "images"))
+		os.system("copy %s\\*.* %s" % (os.path.join("make_portable", "help_images"), os.path.join("BPBiblePortable", "Other", "Help", "images")))
+		# Other\Source
+		os.mkdir(os.path.join("BPBiblePortable", "Other", "Source"))
+		os.system("copy %s\\*.* %s" % (os.path.join("make_portable", "source"), os.path.join("BPBiblePortable", "Other", "Source")))
+		installerconfig_contents = open("%s.template" % os.path.join("make_portable", "PortableApps.comInstallerConfig.nsh"), "r").read()
+		if portable_prerelease_status_number:
+			installerconfig_installer_version = "%s_PRERELEASE%s" % (new_version, portable_prerelease_status_number)
+		else:
+			installerconfig_installer_version = new_version
+
+		installerconfig_contents = installerconfig_contents.replace("$APPVERSION", new_version_four_part)
+		installerconfig_contents = installerconfig_contents.replace("$APPINSTALLERFILENAMEVERSION", installerconfig_installer_version)
+		open(os.path.join("BPBiblePortable", "Other", "Source", "PortableApps.comInstallerConfig.nsh"), "w").write(installerconfig_contents)
+
+		if os.path.exists("\\PortableApps\\NSISPortable\\App\\NSIS\\makensis.exe"):
+			nsis_path = "\\PortableApps\\NSISPortable\\App\\NSIS\\makensis.exe"
+		else:
+			for path in os.environ["PATH"].split(os.pathsep):
+				tmppath = os.path.join(path, "makensis.exe")
+				if os.path.exists(tmppath) and os.access(tmppath, os.X_OK):
+					nsis_path = tmppath
+					break
+
+		print "Compiling the BPBible Portable launcher..."
+		if os.path.exists(nsis_path):
+			os.system("%s %s" % (nsis_path, os.path.abspath(os.path.join("BPBiblePortable", "Other", "Source", "BPBiblePortable.nsi"))))
+
+		nocompileinstaller = False
+		if not os.path.exists(upx_path):
+			sys.stderr.write("Can't find UPX: you will need to compress BPBiblePortable\App\BPBible with the\nPortableApps.com AppCompactor (http://PortableApps.com/AppCompactor) before\ncompiling BPBiblePortable\Other\Source\PortableApps.comInstaller.nsi with NSIS.")
+			nocompileinstaller = True
+
+		if not os.path.exists(os.path.join("BPBiblePortableOptional1", "Data", "resources", "mods.d")):
+			os.mkdir("BPBiblePortableOptional1")
+			sys.stderr.write("You don't have the additional resources package!\nInstall a previous copy of BPBible Portable with the additional resources and\nthen copy from its installation directory the Data directory to\n./BPBiblePortableOptional1 (/Data/resources/...)")
+			nocompileinstaller = True
+
+		if not nocompileinstaller and os.path.exists(nsis_path):
+			# Everything there!
+			print "Compiling the BPBible Portable installer..."
+			os.system("%s %s" % (nsis_path, os.path.abspath(os.path.join("BPBiblePortable", "Other", "Source", "PortableApps.comInstaller.nsi"))))
+
+	else:
+		os.system("copy %s installer" % os.path.join(wx_dir, "gdiplus.dll"))
+		os.system("copy %s installer" % os.path.join(wx_dir, "msvcp71.dll"))
+
+		print "Creating the installer."
+		iss_file = os.path.join("installer", "bpbible.iss")
+		iss_contents = open("%s.template" % iss_file, "r").read().replace("$APP_VERSION", new_version)
+		open(iss_file, "w").write(iss_contents)
+		os.system("iscc %s" % iss_file)
 
 def upload_release():
 	if not make_release:
