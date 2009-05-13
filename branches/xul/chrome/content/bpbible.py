@@ -1,3 +1,4 @@
+from swlib import pysw
 import mozutils
 import config
 from util.debug import dump
@@ -26,8 +27,15 @@ def lookup_reference():
 	item = document.getElementById("toolbar_location")
 	assert item
 	dump("Looking up reference: %s" % item.value)
+	print "Here"
+	i = item.value
+	i = pysw.GetVerseStr(item.value, userInput=True)
 	browser = document.getElementById("browser")
-	browser.setAttribute("src", "bpbible://ESV/!%s" % item.value)
+	# clear it
+	browser.setAttribute("src", "bpbible://")
+
+	# now set it
+	browser.setAttribute("src", "bpbible://ESV/%s#%s_start" % (i, i))
 
 def do_load():
 	util.dom_util.document = document

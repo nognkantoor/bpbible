@@ -64,7 +64,7 @@ class SmartBody(object):
 		re.IGNORECASE
 	)
 	
-	empty_versenumber = re.compile(u"<glink href=[^>]+><small><sup></sup></small></glink>\s?")
+	empty_versenumber = re.compile(u"<a class=\"(verse|chapter)number[^\"]*\"[^>]+></a>\s?")
 	
 	def __init__(self, body, verse_per_line=True):
 		self.body = body
@@ -78,6 +78,13 @@ class SmartBody(object):
 		
 		if verse_0:
 			dict["versenumber"] = u""
+
+		if dict["versenumber"] == process_digits("1", userOutput=True):
+			dict["versenumber"] = dict["chapternumber"]
+			dict["numbertype"] = "chapternumber"
+		else:
+			dict["numbertype"] = "versenumber"
+			
 			
 		
 		whitespace = []

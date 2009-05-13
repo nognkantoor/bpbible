@@ -3,7 +3,7 @@ from swlib.pysw import SW, GetVerseStr, GetBestRange
 from util.debug import dprint, MESSAGE
 
 class ThMLParser(filterutils.ParserBase):
-	def start_scripRef(self, attributes):
+	def start_scripRef(self, xmltag):
 		if (#self.u.module.Type() ==  "Biblical Texts" or 
 			not	filterutils.filter_settings["expand_thml_refs"]):
 			# we don't do anything here. This may change when I have a module
@@ -11,17 +11,17 @@ class ThMLParser(filterutils.ParserBase):
 			self.success = SW.INHERITED
 			return
 		
-		self.start_tag = attributes
+		self.start_tag = xmltag
 		self.u.suspendTextPassThru = True
 	
-	def end_scripRef(self):
+	def end_scripRef(self, xmltag):
 		if (#self.u.module.Type() ==  "Biblical Texts" or 
 			not	filterutils.filter_settings["expand_thml_refs"]):
 		
 			self.success = SW.INHERITED
 			return
 
-		refList = self.start_tag.get("passage", None)
+		refList = self.start_tag.getAttribute("passage")
 		if self.u.module.Type() == "Biblical Texts":
 			#self.success = SW.INHERITED
 			if refList:
@@ -62,17 +62,18 @@ class ThMLParser(filterutils.ParserBase):
 		# let text resume to output again
 		self.u.suspendTextPassThru = False
 	
-	def start_sync(self, attributes):
+	def start_sync(self, xmltag):
 		# This handles strongs numbers
 
 		# <sync type="Strongs" value="G1985" />
-		if ("type" not in attributes or attributes["type"]!="Strongs" or 
-			"value" not in attributes):
+		type = xmltag.getAttribute("type")
+		value = xmltag.getAttribute("value")
+		if type != "Strongs" or not value:
 			#not filterutils.filter_settings["strongs_headwords"]):
 			self.success = SW.INHERITED
 			return
 			
-		headword = self.get_strongs_headword(attributes["value"])
+		headword = self.get_strongs_headword(value)
 		if not headword:
 			self.success = SW.INHERITED	
 			return

@@ -5,7 +5,8 @@ from util.debug import dprint, ERROR, WARNING
 import traceback
 from util.configmgr import config_manager
 
-default_ellipsis_level = 2
+# TODO: TESTING - was default_ellipsis_level = 2
+default_ellipsis_level = 0
 filter_settings = config_manager.add_section("Filter")
 filter_settings.add_item("use_osis_parser", True, item_type=bool)
 filter_settings.add_item("use_thml_parser", True, item_type=bool)
@@ -83,23 +84,14 @@ class ParserBase(object):
 		self.u = userdata
 	
 		tag = SW.XMLTag("<%s>" % token)
+		which_one = "start_%s"
 		if tag.isEndTag():
-			method = getattr(self, "end_%s" % tag.getName(), None)
-			if method is not None:
-				self.success = SW.SUCCEEDED		
-				method()
-		else:
-			method = getattr(self, "start_%s" % tag.getName(), None)
-			if method is not None:
-				self.success = SW.SUCCEEDED			
+			which_one = "end_%s"
+		method = getattr(self, which_one % tag.getName(), None)
+		if method is not None:
+			self.success = SW.SUCCEEDED		
+			method(tag)
 
-				# TODO: just pass this on, don't convert to dictionary
-				attributes = {}
-				for item in (i.c_str() for i in tag.getAttributeNames()):
-					attributes[item] = tag.getAttribute(item)
-
-				return method(attributes)
-				
 	def get_strongs_headword_from_headword_module(self, value):
 		global strongs_cacher
 		
@@ -172,7 +164,7 @@ class ParserBase(object):
 			word = display_number
 
 		#TODO handle extra...
-		item = '<font size="-1"><glink href="passagestudy.jsp?action=showStrongs&type=%s&value=%s">&lt;%s&gt;</glink></font>' % (modlang, number, word)
+		item = '<a class="strongs_headword" href="strongs://%s/%s">&lt;%s&gt;</a>' % (modlang, number, word)
 		strongs_cache[value] = item
 		
 		
