@@ -12,19 +12,42 @@ class OSISParser(filterutils.ParserBase):
 		self.morph_bufs = []
 		self.was_sword_ref = False
 		self.in_indent = False
+		self._end_hi = ""
 	
-	def start_reference(self, attributes):
-		if "osisRef" not in attributes:
+	def start_hi(self, xmltag):
+		assert not xmltag.isEmpty(), "Hi cannot be empty"
+		type = xmltag.getAttribute("type")
+		types = {
+			"bold": ("<b>", "</b>"),
+			"italic": ("<i>", "</i>"),
+			"sub": ("<sub>", "</sub>"),
+			"sup": ("<sup>", "</sup>"),
+			"underline": ("<u>", "</u>"),
+			"small-caps": ('<span class="small-caps">', "</span>"),
+		}
+		if type not in types:
+			dprint(WARNING, "Unhandled hi type", type)
+			type = "italic"
+		
+		start, end = types[type]
+		self.buf += start
+		self._end_hi = end
+	
+	def end_hi(self, xmltag):
+		self.buf += self._end_hi
+		
+	def start_reference(self, xmltag):
+		self.ref = xmltag.getAttribute("osisRef")
+		if not self.ref:
 			self.ref = None
 			self.success = SW.INHERITED
-			dprint(WARNING, "No osisRef in reference", attributes)
+			dprint(WARNING, "No osisRef in reference", xmltag.toString())
 			
 			return
 			
 
 		#TODO check this
 		#TODO check for Bible:Gen.3.5
-		self.ref = attributes["osisRef"]
 		idx = self.ref.find(":")
 		self.was_sword_ref = False
 		
@@ -40,7 +63,7 @@ class OSISParser(filterutils.ParserBase):
 		self.u.suspendLevel += 1
 		self.u.suspendTextPassThru = self.u.suspendLevel
 	
-	def end_reference(self):
+	def end_reference(self, xmltag):
 		if self.ref is None:
 			self.success = SW.INHERITED
 			return
@@ -58,18 +81,28 @@ class OSISParser(filterutils.ParserBase):
 				ref, self.u.lastTextNode.c_str()
 			)
 			
-	def start_w(self, attributes):
+	def start_lb(self, xmltag):
+		type = xmltag.getAttribute("type")
+		if not xmltag.isEmpty():
+			print "Can lb's really be non-empty?"
+		if type == "x-end-paragraph":
+			self.buf += "</p>"
+		elif type == "x-begin-paragraph":
+			self.buf += "<p>"
+
+	def start_w(self, xmltag):
 		self.strongs_bufs = []
 		self.was_G3588 = None
 		# w lemma="strong:H03050" wn="008"
 	
-		if ("lemma" not in attributes or self.u.suspendTextPassThru):
+		lemmas = xmltag.getAttribute("lemma")
+		if (not lemmas or self.u.suspendTextPassThru):
 			#not	filterutils.filter_settings["strongs_headwords"]):
 			self.success = SW.INHERITED		
 			return
 
 		# TODO: gloss, xlit?, POS?
-		lemmas = attributes["lemma"]
+
 		for lemma in lemmas.split(" "):
 		
 			if (not lemma.startswith("strong:") and 
@@ -94,8 +127,8 @@ class OSISParser(filterutils.ParserBase):
 			self.strongs_bufs.append(headword)
 			
 		self.morph_bufs = []
-		if "morph" in attributes:
-			morph = attributes["morph"]
+		morph = xmltag.getAttribute("morph")
+		if morph:
 			for attrib in morph.split():
 				val = attrib.find(":")
 				if val == -1:
@@ -106,40 +139,80 @@ class OSISParser(filterutils.ParserBase):
 				if val[0] == 'T' and val[1] in "GH" and val[2] in "0123456789":
 					val2 = val2[2:]
 				if not self.u.suspendTextPassThru:
-					self.morph_bufs.append("<small><em>(<a href=\"passagestudy.jsp?action=showMorph&type=%s&value=%s\">%s</a>)</em></small>"%(
+					self.morph_bufs.append("<a class=\"morph\" href=\"morph://%s/%s\">(%s)</a>"%(
 							SW.URL.encode(morph).c_str(),
 							SW.URL.encode(val).c_str(),
 							val2))
+		
+		if self.strongs_bufs:
+			self.u.suspendLevel += 1
+			self.u.suspendTextPassThru = self.u.suspendLevel
 			
 	
-	def end_w(self):
+	def end_w(self, xmltag):
+		if self.strongs_bufs:
+			self.u.suspendLevel -= 1
+			self.u.suspendTextPassThru = self.u.suspendLevel
+	
 		if self.was_G3588 and not self.u.lastTextNode.size():
 			# and not self.morph_bufs:
 			# don't show empty 3588 tags
 			return
 			
 		if self.strongs_bufs:
-			self.buf += "".join(self.strongs_bufs + self.morph_bufs)
+			self.buf += '<span class="c"><span class="strongs_word">'
+			self.buf += self.u.lastTextNode.c_str() or "&nbsp;"
+			self.buf += '</span><span class="strongs"><span class="strongs_headwords">'
+			self.buf += "".join(self.strongs_bufs)
+			if self.morph_bufs:
+				self.buf += '</span><span class="strongs_morph">'
+				self.buf += "".join(self.morph_bufs)
+
+			self.buf += "</span></span></span>"
 			return
 
 		self.success = SW.INHERITED
 		
-	def start_note(self, attributes):
+	def start_note(self, xmltag):
 		self.did_xref = False
 		
 	
-		if "type" not in attributes or "swordFootnote" not in attributes:
+		type = xmltag.getAttribute("type")
+		footnoteNumber = xmltag.getAttribute("swordFootnote")
+		if not type:
+			print "Not type - module bug", xmltag.toString()
+			type = "missing"
+		if not type or not footnoteNumber:
+			print "FAILED"
 			self.success = SW.INHERITED
+			return
 		
-		elif(attributes["type"] in ("crossReference", "x-cross-ref") and
-				filterutils.filter_settings["footnote_ellipsis_level"]):
-			footnoteNumber = attributes["swordFootnote"]
-			footnotes = SW.Buf("Footnote")			
-			refList = SW.Buf("refList")
-			number = SW.Buf(footnoteNumber)
-			map = self.u.module.getEntryAttributesMap()
-			try:
-				refs = map[footnotes][number][refList].c_str()
+		was_xref = type in ("crossReference", "x-cross-ref")
+		
+		footnote_type = "n"		
+		if was_xref:
+			footnote_type = "x"
+
+		do_xref = filterutils.filter_settings["footnote_ellipsis_level"]
+		footnotes = SW.Buf("Footnote")
+		refList = SW.Buf("refList")
+		n = SW.Buf("n")
+		number = SW.Buf(footnoteNumber)
+		#if not do_xref:
+		#	self.success = SW.INHERITED
+
+		map = self.u.module.getEntryAttributesMap()
+		footnote = map[footnotes][number]
+		if n in footnote:
+			footnote_char = footnote[n].c_str()
+		else:
+			if was_xref: footnote_char = "x"
+			else: footnote_char = "n"
+
+		if do_xref:
+			try:			
+				refs = footnote[refList].c_str()
+			
 			except IndexError:
 				dprint(WARNING, "Error getting Footnote '%s' refList" % 
 					footnoteNumber)
@@ -150,24 +223,33 @@ class OSISParser(filterutils.ParserBase):
 				# if there weren't any references, just do the usual
 				self.success = SW.INHERITED
 				return
-				
+			
 
 			self.u.inXRefNote = True
-			self.u.suspendLevel += 1
-			self.u.suspendTextPassThru = self.u.suspendLevel
 			
 			self.buf += filterutils.ellipsize(
 				refs.split(";"), 
 				self.u.key.getText(),
 				int(filterutils.filter_settings["footnote_ellipsis_level"])
 			)
-			self.did_xref = True
-			
-			
 		else:
-			self.success = SW.INHERITED
+			c = "footnote footnote_%s" % type
+			self.buf += "<a class=\"%s\" href=\"passagestudy.jsp?action=showNote&type=%c&value=%s&module=%s&passage=%s\">%s</a>" % (
+								c,
+								footnote_type,
+								SW.URL.encode(footnoteNumber).c_str(), 
+								SW.URL.encode(self.u.version.c_str()).c_str(), 
+								SW.URL.encode(self.u.key.getText()).c_str(), 
+								footnote_char
+			)
+		self.did_xref = True
+		self.u.suspendLevel += 1
+		self.u.suspendTextPassThru = self.u.suspendLevel
+		
+			
+		
 
-	def end_note(self):
+	def end_note(self, xmltag):
 		if self.did_xref:
 			self.u.inXRefNote = False
 			self.u.suspendLevel -= 1
@@ -180,31 +262,55 @@ class OSISParser(filterutils.ParserBase):
 
 		self.success = SW.INHERITED	
 	
+	def start_milestone(self, xmltag):
+		if not xmltag.isEmpty():
+			print "Can milestone's really be non-empty?"
+	
+		if xmltag.getAttribute("type") == "x-p":
+			# m = attributes["marker"] (Pilcrow character in KJV)
+			self.buf += "<!P>"
+		else:
+			self.success = SW.INHERITED	
+
+		
 	# TODO:
 	# lg starting in previous chapter
 	# verse numbers on x-indent lines
 	# verse numbers (and footnotes) float lefter? (hard)
 	# version comparison problems - kill these!
 
-	def start_title(self, attributes):
-		self.buf += '<h6 class="heading" canonical="%s">' % \
-			attributes.get("canonical", "false")
+	def start_title(self, xmltag):
+		canonical = xmltag.getAttribute("canonical")
+		canonical = canonical or "false"
+		self.buf += '<h6 class="heading" canonical="%s">' % canonical
 	
-	def end_title(self):
+	def end_title(self, xmltag):
 		self.buf += '</h6>'
 
-	def start_lg(self, attributes):
-		if attributes.get("eID"):
-			return self.end_lg()
+	def start_lg(self, xmltag):
+		if xmltag.getAttribute("eID"):
+			return self.end_lg(xmltag)
 
-		self.buf += '<indent-block-start source="lg" width="0" />'
+		self.buf += '<blockquote class="lg" width="0">'
 	
-	def end_lg(self):
-		self.buf += '<indent-block-end source="lg" />'
+	def end_lg(self, xmltag):
+		self.buf += '</blockquote>'
 	
-	def start_l(self, attributes):
-		if attributes.get("eID"):
-			return self.end_l()
+	def start_divineName(self, xmltag):
+		self.buf += "<span class='divineName'>"
+
+	def end_divineName(self, xmltag):
+		self.buf += "</span>"
+	
+		
+	def start_l(self, xmltag):
+		if xmltag.getAttribute("eID"):
+			return self.end_l(xmltag)
+
+		if xmltag.isEmpty() and not xmltag.getAttribute("sID"):
+			print "<l />?!?", xmltag.toString()
+			self.success = SW.INHERITED
+			return
 		
 		mapping = {
 			# usual poetry indent in ESV
@@ -223,32 +329,32 @@ class OSISParser(filterutils.ParserBase):
 			"x-secondary": 2,
 		}
 
-		level = attributes.get("level")
+		level = xmltag.getAttribute("level")
 		if level:
 			# the level defaults to 1 - i.e. no indent
 			indent = 2 * (int(level) - 1)
 		else:
-			indent = mapping.get(attributes.get("type"), 0)
+			indent = mapping.get(xmltag.getAttribute("type"), 0)
 
-		if indent:
-			if self.in_indent:
-				dprint(WARNING, "Nested indented l's", self.u.key.getText())
-
-			self.in_indent = True
-			self.buf += '<indent-block-start source="l" width="%s"/>' % indent
-		else:
-			self.success = SW.INHERITED
-
-	def end_l(self):
+		#if indent:
 		if self.in_indent:
-			self.buf += "<indent-block-end />"
+			dprint(WARNING, "Nested indented l's", self.u.key.getText())
+
+		self.in_indent = True
+		self.buf += '<div class="indentedline" width="%d" source="l">' % indent
+		#else:
+		#	self.success = SW.INHERITED
+
+	def end_l(self, xmltag):
+		if self.in_indent:
+			self.buf += "</div>"
 			self.in_indent = False
 			
 		else:
 			self.success = SW.INHERITED
 	
-	def start_figure(self, attrib):
-		src = attrib.get("src")
+	def start_figure(self, xmltag):
+		src = xmltag.getAttribute("src")
 		if not src:
 			self.success = SW.FAILED
 			return

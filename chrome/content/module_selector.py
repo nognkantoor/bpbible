@@ -17,7 +17,7 @@ def lookup_reference():
 	assert item
 	dump("Looking up reference: %s" % item.value)
 	browser = document.getElementById("browser")
-	browser.setAttribute("src", "bpbible://%s/!%s" % (biblemgr.bible.mod.Name(), item.value))
+	browser.setAttribute("src", "bpbible://%s/%s" % (biblemgr.bible.mod.Name(), item.value))
 
 def set_browser_text(text):
 	document.getElementById("bodycontent").innerHTML = text.replace("<!P>", "&lt;!P&gt;")

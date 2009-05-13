@@ -1,0 +1,248 @@
+br.verse_per_line {
+	display: none;
+}
+
+/* Chapter and verse numbers */
+a.chapternumber {
+	float: left;
+	display: block;
+	line-height: 130%;/*xx-large;*/
+	font-size: 200%;
+	text-decoration: none;
+	padding-right: 3px;
+	color: hsl(240, 35%, 60%);
+}
+
+a.versenumber {
+	padding-right: 3px;
+	text-decoration: none;
+	font-size: small;
+	vertical-align: 0.3em;
+	line-height: 0;
+	color: hsl(240, 35%, 50%);
+	
+}
+
+a.currentverse {
+	color: hsl(120, 35%, 50%);
+}
+
+a.currentverse.chapternumber {
+	color: hsl(120, 35%, 60%);
+}
+
+
+/* Headings */
+/* TODO: Matt 5:2 - <p> comes *before* heading - our text indent goes
+ * missing... */
+h6.heading {
+	font-size:large;
+	margin-top: 1em;
+	margin-bottom: 0;
+}
+
+h6.heading[canonical="true"] {
+	font-style: italic;
+}
+
+/* Footnotes */
+a.footnote {
+	text-decoration: none;
+	font-size: 75%;
+	vertical-align: super;
+	line-height: 0;/*normal;*/
+}
+
+/* e.g. ESV Gen 1:1 */
+a.footnote.footnote_crossReference {
+	color: hsl(0, 55%, 50%);
+}
+
+/* e.g. ESV Zech 14:7 - Hebrew one */
+a.footnote.footnote_translation {
+	color: hsl(180, 75%, 40%);
+}
+
+/* e.g. ESV Zech 14:21 - or Canaanite */
+a.footnote.footnote_alternative {
+	color: hsl(120, 55%, 50%);
+}
+
+/* e.g. NASB Genesis 1:1 */
+a.footnote.footnote_explanation {
+	color: hsl(240, 55%, 50%);
+}
+
+/* e.g. ESV Ex 16:16 - omer */
+a.footnote.footnote_background {
+	color: hsl(300, 55%, 50%);
+}
+
+/* e.g. ESV Zech 14:6 - Compare Septuagint, ... */
+a.footnote.footnote_variant {
+	color: hsl(60, 55%, 30%);
+}
+
+/* divineName */
+span.divineName, span.small-caps {
+	font-variant: small-caps;
+}
+
+
+/* Paragraphs */
+p {
+/*	text-align: justify;*/
+	text-indent: 1em;
+	margin-bottom: 1px;
+	margin-top: 1px;	
+}
+
+body {
+/*	text-align: justify;*/
+}
+
+/* we really want to have the indent of paragraph with a chapter number being
+ * 0 - however, we can't do p < a.chapternumber. This hack will have to do
+ * instead... 
+ * TODO: what about if we have pre-chapter content?
+ */
+body > p:first-child /* > a.chapternumber*/
+{
+/*	text-indent: 0em;*/
+}
+
+/* Poetry */
+blockquote.lg
+{
+	margin: 0.5em 0em 0.5em 3em;
+}
+
+/* We want our indented lines to behave nicely - wrapped lines should be
+ * indented further. text-indent undoes the wide margin only for the first
+ * line */
+div.indentedline[width="2"] {
+	margin-left: 5em;
+	text-indent: -3em;
+}
+div.indentedline[width="4"] {
+	margin-left: 5em;
+	text-indent: -1em;
+}
+div.indentedline[width="6"] {
+	margin-left: 7em;
+	text-indent: -1em;
+}
+
+div.indentedline[width="0"] {
+	margin-left: 5em;
+	text-indent: -5em;
+}
+
+blockquote.lg > a.versenumber
+{
+	position: absolute;
+	display: block;
+	float: left;
+	left: 1.5em;
+	line-height: inherit;
+}
+
+blockquote.lg > a.chapternumber, blockquote.lg > div.indentedline > a.chapternumber
+{
+	position: absolute;
+	display: block;
+	float: left;
+	margin-left: -2em;
+	left: inherit;
+	line-height: 100%;
+	font-size: 150%;
+}
+
+/* Strong's headwords */
+a.strongs_headword {
+	text-decoration: none;
+	font-size: small;
+}
+/*a.strongs_headword:before { content: "<" }
+a.strongs_headword:after { content: ">" }*/
+
+a.morph {
+	text-decoration: none;
+	font-size: small;
+	font-style: italic;
+}
+/*a.morph:before { content: "(" }
+a.morph:after { content: ")" }*/
+
+span.c * {
+	display: inline;
+	line-height: 1em;
+	text-indent: 0;
+	text-align: center;
+	white-space: nowrap;
+}
+span.strongs * {
+	display: inline;
+}
+
+span.strongs {
+/*	margin: auto;*/
+}
+
+span.c:hover {
+/*	background-color: hsl(240, 50%, 90%);*/
+	background-color: hsl(240, 50%, 95%);
+}
+
+span.c {
+	border: solid thin hsl(240, 0%, 75%);
+	text-indent: 0;
+	padding: 1px;
+	
+
+}
+span.c > *, span.strongs > * {
+	display: table-row-group;
+}
+
+span.c, span.strongs { 
+	display: inline-table;
+	border-spacing: 1px;
+
+}
+span.strongs {
+	width: 100%;
+}
+
+span.strongs > span.strongs_headwords > a.strongs_headword {
+	display: table-cell;
+	font-size: 80%;
+}
+span.strongs > span.strongs_morph {
+	display: table-footer-group;
+
+}
+span.strongs > span.strongs_morph > a.morph {
+	display: table-cell;
+	font-size: 80%;
+}
+
+span.strongs, span.c {
+	display: inline-table; 
+}
+span.c {
+	margin: 0 0 0.5em 0
+}
+
+body { line-height: 1.4em; }
+
+/*SUB, SUP { line-height: 0; } */
+
+/* Deubg */
+div.timer {
+	position: fixed;
+	right: 0px;
+	bottom: 0px;
+	border: thin solid black;
+	background-color: hsla(0, 100%, 50%, .35);
+	}

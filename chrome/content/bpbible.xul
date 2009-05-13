@@ -15,16 +15,17 @@ We set windowtype here for XUSH... pretending to be firefox.
 -->
 <window id="bpbible"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"   
-        xmlns:html="http://www.w3.org/1999/xhtml"
-        xmlns:h="http://www.w3.org/1999/xhtml"
+        xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"		
+		xmlns:html="http://www.w3.org/1999/xhtml"
+		xmlns:h="http://www.w3.org/1999/xhtml"
         title="&bpbible.title;"
         style="width: 700px; height: 500px;"
         script-type="application/x-python"
         persist="screenX screenY width height"
-        onload="do_load();">
+		windowtype="navigator:browser"
+		onload="do_load();">
 
-  <script type="application/x-python" src="chrome://bpbible/content/bpbible.py"/>
+  <script type="application/x-python" src="chrome://bpbible/content/bpbible.py" />
   <script type="application/javascript" src="chrome://bpbible/content/bpbible.js"/>
 
   <!-- Commands and keys. -->
@@ -88,20 +89,31 @@ We set windowtype here for XUSH... pretending to be firefox.
     </menubar>
 
     <toolbar id="toolbar_explorer" mode="icons">
-      <textbox id="toolbar_location" value="Genesis 1" onkeypress="handle_location_keypress(event);"/>
+      <textbox id="toolbar_location" value="Matthew 2" onkeypress="handle_location_keypress(event);"/>
       <button oncommand="go(event)" label="Go"/>
     </toolbar>
 
   </toolbox>
 
   <vbox id="appcontent" flex="1">
+<!-- <html:html xmlns="http://www.w3.org/1999/xhtml" style="width: 100%;"
+type="content-primary">
+<body id="bodycontent"></body>
+</html:html> -->
 
-    <browser disablehistory="true"
-      src="bpbible://bpbible/!Gen 3:15" id="browser" style="width: 100%;"  flex="1" type="content"/>
+<!-- <iframe id="iframe" flex="1" type="content-primary"></iframe> -->
+
+<browser disablehistory="true"
+src="bpbible:" id="browser" style="width: 100%;"  flex = "1" type="content"/>
+<!-- <script type='text/x-javascript'>
+	document.browserInnerHTML = browser.contentDocument.contentElement;
+</script>-->
   </vbox>
   <vbox id="browser-bottombox">
     <findbar browserid="browser" id="FindToolbar"/>
 
-    <statusbar id="status-bar"/>
+    <statusbar id="status-bar">
+		<statusbarpanel id="statusbar-display" flex="1" label="BPBible has no status" />
+	</statusbar>
   </vbox>
 </window>

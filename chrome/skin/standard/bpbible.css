@@ -2,40 +2,7 @@
 @import url("chrome://global/skin/");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
-
 window {
   background-color    : silver;
-  font: "Arial";
+  font-family: arial;
 }
-
-br.verse_per_line	{
-	display: none;
-}
-
-a.chapternumber {}
-a.versenumber {
-	text-decoration: none;
-	vertical-align: 50%;
-	font-size: small;
-	line-height: 0;
-}
-
-html|a.versenumber {
-	text-decoration: none;
-	vertical-align: 50%;
-	font-size: small;
-	line-height: 0;
-}
-
-html|a.versenumber {
-	text-decoration: none;
-	vertical-align: 50%;
-	font-size: small;
-	line-height: 0;
-}
-a.currentverse {
-	color:#008800;
-}
-
-
-body { line-height: 1.4em; }

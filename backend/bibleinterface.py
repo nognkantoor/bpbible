@@ -302,3 +302,8 @@ biblemgr = BibleInterface("ESV", "TSK", "ISBE")
 biblemgr.dictionary.templatelist.append(config.dictionary_template)
 biblemgr.commentary.templatelist.append(config.other_template)
 biblemgr.bible.templatelist.append(config.bible_template)
+
+# TODO: TESTING
+for option, values in biblemgr.get_options():
+	if "On" in values:
+		biblemgr.set_option(option, "On")
