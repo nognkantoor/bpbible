@@ -69,7 +69,7 @@ class BasicTreeView(object):
 
 	def setup_tree_events(self, tree):
 		self.tree = tree
-		self.tree.addEventListener("dblclick", self.double_click_on_item, True)
+		self.tree.addEventListener("click", self.double_click_on_item, True)
 
 	def double_click_on_item(self, event):
 		self.on_selection(self.visibleData[self.tree.currentIndex])
