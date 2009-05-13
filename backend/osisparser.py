@@ -183,7 +183,8 @@ class OSISParser(filterutils.ParserBase):
 			print "Not type - module bug", xmltag.toString()
 			type = "missing"
 		if not type or not footnoteNumber:
-			print "FAILED"
+			if type != "x-strongsMarkup":
+				print "FAILED", xmltag.toString()
 			self.success = SW.INHERITED
 			return
 		
