@@ -166,8 +166,9 @@ use_system_inactive_caption_colour = False
 
 # templates
 body = (
-u'<glink href="nbible:$internal_reference">'
-u'<small><sup>$versenumber</sup></small></glink> $text $tags')
+# temporarily, use bpbible://dummy TODO: fix this
+u'<a class="$numbertype" name="${internal_reference}_start" href="bpbible://dummy/$internal_reference#${internal_reference}_start">'
+u'$versenumber</a>$text $tags<a name="${internal_reference}_end"></a>')
 
 
 bible_template = SmartVerseTemplate(body=body)
@@ -185,9 +186,12 @@ dictionary_template = VerseTemplate(
 )
 
 
-body = (u'<glink href="nbible:$internal_reference#current" colour="#008000">'
-		u'<small><sup>$versenumber</sup></small></glink> '
-		u'<highlight-start colour="#008000">$text<highlight-end /> $tags')
+body = (u'''
+	<a name="${internal_reference}_start" 
+	   class="$numbertype currentverse" '
+	   href="bpbible://dummy/$internal_reference#$internal_reference_start">
+	   $versenumber</a>$text $tags
+	<a name="${internal_reference}_end"></a>''')
 
 current_verse_template = SmartVerseTemplate(body)
 
