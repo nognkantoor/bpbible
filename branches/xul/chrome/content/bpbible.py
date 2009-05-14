@@ -3,6 +3,9 @@ import mozutils
 import config
 from util.debug import dump
 import util.dom_util
+import util.i18n
+if not hasattr(util.i18n, "langid"):
+	util.i18n.initialize()
 
 def bpbible_doCommand(event):
 	item_name = event.target.id
@@ -27,10 +30,15 @@ def lookup_reference():
 	item = document.getElementById("toolbar_location")
 	assert item
 	dump("Looking up reference: %s" % item.value)
-	print "Here"
 	i = item.value
-	i = pysw.GetVerseStr(item.value, userInput=True)
+	try:
+		i = pysw.GetVerseStr(item.value, userInput=True, raiseError=True)
+	except pysw.VerseParsingError, v:
+		mozutils.doAlert(str(v))
+		return
+
 	browser = document.getElementById("browser")
+
 	# clear it
 	browser.setAttribute("src", "bpbible://")
 
