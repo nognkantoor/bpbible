@@ -15,17 +15,22 @@ a.chapternumber {
 
 [dir="rtl"] a.chapternumber {
 	float: right;
-	padding-right: 3px;
+	padding-left: 3px;
+	padding-right: 0px;
 }
 
 a.versenumber {
-	padding-right: 3px;
+	padding-right: 2px;
 	text-decoration: none;
 	font-size: small;
-	vertical-align: 0.3em;
+	vertical-align: 0.4em;
 	line-height: 0;
 	color: hsl(240, 35%, 50%);
 	
+}
+[dir="rtl"] a.versenumber {
+	padding-left: 3px;
+	padding-right: 0px;
 }
 
 a.currentverse {
@@ -148,56 +153,50 @@ div.indentedline[width="0"] {
 	text-indent: -5em;
 }
 
+[dir="rtl"] div.indentedline {
+	margin-left: 0em;
+}
 [dir="rtl"] div.indentedline[width="2"] {
 	margin-right: 5em;
-	text-indent: -3em;
 }
 [dir="rtl"] div.indentedline[width="4"] {
 	margin-right: 5em;
-	text-indent: -1em;
 }
 [dir="rtl"] div.indentedline[width="6"] {
 	margin-right: 7em;
-	text-indent: -1em;
 }
-
 [dir="rtl"] div.indentedline[width="0"] {
 	margin-right: 5em;
-	text-indent: -5em;
 }
 
 blockquote.lg > a.versenumber
 {
-	position: absolute;
+	position: relative;
 	display: block;
 	float: left;
-	left: 1.5em;
+	left: -2.5em;
 	line-height: inherit;
 }
 
 blockquote.lg > a.chapternumber, blockquote.lg > div.indentedline > a.chapternumber
 {
-	position: absolute;
-	display: block;
-	float: left;
 	margin-left: -2em;
-	left: inherit;
 	line-height: 100%;
 	font-size: 150%;
 }
 
 [dir="rtl"] blockquote.lg > a.versenumber
 {
+	left: 0em;
 	float: right;
-	right: 1.5em;
+	right: -2.5em;
 }
 
 [dir="rtl"] blockquote.lg > a.chapternumber, 
 [dir="rtl"] blockquote.lg > div.indentedline > a.chapternumber
 {
-	float: right;
 	margin-right: -2em;
-	right: inherit;
+	margin-left: 0;
 }
 
 /* Strong's headwords */
@@ -276,7 +275,9 @@ span.c {
 	margin: 0 0 0.5em 0
 }
 
-body { line-height: 1.4em; }
+body { 
+	line-height: 1.4em; 
+}
 
 /*SUB, SUP { line-height: 0; } */
 
