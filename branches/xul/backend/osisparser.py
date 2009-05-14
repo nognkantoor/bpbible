@@ -155,14 +155,14 @@ class OSISParser(filterutils.ParserBase):
 			self.u.suspendLevel -= 1
 			self.u.suspendTextPassThru = self.u.suspendLevel
 	
-		if self.was_G3588 and not self.u.lastTextNode.size():
+		if self.was_G3588 and not self.u.lastSuspendSegment.size():
 			# and not self.morph_bufs:
 			# don't show empty 3588 tags
 			return
 			
 		if self.strongs_bufs:
 			self.buf += '<span class="c"><span class="strongs_word">'
-			self.buf += self.u.lastTextNode.c_str() or "&nbsp;"
+			self.buf += self.u.lastSuspendSegment.c_str() or "&nbsp;"
 			self.buf += '</span><span class="strongs"><span class="strongs_headwords">'
 			self.buf += "".join(self.strongs_bufs)
 			if self.morph_bufs:
@@ -298,11 +298,17 @@ class OSISParser(filterutils.ParserBase):
 	def end_lg(self, xmltag):
 		self.buf += '</blockquote>'
 	
+	def write(self, text):
+		if self.u.suspendTextPassThru:
+			self.u.lastSuspendSegment.append(text)
+		else:
+			self.buf += text
+
 	def start_divineName(self, xmltag):
-		self.buf += "<span class='divineName'>"
+		self.write("<span class='divineName'>")
 
 	def end_divineName(self, xmltag):
-		self.buf += "</span>"
+		self.write("</span>")
 	
 		
 	def start_l(self, xmltag):
