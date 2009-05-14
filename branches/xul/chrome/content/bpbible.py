@@ -35,7 +35,7 @@ def lookup_reference():
 	browser.setAttribute("src", "bpbible://")
 
 	# now set it
-	browser.setAttribute("src", "bpbible://ESV/%s#%s_start" % (i, i))
+	browser.setAttribute("src", "bpbible://ESV/%s" % i)
 
 def do_load():
 	util.dom_util.document = document

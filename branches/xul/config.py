@@ -167,7 +167,7 @@ use_system_inactive_caption_colour = False
 # templates
 body = (
 # temporarily, use bpbible://dummy TODO: fix this
-u'<a class="$numbertype" name="${internal_reference}_start" href="bpbible://dummy/$internal_reference#${internal_reference}_start">'
+u'<a class="$numbertype" name="${internal_reference}_start" href="bpbible://dummy/$internal_reference">'
 u'$versenumber</a>$text $tags<a name="${internal_reference}_end"></a>')
 
 

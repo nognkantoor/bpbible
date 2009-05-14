@@ -23,14 +23,10 @@ class bpBibleChannelHelper:
 		print `ref`
 		if not ref: return "<html><body>Content not loaded</body></html>"
 		print "Ref contains '!'?", "!" in ref
-		r = ref.rfind("#")
-		if r != -1:
-			ref = ref[:r]
-
 		print ref
 
 		c = biblemgr.bible.GetChapter(ref, ref, config.current_verse_template)
-		c = c.replace("<!P>", "&lt;!P&gt;")
+		c = c.replace("<!P>", "</p><p>")
 		stylesheet = '<link rel="stylesheet" type="text/css" href="about:bpcss"/ >'
 		if "bpbibleng" in os.getcwd():
 			p = os.path.expanduser("~/bpbibleng/chrome/skin/standard/bpbible_html.css")
