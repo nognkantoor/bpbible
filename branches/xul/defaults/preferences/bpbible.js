@@ -1,6 +1,8 @@
 pref("general.startup.bpbible",true);
 pref("toolkit.defaultChromeURI", "chrome://bpbible/content/bpbible.xul");
 
+pref("general.autoscroll", true);
+
 /* debugging prefs */
 pref("browser.dom.window.dump.enabled", true);
 pref("javascript.options.showInConsole", true);
