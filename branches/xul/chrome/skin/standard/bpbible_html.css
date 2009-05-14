@@ -6,11 +6,16 @@ br.verse_per_line {
 a.chapternumber {
 	float: left;
 	display: block;
-	line-height: 130%;/*xx-large;*/
+	line-height: 130%;
 	font-size: 200%;
 	text-decoration: none;
 	padding-right: 3px;
 	color: hsl(240, 35%, 60%);
+}
+
+[dir="rtl"] a.chapternumber {
+	float: right;
+	padding-right: 3px;
 }
 
 a.versenumber {
@@ -117,6 +122,11 @@ blockquote.lg
 	margin: 0.5em 0em 0.5em 3em;
 }
 
+[dir="rtl"] blockquote.lg
+{
+	margin: 0.5em 3em 0.5em 0em;
+}
+
 /* We want our indented lines to behave nicely - wrapped lines should be
  * indented further. text-indent undoes the wide margin only for the first
  * line */
@@ -138,6 +148,24 @@ div.indentedline[width="0"] {
 	text-indent: -5em;
 }
 
+[dir="rtl"] div.indentedline[width="2"] {
+	margin-right: 5em;
+	text-indent: -3em;
+}
+[dir="rtl"] div.indentedline[width="4"] {
+	margin-right: 5em;
+	text-indent: -1em;
+}
+[dir="rtl"] div.indentedline[width="6"] {
+	margin-right: 7em;
+	text-indent: -1em;
+}
+
+[dir="rtl"] div.indentedline[width="0"] {
+	margin-right: 5em;
+	text-indent: -5em;
+}
+
 blockquote.lg > a.versenumber
 {
 	position: absolute;
@@ -156,6 +184,20 @@ blockquote.lg > a.chapternumber, blockquote.lg > div.indentedline > a.chapternum
 	left: inherit;
 	line-height: 100%;
 	font-size: 150%;
+}
+
+[dir="rtl"] blockquote.lg > a.versenumber
+{
+	float: right;
+	right: 1.5em;
+}
+
+[dir="rtl"] blockquote.lg > a.chapternumber, 
+[dir="rtl"] blockquote.lg > div.indentedline > a.chapternumber
+{
+	float: right;
+	margin-right: -2em;
+	right: inherit;
 }
 
 /* Strong's headwords */
@@ -245,4 +287,10 @@ div.timer {
 	bottom: 0px;
 	border: thin solid black;
 	background-color: hsla(0, 100%, 50%, .35);
-	}
+}
+
+[dir="rtl"] div.timer {
+	left: 0px;
+	right: inherit;
+}
+

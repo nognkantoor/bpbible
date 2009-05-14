@@ -39,6 +39,15 @@ class bpBibleChannelHelper:
 			stylesheet += '<link rel="stylesheet" type="text/css" href="file:///%s" />' % p
 			
 
+		dir = {
+			SW.DIRECTION_BIDI: "bidi",
+			SW.DIRECTION_LTR:  "ltr",
+			SW.DIRECTION_RTL:  "rtl",
+		}.get(ord(biblemgr.bible.mod.Direction()))
+		if not dir: 
+			print "Unknown text direction"
+			dir = "ltr"
+
 		text = '''\
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
                       "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -48,12 +57,12 @@ class bpBibleChannelHelper:
 	<script type="text/javascript" src="about:bpjq"></script>
 	<script type="text/javascript" src="about:bpjs"></script>	
 </head>
-<body>
+<body dir="%s">
 	<!-- <p> -->
 	%s
 	<!-- </p> -->
 	%s
-</body></html>''' % (stylesheet, c, 
+</body></html>''' % (stylesheet, dir, c, 
 	"<div class='timer'>Time taken: %.3f</div>" % (time.time() - t))
 		
 		try:
