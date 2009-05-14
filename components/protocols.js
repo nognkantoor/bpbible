@@ -50,7 +50,7 @@ BPBibleProtocol.prototype = {
 
 	scheme: "bpbible",
 	protocolFlags : nsIProtocolHandler.URI_NOAUTH |
-				nsIProtocolHandler.URI_LOADABLE_BY_ANYONE,
+				nsIProtocolHandler.URI_IS_UI_RESOURCE,//LOADABLE_BY_ANYONE,
 
 	newURI: function(aSpec, aOriginCharset, aBaseURI) {
 		url = Components.classes["@mozilla.org/network/standard-url;1"].
@@ -161,6 +161,8 @@ BPBibleChannel.prototype = {
 				this.loadGroup.addRequest(this, null);
 			}
 			
+			this.logMessage("Requesting path: " + this.URI.path);
+
 			var html = this._bpb.getDocument(this.URI.path);//this.getHTML();
 			aListener.onStartRequest(this, aContext);
 			var converter = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"]
