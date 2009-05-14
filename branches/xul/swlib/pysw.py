@@ -50,8 +50,15 @@ SW_HAS_MDB = hasattr(SW.Mgr, "loadMDBDir")
 print "SVN; SWORD 1.5.12 compatible" if LIB_1512_COMPAT else "1.5.11 compatible"
 
 locale_dir = "locales/locales.d" + ("/SWORD_1512" if LIB_1512_COMPAT else "")
-if hasattr(sys, "SW_dont_do_stringmgr"):
-	dprint(WARNING, "Skipping StringMgr initialization")
+
+# Check if we are ICU - bindings don't generate static getter here, so we can
+# use the underlying getter
+isICU = SW._Sword.SWMgr_isICU_get()
+if isICU or hasattr(sys, "SW_dont_do_stringmgr"):
+	if isICU: 
+		have_set_locale_dir = False
+	else:
+		dprint(WARNING, "Skipping StringMgr initialization")
 else:
 	# StringMgr handling
 	class MyStringMgr(SW.PyStringMgr):
