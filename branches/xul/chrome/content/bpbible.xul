@@ -15,41 +15,43 @@ We set windowtype here for XUSH... pretending to be firefox.
 -->
 <window id="bpbible"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"		
-		xmlns:html="http://www.w3.org/1999/xhtml"
-		xmlns:h="http://www.w3.org/1999/xhtml"
+        xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml"
+        xmlns:h="http://www.w3.org/1999/xhtml"
         title="&bpbible.title;"
         style="width: 700px; height: 500px;"
         script-type="application/x-python"
         persist="screenX screenY width height"
-		windowtype="navigator:browser"
-		onload="do_load();">
+        windowtype="navigator:browser"
+        onload="do_load();">
 
-  <script type="application/x-python" src="chrome://bpbible/content/bpbible.py" />
-  <script type="application/javascript" src="chrome://bpbible/content/bpbible.js"/>
+  <script type="application/x-python" 
+          src="chrome://bpbible/content/bpbible.py" />
+  <script type="application/javascript" 
+          src="chrome://bpbible/content/bpbible.js" />
 
   <!-- Commands and keys. -->
 
   <keyset id="mainKeyset">
     <!-- Keys to activate and use the find bar. -->
-    <key id="key_find" key="F" command="cmd_find" modifiers="accel"/>
-    <key id="key_findAgain" key="G" command="cmd_findAgain" modifiers="accel"/>
-    <key id="key_findPrevious" key="G" command="cmd_findPrevious" modifiers="accel,shift"/>
-    <key keycode="VK_F3" command="cmd_findAgain"/>
-    <key keycode="VK_F3" command="cmd_findPrevious" modifiers="shift"/>
+    <key id="key_find" key="F" command="cmd_find" modifiers="accel" />
+    <key id="key_findAgain" key="G" command="cmd_findAgain" modifiers="accel" />
+    <key id="key_findPrevious" key="G" command="cmd_findPrevious" modifiers="accel,shift" />
+    <key keycode="VK_F3" command="cmd_findAgain" />
+    <key keycode="VK_F3" command="cmd_findPrevious" modifiers="shift" />
   </keyset>
 
   <commandset id="mainCommandSet" script-type="application/javascript">
     <!-- Find commands. -->
     <command id="cmd_find"
              oncommand="gFindBar.onFindCommand();"
-             observes="isImage"/>
+             observes="isImage" />
     <command id="cmd_findAgain"
              oncommand="gFindBar.onFindAgainCommand(false);"
-             observes="isImage"/>
+             observes="isImage" />
     <command id="cmd_findPrevious"
              oncommand="gFindBar.onFindAgainCommand(true);"
-             observes="isImage"/>
+             observes="isImage" />
   </commandset>
 
   <!-- Menus, that's Python code in the "oncommand" section. -->
@@ -57,12 +59,12 @@ We set windowtype here for XUSH... pretending to be firefox.
     <menubar id="menubar_explorer">
       <menu id="menu_file" label="&file.label;" accesskey="&file.accesskey;">
         <menupopup id="popup_file">
-          <menuitem label="View all books" oncommand="window.open('chrome://bpbible/content/module_selector.xul', '', 'chrome');"/>
+          <menuitem label="View all books" oncommand="window.open('chrome://bpbible/content/module_selector.xul', '', 'chrome');" />
           <menuitem id="menu_FileQuitItem"
                     label="&fileExit.label;"
                     accesskey="&fileExit.accesskey;"
                     oncommand="bpbible_doCommand(event)"
-                    key="key_exit"/>
+                    key="key_exit" />
         </menupopup>
       </menu>
       <menu id="menu_tools" label="&tools.label;" accesskey="&tools.accesskey;">
@@ -78,42 +80,39 @@ We set windowtype here for XUSH... pretending to be firefox.
           <menuitem id="menu_Extensions"
                     label="&extensions.label;"
                     accesskey="&extensions.accesskey;"
-                    oncommand="bpbible_doCommand(event)"/>
+                    oncommand="bpbible_doCommand(event)" />
       
           <menuitem id="menu_About"
                     label="&helpAbout.label;"
                     accesskey="&helpAbout.accesskey;"
-                    oncommand="bpbible_doCommand(event)"/>
+                    oncommand="bpbible_doCommand(event)" />
         </menupopup>
       </menu>
     </menubar>
 
     <toolbar id="toolbar_explorer" mode="icons">
-      <textbox id="toolbar_location" value="Matthew 2" onkeypress="handle_location_keypress(event);"/>
-      <button oncommand="go(event)" label="Go"/>
+      <textbox id="toolbar_location" 
+               value="Matthew 2" 
+               onkeypress="handle_location_keypress(event);" />
+      <button oncommand="go(event)" label="Go" />
     </toolbar>
 
   </toolbox>
 
   <vbox id="appcontent" flex="1">
-<!-- <html:html xmlns="http://www.w3.org/1999/xhtml" style="width: 100%;"
-type="content-primary">
-<body id="bodycontent"></body>
-</html:html> -->
-
-<!-- <iframe id="iframe" flex="1" type="content-primary"></iframe> -->
-
-<browser disablehistory="true"
-src="bpbible:" id="browser" style="width: 100%;"  flex = "1" type="content"/>
-<!-- <script type='text/x-javascript'>
-	document.browserInnerHTML = browser.contentDocument.contentElement;
-</script>-->
+    <browser id="browser"
+             disablehistory="true"
+             src="bpbible:"
+             style="width: 100%;"
+             flex="1" 
+             type="content" />
   </vbox>
   <vbox id="browser-bottombox">
-    <findbar browserid="browser" id="FindToolbar"/>
-
+    <findbar browserid="browser" id="FindToolbar" />
     <statusbar id="status-bar">
-		<statusbarpanel id="statusbar-display" flex="1" label="BPBible has no status" />
-	</statusbar>
+      <statusbarpanel id="statusbar-display" 
+                      flex="1" 
+                      label="BPBible has no status" />
+    </statusbar>
   </vbox>
 </window>
