@@ -109,9 +109,10 @@ class OSISParser(filterutils.ParserBase):
 				not lemma.startswith("x-Strongs:") and
 				not lemma.startswith("Strong:")):
 				dprint(WARNING, "Could not match lemma", lemma)
-				self.success = SW.INHERITED		
+				#self.success = SW.INHERITED
+				continue
 				
-				return
+				#return
 			
 			strongs = lemma[lemma.index(":")+1:]
 			if self.was_G3588 is None and strongs == "G3588":
