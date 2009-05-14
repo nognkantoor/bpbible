@@ -27,7 +27,7 @@ class bpBibleChannelHelper:
 
 		c = biblemgr.bible.GetChapter(ref, ref, config.current_verse_template)
 		c = c.replace("<!P>", "</p><p>")
-		stylesheet = '<link rel="stylesheet" type="text/css" href="about:bpcss"/ >'
+		stylesheet = '<link rel="stylesheet" type="text/css" href="chrome://bpbible/skin/bpbible_html.css"/ >'
 		if "bpbibleng" in os.getcwd():
 			p = os.path.expanduser("~/bpbibleng/chrome/skin/standard/bpbible_html.css")
 			#s = open().read()
@@ -50,8 +50,15 @@ class bpBibleChannelHelper:
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	%s
-	<script type="text/javascript" src="about:bpjq"></script>
-	<script type="text/javascript" src="about:bpjs"></script>	
+	<script type="text/javascript" 
+		src="chrome://bpbible/content/jquery-1.3.2.js"></script>
+	<script type="text/javascript" 
+		src="chrome://bpbible/content/bpbible_html.js"></script>
+		
+	<script type="application/x-python">
+print "Security Violated!!!"
+</script>
+            	
 </head>
 <body dir="%s">
 	<!-- <p> -->
