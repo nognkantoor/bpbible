@@ -48,6 +48,8 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 
 	def _bind_events(self):
 		self.Bind(wx.EVT_CLOSE, self._on_close)
+		guiutil.add_close_window_esc_accelerator(self, self.Close)
+
 		self.topic_tree.Bind(wx.EVT_TREE_SEL_CHANGED, self._selected_topic_changed)
 		self.topic_tree.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self._get_topic_tool_tip)
 		self.topic_tree.Bind(wx.EVT_TREE_END_LABEL_EDIT, self._end_topic_label_edit)
@@ -91,7 +93,8 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		topic.
 		"""
 		self._set_selected_topic(topic)
-		assert passage_entry in topic.passages
+		if passage_entry not in topic.passages:
+			return
 		index = topic.passages.index(passage_entry)
 		self._select_list_entry_by_index(index)
 		self.passage_list_ctrl.SetFocus()
@@ -104,7 +107,8 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 	
 	def _set_selected_topic(self, topic):
 		tree_item = self._find_topic(self.topic_tree.GetRootItem(), topic)
-		assert tree_item is not None
+		if tree_item is None:
+			tree_item = self.topic_tree.GetRootItem()
 		self.topic_tree.SelectItem(tree_item)
 		self.topic_tree.EnsureVisible(tree_item)
 		return tree_item
@@ -320,7 +324,9 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 	def _get_current_topic_text(self):
 		if self.selected_topic is None:
 			return u""
-		text = self.selected_topic.full_name + u"\n" + self.selected_topic.description.strip()
+		text = self.selected_topic.full_name
+		if self.selected_topic.description:
+			text += u"\n" + self.selected_topic.description.strip()
 
 		passage_text = u"\n".join(self._passage_entry_text(passage_entry)
 				for passage_entry in self.selected_topic.passages)
@@ -466,7 +472,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 
 	def _change_passage_comment(self, passage_entry, new_comment):
 		index = self.selected_topic.passages.index(passage_entry)
-		self.passage_list_ctrl.SetStringItem(index, 1, new_comment)
+		self.passage_list_ctrl.SetStringItem(index, 1, passage_entry.comment[:300].replace("\n", " "))
 
 	def _passage_selection_changed(self, event):
 		self._change_selected_passages()

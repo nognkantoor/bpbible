@@ -29,7 +29,7 @@ from guess_verse import GuessVerseFrame
 
 bible_settings = config_manager.add_section("Bible")
 bible_settings.add_item("verse_per_line", False, item_type=bool)
-
+bible_settings.add_item("select_verse_on_click", False, item_type=bool)
 
 class BibleFrame(VerseKeyedFrame):
 	id = N_("Bible")
@@ -116,17 +116,17 @@ class BibleFrame(VerseKeyedFrame):
 			), IN_POPUP),
 					
 			
-			(Separator, IN_BOTH),
-			# Pick suitably arbitrary accelerators.
+			(Separator, IN_MENU),
 			(MenuItem(
 				_("Manage Topics"), 
 				self.manage_topics,
 				accelerator="Ctrl+Shift+T",
 				doc=_("Manages all of the topics and the passages in them.")	
-			), IN_BOTH),
+			), IN_MENU),
 			(MenuItem(
 				_("Tag verses"), 
 				self.tag_verses,
+				accelerator="Ctrl+T",
 				enabled=self.has_module,
 				doc=_("Tags the currently selected verses.")
 
@@ -236,7 +236,7 @@ class BibleFrame(VerseKeyedFrame):
 		tag_passage(self, self.get_quick_selected())
 	
 	@guiutil.frozen
-	def SetReference(self, ref, context=None, raw=None):
+	def SetReference(self, ref, context=None, raw=None, y_pos=None):
 		"""Sets reference. This is set up to be an observer of the main frame,
 		so don't call internally. To set verse reference, use notify"""
 		if raw is None:
@@ -272,7 +272,10 @@ class BibleFrame(VerseKeyedFrame):
 			self.SetPage(data, raw=raw)
 
 			#set to current verse
-			self.scroll_to_current()
+			if y_pos is not None:
+				self.Scroll(-1, y_pos)
+			else:
+				self.scroll_to_current()
 
 		#file = open("a.html","w")
 		#file.writelines(data)
@@ -337,7 +340,6 @@ class BibleFrame(VerseKeyedFrame):
 		text = first + " - " + last
 		print text
 		return GetBestRange(text)
-
 	
 	#def CellClicked(self, cell, x, y, event):
 	#	#if(self.select): return
@@ -346,5 +348,17 @@ class BibleFrame(VerseKeyedFrame):
 
 	#	return super(BibleFrame, self).CellClicked(cell, x, y, event)
 
-	
+	def CellMouseUp(self, cell, x, y, event):
+		if not self.m_tmpHadSelection and not self.m_selection and not event.Dragging():
+			self.maybe_select_clicked_verse(cell)
 
+	def maybe_select_clicked_verse(self, cell):
+		if not bible_settings["select_verse_on_click"]:
+			return
+
+		start_cell = self.GetInternalRepresentation().FirstTerminal
+		reference = self.FindVerse(cell, start_cell=start_cell)
+		if reference:
+			wx.CallAfter(self.suppress_scrolling,
+				lambda: self.notify(reference)
+			)

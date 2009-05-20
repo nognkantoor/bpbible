@@ -377,7 +377,21 @@ class SearchPanel(xrcSearchPanel):
 		if search_config["disappear_on_doubleclick"]:
 			self.on_close()
 		
-	
+
+	def next_search_result(self, offset):
+		item_count = self.verselist.ItemCount
+		if item_count == 0:
+			return
+
+		index = self.verselist.GetSelection() + offset
+		if index < 0:
+			index = item_count - 1
+		elif index == item_count:
+			index = 0
+
+		self.verselist.SetSelection(index)
+		self.go_to_reference(index)
+
 	def go_to_reference(self, idx):
 		item_text = self.verselist.results[idx]
 		
@@ -444,6 +458,8 @@ class SearchPanel(xrcSearchPanel):
 		#self.verselist.InsertColumn(0, "Reference")
 		#self.verselist.InsertColumn(1, "Preview")
 		self.set_gui_search_type(search_config["indexed_search"])
+
+		guiutil.add_close_window_esc_accelerator(self, self.on_close)
 
 	def construct_option_panels(self, parent):
 		self.range_panel = RangePanel(parent)
@@ -1092,6 +1108,21 @@ class SearchList(virtuallist.VirtualListCtrlXRC):
 		finally:
 			biblemgr.restore_state()
 			self.parent.book.templatelist.pop()
+
+	def GetSelection(self):
+		return self.GetNextItem(-1, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
+
+	def SetSelection(self, item):
+		selection = self.GetSelection()
+		if selection != -1:
+			self.SetItemState(item,
+				0, 
+				wx.LIST_STATE_SELECTED|wx.LIST_STATE_FOCUSED 
+			)
+		self.SetItemState(item, 
+			wx.LIST_STATE_SELECTED|wx.LIST_STATE_FOCUSED,
+			wx.LIST_STATE_SELECTED|wx.LIST_STATE_FOCUSED 
+		)
 
 class BibleSearchPanel(SearchPanel):
 	def __init__(self, parent):

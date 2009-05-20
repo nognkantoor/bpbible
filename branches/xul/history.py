@@ -1,10 +1,12 @@
 import wx
 from util.observerlist import ObserverList
+from gui import fonts, htmlbase
 from gui.guiutil import FreezeUI
 from events import HISTORY
 import guiconfig
 from swlib import pysw
 from util import osutils
+from backend.bibleinterface import biblemgr
 
 use_history_as_tree = False
 
@@ -13,6 +15,10 @@ class HistoryItem(object):
 		self.parent = parent
 		self.children = []
 		self.ref = ref
+		self.y_pos = None
+		self.bible_version = None
+		self.font_params = None
+		self.zoom_level = None
 	
 	def trim(self, child):
 		assert child in self.children, "Can't trim item when not in children"
@@ -21,6 +27,17 @@ class HistoryItem(object):
 	@property
 	def user_ref(self):
 		return pysw.internal_to_user(self.ref)
+
+	def have_settings_changed(self):
+		"""Checks if any important settings changes have occurred.
+
+		These include the Bible version, the module font or the zoom level.
+		If any of these change, then the current screen position will be unreliable
+		and should not be used.
+		"""
+		return ((self.bible_version != biblemgr.bible.version) or
+				(self.font_params != fonts.get_module_font_params(biblemgr.bible.mod)) or
+				(self.zoom_level != htmlbase.html_settings["zoom_level"]))
 
 class History(object):
 	"""Manages history
@@ -100,11 +117,25 @@ class History(object):
 		self.current_item = history_item
 		self.on_history_changed(self.current_item)
 
+	def before_navigate(self):
+		"""Saves the current position and settings so that the curent
+		position can be restored when the history is used.
+
+		The settings must be saved since it makes no sense to return to the
+		current position if the settings have changed.
+		"""
+		self.current_item.y_pos = guiconfig.mainfrm.bibletext.GetViewStart()[1]
+		self.current_item.bible_version = biblemgr.bible.version
+		self.current_item.font_params = fonts.get_module_font_params(biblemgr.bible.mod)
+		self.current_item.zoom_level = htmlbase.html_settings["zoom_level"]
+
 	def clear(self):
 		self.history = HistoryItem(None, None)
 		self.current_item = self.history
 		
 	def go(self, direction):
+		self.before_navigate()
+
 		if direction < 0:
 			return self.back()
 		if direction > 0:
@@ -141,6 +172,8 @@ class HistoryTree(wx.TreeCtrl):
 		item = event.GetItem()
 		history_item = self.GetPyData(item)
 		parent = self.history.current_item
+
+		self.history.before_navigate()
 		# if it is in our back list, go back to it
 		while parent:
 			if history_item == parent:
@@ -159,7 +192,9 @@ class HistoryTree(wx.TreeCtrl):
 			else:
 				self.history.new_location(history_item.ref)
 
-		guiconfig.mainfrm.set_bible_ref(history_item.ref, source=HISTORY)
+		guiconfig.mainfrm.set_bible_ref(history_item.ref, source=HISTORY,
+				y_pos=history_item.y_pos
+			)
 		wx.CallAfter(self.rebuild_tree)
 
 	def create_item(self, parent, item):

@@ -115,7 +115,7 @@ class MainFrame(wx.Frame, AuiLayer):
 		self.zoomlevel = 0
 
 		self.bible_observers = ObserverList([
-			lambda event: self.bibletext.SetReference(event.ref),
+			lambda event: self.bibletext.SetReference(event.ref, y_pos=event.y_pos),
 			self.set_title
 		])
 
@@ -661,7 +661,8 @@ class MainFrame(wx.Frame, AuiLayer):
 
 	def move_history(self, direction):
 		history_item = self.history.go(direction)
-		self.set_bible_ref(history_item.ref, source=HISTORY)
+		y_pos = history_item.y_pos if not history_item.have_settings_changed() else None
+		self.set_bible_ref(history_item.ref, y_pos=y_pos, source=HISTORY)
 	
 	def on_html_ide(self, event):
 		ide = HtmlIde(self)
@@ -1223,12 +1224,15 @@ class MainFrame(wx.Frame, AuiLayer):
 				lambda: self.UpdateBibleUI(source, settings_changed)
 			)
 
-	def UpdateBibleUI(self, source, settings_changed=False):
+	def UpdateBibleUI(self, source, settings_changed=False, y_pos=None):
+		current_ypos = self.bibletext.GetViewStart()[1]
+		self.history.before_navigate()
 		self.bible_observers(
 			BibleEvent(
 				ref=self.currentverse,
 				settings_changed=settings_changed,
-				source=source
+				source=source,
+				y_pos=y_pos,
 			)
 		)
 	
@@ -1240,7 +1244,7 @@ class MainFrame(wx.Frame, AuiLayer):
 											 verse=pysw.internal_to_user(event.ref)))
 	
 	def set_bible_ref(self, ref, source, settings_changed=False, 
-			userInput=False):
+			userInput=False, y_pos=None):
 		"""Sets the current Bible reference to the given reference.
 
 		This will trigger a Bible reference update event.
@@ -1250,13 +1254,17 @@ class MainFrame(wx.Frame, AuiLayer):
 			The possible sources are defined in events.py.
 		settings_changed: This is true if the settings have been changed.
 		userInput: was this user input (i.e. using user locale)?
+		y_pos: The y position to return to.  Used by the history to make
+			sure we return to the same y position, rather than the selected
+			verse which is often verse 1 and generally not what the user
+			was at before they clicked on a hyperlink.
 		"""
 		self.currentverse = pysw.GetVerseStr(
 			ref, self.currentverse, raiseError=True, 
 			userInput=userInput
 		)
 		
-		self.UpdateBibleUI(source, settings_changed)
+		self.UpdateBibleUI(source, settings_changed, y_pos)
 
 class MainFrameXRC(MainFrame):
 	def __init__(self):
