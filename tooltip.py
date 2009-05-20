@@ -107,6 +107,7 @@ class TooltipBaseMixin(object):
 		if force:
 			self.html.SetPage(self.text, body_colour=self.colour,
 				text_colour=self.text_colour)
+			self.maybe_scroll_to_current()
 
 	def _SetText(self, text):
 		# remove trailing new lines
@@ -177,9 +178,24 @@ class TooltipBaseMixin(object):
 
 			y = max(y, screen_rect.Top)
 
+		mouse_x, mouse_y = wx.GetMousePosition()
+		if (x <= mouse_x <= x + width) and (y <= mouse_y <= y + height):
+			x = mouse_x + 5
+			if x + width > screen_rect.Right:
+				x = max(mouse_x - width - factor, screen_rect.Left)
+
+		if x + width > screen_rect.Right:
+			x = max(screen_rect.Right - width - factor, screen_rect.Left)
+
 		self.MoveXY(x, y)
 
 		self.Show()
+
+		wx.CallAfter(self.maybe_scroll_to_current)
+
+	def maybe_scroll_to_current(self):
+		if self.tooltip_config.scroll_to_current:
+			self.html.scroll_to_current()
 	
 	def get_popup_position(self):
 		x, y = wx.GetMousePosition()
@@ -367,18 +383,37 @@ class Tooltip(TooltipBaseMixin, tooltip_parent):
 		if self.timer:
 			self.timer.Stop()
 
-	def MouseOut(self, event):
+	def tooltip_children(self):
+		x = self
+		# yes, yes, we include ourselves...
+		yield x
+		while x.html.has_tooltip:
+			x = x.html.tooltip
+			yield x
+	
+	def tooltip_parents(self):
+		item = self.logical_parent
+		while item and item.logical_parent:
+			item = item.logical_parent
+			assert item.has_tooltip, "logical parent should have a tooltip "
+			
+			yield item.tooltip
+
+	def MouseOut(self, event=None):
 		# unless we get unset before the next event loop, disappear next event
 		# loop. This is needed as under wxGTK, we get an out on the tooltip,
 		# then an in on the panel on the tooltip, which is a tad weird.
 
 		# Note: this assumes that MouseOut events get sent before MouseIn
 		self.wants_to_go_away = True
-		
 		def disappear():
 			# we may have been killed since the timer started...
 			if not self:
 				return
+			
+			for item in self.tooltip_children():
+				if item.ScreenRect.Contains(wx.GetMousePosition()):
+					return
 
 			if self.wants_to_go_away and (
 				not self.logical_parent.current_target
@@ -386,7 +421,23 @@ class Tooltip(TooltipBaseMixin, tooltip_parent):
 				dprint(TOOLTIP, 
 					"Going away as mouse off and not vetoed by mousein")
 				#self.parent.lastcell = ""
-				self.Stop()
+
+				dprint(TOOLTIP, "Stopping children")
+				# hide all our children - this includes ourselves
+				for item in self.tooltip_children():
+					item.Stop()
+				
+				dprint(TOOLTIP, "Notifying parents")
+
+				# and tell our parent tooltips that they need to reconsider
+				# their need to live
+				for item in self.tooltip_parents():
+					if item.ScreenRect.Contains(wx.GetMousePosition()):
+						break
+					
+					# don't send a MouseOut if it already is processing one
+					if not item.out_timer.IsRunning():
+						item.MouseOut(None)
 	
 		self.mouse_is_over = False
 
@@ -555,6 +606,7 @@ class TooltipConfig(object):
 		self.tooltip = None
 		self.mod = mod
 		self.book = book
+		self.scroll_to_current = False
 
 	def get_module(self):
 		if self.book:
@@ -829,6 +881,9 @@ class TooltipDisplayer(object):
 
 		return self._tooltip
 		
+	@property
+	def has_tooltip(self):
+		return self._tooltip is not None
 		
 
 

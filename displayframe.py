@@ -104,18 +104,12 @@ class DisplayFrame(TooltipDisplayer, HtmlSelectableWindow):
 		if event: event.Skip()
 	
 		self.mouseout = False
-		if self._tooltip:
-			exceptions = [self._tooltip]
-		else:
-			exceptions = []
-			
-		item = self
-		while item.logical_parent:
-			item = item.logical_parent
-			if item._tooltip:
-				exceptions.append(item._tooltip)
 
-			
+		### children includes our own tooltip...
+		exceptions = [item for item in self.tooltip.tooltip_children()]
+		exceptions += [item for item in self.tooltip.tooltip_parents()]
+		exceptions = [t for t in exceptions if t.IsShown()]
+
 		guiconfig.mainfrm.hide_tooltips(exceptions=exceptions)
 
 	def strip_text(self, word):
@@ -400,7 +394,7 @@ class DisplayFrame(TooltipDisplayer, HtmlSelectableWindow):
 		frame.tooltip.show_bible_refs(frame, href, url, screen_x, screen_y)
 
 	def OnCellMouseLeave(self, cell, x, y):
-		if self._tooltip is not None:
+		if self.has_tooltip:
 			self.tooltip.MouseOut(None)
 
 		self.current_target = None

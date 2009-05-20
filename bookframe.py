@@ -93,9 +93,21 @@ class BookFrame(AUIDisplayFrame):
 	def get_actions(self):
 		actions = super(BookFrame, self).get_actions()
 		actions.update({
-			wx.WXK_F8: self.chapter_forward,
+			# Navigation shortcuts.
 			wx.WXK_F5: self.chapter_back,
+			wx.WXK_F8: self.chapter_forward,
+			(wx.WXK_LEFT, wx.MOD_CMD): self.chapter_back,
+			(wx.WXK_RIGHT, wx.MOD_CMD): self.chapter_forward,
+			# Emulation of vi, Gmail, Google Reader, etc.
+			ord("K"): self.chapter_back,
+			ord("J"): self.chapter_forward,
+
+			# Search shortcuts.
 			ord("S"): self.search_quickly,
+			ord("P"): (lambda: self.search_results_move(-1)),
+			ord("N"): (lambda: self.search_results_move(1)),
+			# More Vi emulation.  Shift-N = previous search result.
+			(ord("N"), wx.MOD_SHIFT): (lambda: self.search_results_move(-1)),
 		})
 
 		if self.use_quickselector:
@@ -103,6 +115,10 @@ class BookFrame(AUIDisplayFrame):
 		
 		return actions
 
+	def search_results_move(self, amount):
+		search_panel = self.get_search_panel_for_frame()
+		assert search_panel, "Search panel not found for %s" % self
+		search_panel.next_search_result(amount)
 			
 			
 	def chapter_move(self, amount): pass
@@ -257,12 +273,20 @@ class VerseKeyedFrame(BookFrame):
 		self.notify(vk.text, source=VERSE_MOVE)
 	
 	def get_actions(self):
-		d = super(VerseKeyedFrame, self).get_actions()
-		d.update({wx.WXK_F9 : self.verse_back,
-				  wx.WXK_F12: self.verse_forward,
+		actions = super(VerseKeyedFrame, self).get_actions()
+		actions.update({
+			wx.WXK_F9 : self.verse_back,
+		  	wx.WXK_F12: self.verse_forward,
+			(wx.WXK_UP, wx.MOD_CMD): self.verse_back,
+			(wx.WXK_DOWN, wx.MOD_CMD): self.verse_forward,
+			# Emulation of vi, Gmail, Google Reader, etc.
+			# Note that this overrides the next and previous chapter shortcut
+			# from the book frame.
+			ord("K"): self.verse_back,
+			ord("J"): self.verse_forward,
 		})
 
-		return d
+		return actions
 	
 		
 
