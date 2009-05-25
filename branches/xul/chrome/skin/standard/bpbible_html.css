@@ -215,7 +215,7 @@ a.morph {
 /*a.morph:before { content: "(" }
 a.morph:after { content: ")" }*/
 
-span.c * {
+span.strongs-block * {
 	display: inline;
 	line-height: 1em;
 	text-indent: 0;
@@ -230,23 +230,25 @@ span.strongs {
 /*	margin: auto;*/
 }
 
-span.c:hover {
+span.strongs-block:hover {
 /*	background-color: hsl(240, 50%, 90%);*/
 	background-color: hsl(240, 50%, 95%);
 }
 
-span.c {
-	border: solid thin hsl(240, 0%, 75%);
-	text-indent: 0;
-	padding: 1px;
-	
+span.strongs-block {
+	line-height: 1em;
+	text-indent: 0;	
 
+	/* We have a very thin light border to the right of each strongs block */
+	border-right: solid thin hsl(240, 0%, 75%);	
+	padding-right: 2px;
 }
-span.c > *, span.strongs > * {
+
+span.strongs-block > *, span.strongs > * {
 	display: table-row-group;
 }
 
-span.c, span.strongs { 
+span.strongs-block, span.strongs { 
 	display: inline-table;
 	border-spacing: 1px;
 
@@ -268,20 +270,23 @@ span.strongs > span.strongs_morph > a.morph {
 	font-size: 80%;
 }
 
-span.strongs, span.c {
+span.strongs, span.strongs-block {
 	display: inline-table; 
 }
-span.c {
+
+/* Below each strong's block, put 1/2em of space */
+span.strongs-block {
 	margin: 0 0 0.5em 0
 }
 
+/* Global style */
 body { 
 	line-height: 1.4em; 
 }
 
 /*SUB, SUP { line-height: 0; } */
 
-/* Deubg */
+/* Debug */
 div.timer {
 	position: fixed;
 	right: 0px;
