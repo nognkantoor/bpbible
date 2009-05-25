@@ -50,7 +50,10 @@ BPBibleProtocol.prototype = {
 
 	scheme: "bpbible",
 	protocolFlags : nsIProtocolHandler.URI_NOAUTH |
-				nsIProtocolHandler.URI_IS_UI_RESOURCE,//LOADABLE_BY_ANYONE,
+				// we could use URI_LOADABLE_BY_ANYONE and set
+				// contentaccessible=yes in chrome.manifest - but this lets us
+				// access file:// as well...
+				nsIProtocolHandler.URI_IS_UI_RESOURCE,
 
 	newURI: function(aSpec, aOriginCharset, aBaseURI) {
 		url = Components.classes["@mozilla.org/network/standard-url;1"].
