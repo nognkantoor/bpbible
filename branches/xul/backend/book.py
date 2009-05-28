@@ -198,7 +198,8 @@ class Book(object):
 			if specialref == body_dict["internal_reference"]:
 				t = specialtemplate
 
-			verse = u""
+			verse = t.preverse.safe_substitute(body_dict)
+
 			for heading_dict in headings:
 				verse += t.headings.safe_substitute(heading_dict)
 			
@@ -251,6 +252,7 @@ class Book(object):
 				versekey.setText(key.getText())
 				#if(self.headings):
 				#	versekey.Headings(1)
+				osisRef = versekey.getOSISRef()
 				internal_reference = versekey.getText()
 				if internal_reference.endswith(":0"):
 					reference = ""
@@ -325,6 +327,7 @@ class Book(object):
 							bookname = versekey.getBookName(),
 							reference = reference,
 							internal_reference = internal_reference,
+							osisRef = osisRef,
 							tags = tags,
 				)	
 						  
