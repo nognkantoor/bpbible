@@ -23,7 +23,7 @@ a.versenumber {
 	padding-right: 2px;
 	text-decoration: none;
 	font-size: small;
-	vertical-align: 0.4em;
+	vertical-align: 0.32em;
 	line-height: 0;
 	color: hsl(240, 35%, 50%);
 	
@@ -59,8 +59,9 @@ h6.heading[canonical="true"] {
 a.footnote {
 	text-decoration: none;
 	font-size: 75%;
-	vertical-align: super;
+	vertical-align: 0.55em;	
 	line-height: 0;/*normal;*/
+/*	display: none;*/
 }
 
 /* e.g. ESV Gen 1:1 */
@@ -98,6 +99,26 @@ span.divineName, span.small-caps {
 	font-variant: small-caps;
 }
 
+/* block level elements which are children of our inline highlighting span
+ * should get its background colour, but don't unless we use the second
+ * selector... 
+ * NOTE: this should be the first background-color in the CSS, so that it
+ * doesn't override others
+ */
+.highlight, .highlight div {
+	background-color: hsl(240, 100%, 90%);
+}
+
+/* It looks really messy if our superscripted footnotes/versenumbers are
+ * individually highlighted... Usually they are probably
+ * highlighted mostly anyway, just not including the top bits... An exception
+ * is verse numbers in poetry - these look nice not highlighted... */
+.highlight a.footnote, .highlight a.versenumber, .highlight a.chapternumber {
+	background: none;
+}
+/*.highlight span.strongs-block {
+	background-
+*/	
 
 /* Paragraphs */
 p {
@@ -136,40 +157,41 @@ blockquote.lg
  * indented further. text-indent undoes the wide margin only for the first
  * line */
 div.indentedline[width="2"] {
-	margin-left: 5em;
+	padding-left: 5em;
 	text-indent: -3em;
 }
 div.indentedline[width="4"] {
-	margin-left: 5em;
+	padding-left: 5em;
 	text-indent: -1em;
 }
 div.indentedline[width="6"] {
-	margin-left: 7em;
+	padding-left: 7em;
 	text-indent: -1em;
 }
 
 div.indentedline[width="0"] {
-	margin-left: 5em;
+	padding-left: 5em;
 	text-indent: -5em;
 }
 
 [dir="rtl"] div.indentedline {
-	margin-left: 0em;
+	padding-left: 0em;
 }
 [dir="rtl"] div.indentedline[width="2"] {
-	margin-right: 5em;
+	padding-right: 5em;
 }
 [dir="rtl"] div.indentedline[width="4"] {
-	margin-right: 5em;
+	padding-right: 5em;
 }
 [dir="rtl"] div.indentedline[width="6"] {
-	margin-right: 7em;
+	padding-right: 7em;
 }
 [dir="rtl"] div.indentedline[width="0"] {
-	margin-right: 5em;
+	padding-right: 5em;
 }
 
-blockquote.lg > a.versenumber
+blockquote.lg > a.versenumber, 
+blockquote.lg > span.highlight > a.versenumber
 {
 	position: relative;
 	display: block;
@@ -178,22 +200,22 @@ blockquote.lg > a.versenumber
 	line-height: inherit;
 }
 
-blockquote.lg > a.chapternumber, blockquote.lg > div.indentedline > a.chapternumber
+blockquote.lg a.chapternumber
 {
 	margin-left: -2em;
 	line-height: 100%;
 	font-size: 150%;
 }
 
-[dir="rtl"] blockquote.lg > a.versenumber
+[dir="rtl"] blockquote.lg > a.versenumber,
+[dir="rtl"] blockquote.lg > span.highlight > a.versenumber
 {
 	left: 0em;
 	float: right;
 	right: -2.5em;
 }
 
-[dir="rtl"] blockquote.lg > a.chapternumber, 
-[dir="rtl"] blockquote.lg > div.indentedline > a.chapternumber
+[dir="rtl"] blockquote.lg a.chapternumber
 {
 	margin-right: -2em;
 	margin-left: 0;
