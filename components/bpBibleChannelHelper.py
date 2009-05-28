@@ -25,15 +25,37 @@ class bpBibleChannelHelper:
 		print "Ref contains '!'?", "!" in ref
 		print ref
 
+		stylesheets = ["bpbible_html.css"]
+		scripts = ["jquery-1.3.2.js", "highlight.js", "bpbible_html.js"]
+		
+
 		c = biblemgr.bible.GetChapter(ref, ref, config.current_verse_template)
 		c = c.replace("<!P>", "</p><p>")
-		stylesheet = '<link rel="stylesheet" type="text/css" href="chrome://bpbible/skin/bpbible_html.css"/ >'
-		if "bpbibleng" in os.getcwd():
-			p = os.path.expanduser("~/bpbibleng/chrome/skin/standard/bpbible_html.css")
-			#s = open().read()
-			#stylesheet = "<style type='text/css'>%s</style>" % s
-			stylesheet += '<link rel="stylesheet" type="text/css" href="file:///%s" />' % p
-			
+
+		resources = []
+		skin_prefixs = ["skin/standard", "skin"]
+		script_prefixs = ["content", "content"]
+		
+		### for testing, the file link is easier - but the chrome link is the
+		### one we should be using once it is working properly
+		prefixs = ["file:///" + os.getcwd() + "/chrome"]#, "chrome://bpbible"]
+		for skin_prefix, script_prefix, prefix \
+				in zip(skin_prefixs, script_prefixs, prefixs):
+			for item in stylesheets:
+				resources.append('<link rel="stylesheet" type="text/css" href="%s/%s/%s"/ >' % (prefix, skin_prefix, item))
+			for item in scripts:
+				resources.append('<script type="text/javascript" src="%s/%s/%s"></script>' % (prefix, script_prefix, item))
+
+		f = ""
+		firebug = False
+		if firebug:
+			f = """
+			<script type='text/javascript' 
+				src='chrome://firebuglite/content/firebug-lite.js'></script>
+			<script type="text/javascript">
+			firebug.env.css = "chrome://firebuglite/content/firebug-lite.css";
+			</script>"""
+	
 
 		dir = {
 			SW.DIRECTION_BIDI: "bidi",
@@ -50,22 +72,22 @@ class bpBibleChannelHelper:
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	%s
-	<script type="text/javascript" 
-		src="chrome://bpbible/content/jquery-1.3.2.js"></script>
-	<script type="text/javascript" 
-		src="chrome://bpbible/content/bpbible_html.js"></script>
-		
+	%s
 	<script type="application/x-python">
-print "Security Violated!!!"
+from mozutils import doAlert, doQuit
+doAlert("Security Violated!!! Aborting.")
+doQuit(True)
 </script>
             	
 </head>
 <body dir="%s">
+	<div id="content">
 	<!-- <p> -->
 	%s
 	<!-- </p> -->
 	%s
-</body></html>''' % (stylesheet, dir, c, 
+	</div>
+</body></html>''' % ('\n'.join(resources), f, dir, c, 
 	"<div class='timer'>Time taken: %.3f</div>" % (time.time() - t))
 		
 		try:
