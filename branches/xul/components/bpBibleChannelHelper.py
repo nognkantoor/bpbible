@@ -3,19 +3,21 @@ from backend.bibleinterface import biblemgr
 from swlib.pysw import SW
 import os
 import config
+from util.debug import dprint, ERROR
 
 class bpBibleChannelHelper:
 	_com_interfaces_ = xpcom.components.interfaces.bpBibleChannelHelper
 	_reg_clsid_ = "b79e8f5b-5aee-47e2-b831-d3a2f7609549"
 	_reg_contractid_ = "@bpbible.com/bpBibleChannelHelper;1"
 
-	def getDocument( self, param0 ):
+	def getDocument( self, module_name, param0 ):
 		import time
 		t = time.time()
 
 		# Result: wstring
 		# In: param0: wstring
 		print "PARAM0", param0, 
+		dprint(ERROR, "PARAM0", param0, "MODULE_NAME", module_name)
 		
 		ref = SW.URL.decode(param0).c_str()[1:]
 		assert "!" not in ref
@@ -29,8 +31,13 @@ class bpBibleChannelHelper:
 		scripts = ["jquery-1.3.2.js", "highlight.js", "bpbible_html.js"]
 		
 
-		c = biblemgr.bible.GetChapter(ref, ref, config.current_verse_template)
-		c = c.replace("<!P>", "</p><p>")
+		book = biblemgr.get_module_book_wrapper(module_name)
+		if book:
+			c = book.GetChapter(ref, ref, config.current_verse_template)
+			c = c.replace("<!P>", "</p><p>")
+		else:
+			dprint(ERROR, "Book `%s' not found." % module_name)
+			c = ''
 
 		resources = []
 		skin_prefixs = ["skin/standard", "skin"]

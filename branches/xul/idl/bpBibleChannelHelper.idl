@@ -3,5 +3,5 @@
 [scriptable, uuid(7063ced8-e8ad-49e3-88b0-98f7d020f5c7)]
 interface bpBibleChannelHelper: nsISupports {
     // attributes, constants, methods, ...
-    wstring getDocument(in string document);
+    wstring getDocument(in string moduleName, in string document);
 };

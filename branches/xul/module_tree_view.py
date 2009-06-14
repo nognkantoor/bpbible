@@ -40,11 +40,11 @@ class ModuleTreeView(BasicTreeView):
 		self.tree.Unbind(wx.EVT_TREE_ITEM_MENU)
 		self.tree.Unbind(wx.EVT_TREE_DELETE_ITEM)
 		
-	def on_version_tree(self, item):
+	def on_version_tree(self, event_type, item):
 		if isinstance(item.data, SW.Module):
-			self.on_module_choice(item.data, item.parent.data)
+			self.on_module_choice(event_type, item.data, item.parent.data)
 		else:
-			self.on_category_choice(item.data, item.parent.data)
+			self.on_category_choice(event_type, item.data, item.parent.data)
 		
 	def recreate(self):
 		self.add_first_level_groups()
