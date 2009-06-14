@@ -69,10 +69,14 @@ class BasicTreeView(object):
 
 	def setup_tree_events(self, tree):
 		self.tree = tree
-		self.tree.addEventListener("click", self.double_click_on_item, True)
+		self.tree.addEventListener("click", self.click_on_item, True)
+		self.tree.addEventListener("dblclick", self.double_click_on_item, True)
+
+	def click_on_item(self, event):
+		self.on_selection("click", self.visibleData[self.tree.currentIndex])
 
 	def double_click_on_item(self, event):
-		self.on_selection(self.visibleData[self.tree.currentIndex])
+		self.on_selection("dblclick", self.visibleData[self.tree.currentIndex])
 
 	def expand_items(self, items, recursive=False):
 		for item in items:

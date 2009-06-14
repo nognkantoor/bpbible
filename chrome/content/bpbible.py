@@ -1,7 +1,8 @@
+import cgi
 from swlib import pysw
 import mozutils
 import config
-from util.debug import dump
+from util.debug import dump, dprint, ERROR
 import util.dom_util
 import util.i18n
 if not hasattr(util.i18n, "langid"):
@@ -28,6 +29,8 @@ def go(event):
 
 def lookup_reference():
 	item = document.getElementById("toolbar_location")
+	if not hasattr(window, "mod_name"):
+		initialise_module_name(item)
 	assert item
 	dump("Looking up reference: %s" % item.value)
 	i = item.value
@@ -37,15 +40,31 @@ def lookup_reference():
 		mozutils.doAlert(str(v))
 		return
 
+	dprint(ERROR, "window.mod_name", window.mod_name, "hasattr", hasattr(window, "mod_name"))
 	browser = document.getElementById("browser")
 
 	# clear it
 	browser.setAttribute("src", "bpbible://")
 
 	# now set it
-	browser.setAttribute("src", "bpbible://ESV/%s" % i)
+	browser.setAttribute("src", "bpbible://%s/%s" % (window.mod_name, i))
+	document.title = get_window_title(i)
 
 def do_load():
 	util.dom_util.document = document
 	lookup_reference()
 	window.open('chrome://bpbible/content/module_selector.xul', '', 'chrome');
+
+def get_window_title(reference):
+	return u"%s (%s) - BPBible" % (pysw.GetBestRange(reference, userOutput=True), window.mod_name)
+
+def initialise_module_name(reference_item):
+	module_name = "ESV"
+	if window.location.search:
+		parameters = cgi.parse_qs(window.location.search[1:])
+		if parameters.has_key("module_name"):
+			module_name = parameters["module_name"][0]
+		if parameters.has_key("reference"):
+			reference_item.value = parameters["reference"][0]
+	dprint(ERROR, "Initialising module name to %s" % module_name)
+	window.mod_name = module_name

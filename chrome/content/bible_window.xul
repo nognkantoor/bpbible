@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://bpbible/skin/bpbible.css" type="text/css"?>
+
+<!DOCTYPE window SYSTEM "chrome://bpbible/locale/bpbible.dtd">
+
+<window id="module_selector"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml"
+        title="Bible window"
+        style="width: 900px; height: 750px;"
+        script-type="application/x-python"
+        persist="screenX screenY width height"
+        onload="lookup_reference();">
+
+  <script type="application/x-python" 
+          src="chrome://bpbible/content/module_selector.py" />
+  <script type="application/x-python" 
+          src="chrome://bpbible/content/bpbible.py" />
+
+  <toolbox>
+    <toolbar id="toolbar_explorer" mode="icons" style="width:300px;">
+      <textbox id="toolbar_location" 
+               value="Genesis 1" 
+               onkeypress="handle_location_keypress(event);" />
+      <button oncommand="lookup_reference()" label="Go" />
+    </toolbar>
+  </toolbox>
+  
+  <!-- Bible content. -->
+  <vbox id="appcontent" flex="1">
+    <browser id="browser"
+             disablehistory="true"
+             src="bpbible:" 
+             style="width: 100%;" 
+             type="content" 
+             flex="1" />
+  </vbox>
+</window>
+

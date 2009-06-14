@@ -164,9 +164,9 @@ BPBibleChannel.prototype = {
 				this.loadGroup.addRequest(this, null);
 			}
 			
-			this.logMessage("Requesting path: " + this.URI.path);
+			this.logMessage("Requesting path: " + this.URI.path + " for host " + this.URI.host + " and spec " + this.URI.spec);
 
-			var html = this._bpb.getDocument(this.URI.path);//this.getHTML();
+			var html = this._bpb.getDocument(this.URI.host, this.URI.path);
 			aListener.onStartRequest(this, aContext);
 			var converter = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"]
 							.createInstance(Components.interfaces.nsIScriptableUnicodeConverter);

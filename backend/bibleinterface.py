@@ -46,6 +46,13 @@ class BibleInterface(object):
 		self.state = []
 		self.options = {}
 		self.init_options()
+
+		self.book_type_map = {
+			self.bible.type:		self.bible,
+			self.commentary.type:	self.commentary,
+			self.dictionary.type:	self.dictionary,
+			self.genbook.type:		self.dictionary,
+		}
 	
 	def init_options(self):
 		for option, values in self.get_options():
@@ -98,9 +105,22 @@ class BibleInterface(object):
 	
 	def get_module(self, mod):
 		return self.modules.get(mod)
+
+	def get_module_book_wrapper(self, module_name):
+		mod = self.modules_with_lowercase_name.get(module_name.lower())
+		if mod is None:
+			return None
+
+		book = self.book_type_map.get(mod.Type())
+		if book is None:
+			return None
+
+		book.SetModule(mod)
+		return book
 	
 	def _get_modules(self):
 		self.modules = {}
+		self.modules_with_lowercase_name = {}
 		self.headwords_modules = {}
 		for path, mgr, modules in self.mgrs:
 			headwords_modules = [(name, module) for name, module in modules if
@@ -111,6 +131,8 @@ class BibleInterface(object):
 
 			self.modules.update(modules)
 			self.headwords_modules.update(headwords_modules)
+			self.modules_with_lowercase_name.update(
+					(name.lower(), module) for  name, module in modules)
 
 	@property
 	def all_modules(self):
