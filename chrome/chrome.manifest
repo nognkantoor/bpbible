@@ -3,3 +3,5 @@ skin     bpbible  standard/1.0  skin/standard/
 locale   bpbible  en-US         locale/en-US/
 locale   branding en-US         locale/en-US/brand/
 content  branding 				content/brand
+
+style    chrome://global/content/console.xul chrome://bpbible/content/error_console_style.css
