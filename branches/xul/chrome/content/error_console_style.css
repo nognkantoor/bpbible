@@ -1,0 +1,10 @@
+.console-row[type="warning"][href*="jquery-1.3.2.js"][msg*="anonymous function does not always return a value"],
+.console-row[type="warning"][href*="jquery-1.3.2.js"][msg*="test for equality (==) mistyped as assignment (=)?"],
+.console-row[type="warning"][href*="jquery-1.3.2.js"][msg*="variable i redeclares argument"],
+.console-row[type="warning"][href*="jquery-1.3.2.js"][msg*="reference to undefined property jQuery.cache[id][name]"],
+.console-row[type="warning"][href*="hyphenate.js"][msg*="reference to undefined property hypos[i]"],
+.console-row[type="warning"][href*="hyphenate.js"][msg*="anonymous function does not always return a value"]
+{
+	display: none;
+	/*background: red;*/
+}
