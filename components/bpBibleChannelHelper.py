@@ -4,6 +4,7 @@ from swlib.pysw import SW
 import os
 import config
 from util.debug import dprint, ERROR
+from display_options import all_options, get_js_option_value
 
 class bpBibleChannelHelper:
 	_com_interfaces_ = xpcom.components.interfaces.bpBibleChannelHelper
@@ -28,7 +29,8 @@ class bpBibleChannelHelper:
 		print ref
 
 		stylesheets = ["bpbible_html.css"]
-		scripts = ["jquery-1.3.2.js", "highlight.js", "bpbible_html.js"]
+		scripts = ["jquery-1.3.2.js", "highlight.js", "bpbible_html.js",
+				  "hyphenate.js", "columns.js"]
 		
 
 		book = biblemgr.get_module_book_wrapper(module_name)
@@ -72,11 +74,17 @@ class bpBibleChannelHelper:
 		if not dir: 
 			print "Unknown text direction"
 			dir = "ltr"
+		
+		lang = biblemgr.bible.mod.Lang()
+		
+		options = []
+		for option in all_options():
+			options.append('%s="%s"' % (option, get_js_option_value(option)))
 
 		text = '''\
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
                       "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="%s">
 <head>
 	%s
 	%s
@@ -87,14 +95,14 @@ doQuit(True)
 </script>
             	
 </head>
-<body dir="%s">
+<body dir="%s" %s>
 	<div id="content">
 	<!-- <p> -->
 	%s
 	<!-- </p> -->
-	%s
 	</div>
-</body></html>''' % ('\n'.join(resources), f, dir, c, 
+	%s
+</body></html>''' % (lang, '\n'.join(resources), f, dir, ' '.join(options), c, 
 	"<div class='timer'>Time taken: %.3f</div>" % (time.time() - t))
 		
 		try:

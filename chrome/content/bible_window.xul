@@ -11,6 +11,7 @@
         style="width: 900px; height: 750px;"
         script-type="application/x-python"
         persist="screenX screenY width height"
+        windowtype="navigator:browser"        
         onload="lookup_reference();">
 
   <script type="application/x-python" 
@@ -33,7 +34,7 @@
              disablehistory="true"
              src="bpbible:" 
              style="width: 100%;" 
-             type="content" 
+             type="content-primary" 
              flex="1" />
   </vbox>
 </window>

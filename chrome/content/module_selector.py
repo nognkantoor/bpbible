@@ -29,4 +29,4 @@ def on_module_choice(event_type, module, book):
 		debug.dprint(debug.ERROR, 'Loading Bible window', module_name, reference)
 		url = ('chrome://bpbible/content/bible_window.xul?module_name=%s&reference=%s' %
 			(urllib.quote(module_name), urllib.quote(reference)))
-		bible_window = window.open(url, '', 'chrome');
+		bible_window = window.open(url, '', 'chrome,scrollbars');
