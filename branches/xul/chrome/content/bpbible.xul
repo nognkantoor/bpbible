@@ -41,6 +41,13 @@ We set windowtype here for XUSH... pretending to be firefox.
     <key keycode="VK_F3" command="cmd_findPrevious" modifiers="shift" />
   </keyset>
 
+  <!-- JS uses this to pass events on to python code -->
+  <broadcaster id="process_tooltip" />
+  <observes element="process_tooltip" 
+            attribute="attribute1" 
+            onbroadcast="process_tooltip()"
+            />
+
   <commandset id="mainCommandSet" script-type="application/javascript">
     <!-- Find commands. -->
     <command id="cmd_find"
@@ -52,14 +59,19 @@ We set windowtype here for XUSH... pretending to be firefox.
     <command id="cmd_findPrevious"
              oncommand="gFindBar.onFindAgainCommand(true);"
              observes="isImage" />
+
+    <!-- this probably shouldn't be here... -->
+    <observes element="browser" attribute="src" onbroadcast="dump('src changed')" />
   </commandset>
+
+
 
   <!-- Menus, that's Python code in the "oncommand" section. -->
   <toolbox id="toolbox_explorer">
     <menubar id="menubar_explorer">
       <menu id="menu_file" label="&file.label;" accesskey="&file.accesskey;">
         <menupopup id="popup_file">
-          <menuitem label="View all books" oncommand="window.open('chrome://bpbible/content/module_selector.xul', '', 'chrome');" />
+          <menuitem label="View all books" oncommand="window.open('chrome://bpbible/content/module_selector.xul', '', 'chrome,scrollbars');" />
           <menuitem id="menu_FileQuitItem"
                     label="&fileExit.label;"
                     accesskey="&fileExit.accesskey;"
@@ -67,11 +79,25 @@ We set windowtype here for XUSH... pretending to be firefox.
                     key="key_exit" />
         </menupopup>
       </menu>
+      <menu id="menu_DisplayOptions" label="Display">
+        <menupopup id="popup_DisplayOptions">
+          <menuitem id="menu_columns" label="Column view" type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menuitem id="menu_verse_per_line" 
+                    label="Verse Per Line" 
+                    type="checkbox"
+                    oncommand="toggle_option(event)" />
+                    
+        </menupopup>
+      </menu>
       <menu id="menu_tools" label="&tools.label;" accesskey="&tools.accesskey;">
         <!-- Replicate the Firefox Tools popup exactly, so that we can use
              the overlays of PyShell and similar extensions.
         -->
         <menupopup id="menu_ToolsPopup">
+          <menuitem label="Javascript Console" 
+                    oncommand="window.open('chrome://global/content/console.xul', '', 'chrome,dialog=no,toolbar')" />
+          
 
         </menupopup>
       </menu>
@@ -105,7 +131,7 @@ We set windowtype here for XUSH... pretending to be firefox.
              src="bpbible:"
              style="width: 100%;"
              flex="1" 
-             type="content" />
+             type="content-primary" />
   </vbox>
   <vbox id="browser-bottombox">
     <findbar browserid="browser" id="FindToolbar" />

@@ -1,7 +1,3 @@
-br.verse_per_line {
-	display: none;
-}
-
 /* Chapter and verse numbers */
 a.chapternumber {
 	float: left;
@@ -9,28 +5,22 @@ a.chapternumber {
 	line-height: 130%;
 	font-size: 200%;
 	text-decoration: none;
-	padding-right: 3px;
+	-moz-padding-end: 3px;
 	color: hsl(240, 35%, 60%);
 }
 
 [dir="rtl"] a.chapternumber {
 	float: right;
-	padding-left: 3px;
-	padding-right: 0px;
 }
 
 a.versenumber {
-	padding-right: 2px;
+	-moz-padding-end: 2px;
 	text-decoration: none;
 	font-size: small;
 	vertical-align: 0.32em;
 	line-height: 0;
 	color: hsl(240, 35%, 50%);
 	
-}
-[dir="rtl"] a.versenumber {
-	padding-left: 3px;
-	padding-right: 0px;
 }
 
 a.currentverse {
@@ -105,7 +95,7 @@ span.divineName, span.small-caps {
  * NOTE: this should be the first background-color in the CSS, so that it
  * doesn't override others
  */
-.highlight, .highlight div {
+.highlight, .highlight div, .highlight h6 {
 	background-color: hsl(240, 100%, 90%);
 }
 
@@ -114,23 +104,11 @@ span.divineName, span.small-caps {
  * highlighted mostly anyway, just not including the top bits... An exception
  * is verse numbers in poetry - these look nice not highlighted... */
 .highlight a.footnote, .highlight a.versenumber, .highlight a.chapternumber {
-	background: none;
+/*	background: none; */
 }
 /*.highlight span.strongs-block {
 	background-
 */	
-
-/* Paragraphs */
-p {
-/*	text-align: justify;*/
-	text-indent: 1em;
-	margin-bottom: 1px;
-	margin-top: 1px;	
-}
-
-body {
-/*	text-align: justify;*/
-}
 
 /* we really want to have the indent of paragraph with a chapter number being
  * 0 - however, we can't do p < a.chapternumber. This hack will have to do
@@ -157,44 +135,27 @@ blockquote.lg
  * indented further. text-indent undoes the wide margin only for the first
  * line */
 div.indentedline[width="2"] {
-	padding-left: 5em;
+	-moz-padding-start: 5em;
 	text-indent: -3em;
 }
 div.indentedline[width="4"] {
-	padding-left: 5em;
+	-moz-padding-start: 5em;
 	text-indent: -1em;
 }
 div.indentedline[width="6"] {
-	padding-left: 7em;
+	-moz-padding-start: 7em;
 	text-indent: -1em;
 }
 
 div.indentedline[width="0"] {
-	padding-left: 5em;
+	-moz-padding-start: 5em;
 	text-indent: -5em;
-}
-
-[dir="rtl"] div.indentedline {
-	padding-left: 0em;
-}
-[dir="rtl"] div.indentedline[width="2"] {
-	padding-right: 5em;
-}
-[dir="rtl"] div.indentedline[width="4"] {
-	padding-right: 5em;
-}
-[dir="rtl"] div.indentedline[width="6"] {
-	padding-right: 7em;
-}
-[dir="rtl"] div.indentedline[width="0"] {
-	padding-right: 5em;
 }
 
 blockquote.lg > a.versenumber, 
 blockquote.lg > span.highlight > a.versenumber
 {
 	position: relative;
-	display: block;
 	float: left;
 	left: -2.5em;
 	line-height: inherit;
@@ -202,7 +163,7 @@ blockquote.lg > span.highlight > a.versenumber
 
 blockquote.lg a.chapternumber
 {
-	margin-left: -2em;
+	-moz-margin-start: -2em;
 	line-height: 100%;
 	font-size: 150%;
 }
@@ -213,12 +174,6 @@ blockquote.lg a.chapternumber
 	left: 0em;
 	float: right;
 	right: -2.5em;
-}
-
-[dir="rtl"] blockquote.lg a.chapternumber
-{
-	margin-right: -2em;
-	margin-left: 0;
 }
 
 /* Strong's headwords */
@@ -254,7 +209,7 @@ span.strongs {
 
 span.strongs-block:hover {
 /*	background-color: hsl(240, 50%, 90%);*/
-	background-color: hsl(240, 50%, 95%);
+	background-color: hsl(240, 50%, 93%);
 }
 
 span.strongs-block {
@@ -262,8 +217,8 @@ span.strongs-block {
 	text-indent: 0;	
 
 	/* We have a very thin light border to the right of each strongs block */
-	border-right: solid thin hsl(240, 0%, 75%);	
-	padding-right: 2px;
+	-moz-border-end: solid thin hsl(240, 0%, 75%);	
+	-moz-padding-end: 2px;
 }
 
 span.strongs-block > *, span.strongs > * {
@@ -301,9 +256,54 @@ span.strongs-block {
 	margin: 0 0 0.5em 0
 }
 
+span.morphSegmentation {
+/*	background: green; */
+	-moz-margin-start: 1px;
+	-moz-border-start: solid gray 1px;
+}
+
 /* Global style */
 body { 
-	line-height: 1.4em; 
+	line-height: 1.4;
+}
+
+/* Options */
+body[columns="true"] > #content {
+	-moz-column-width: 20em;
+	text-align: justify;
+
+	/* we need padding on the right; with columns we can't seem to do this
+	 * with padding or margin; but outline works...
+	 * so we will add an invisible outline */
+	outline: 8px solid transparent;
+}
+
+#HyphenatorToggleBox {
+	visibility: hidden;
+}
+
+body[columns="true"] > #HyphenatorToggleBox {
+	visibility: visible;
+}
+
+br.verse_per_line {
+	display: none;
+}
+
+body[verse_per_line="true"] br.verse_per_line {
+	display: inline;
+}
+
+/* Paragraphs */
+p {
+	text-indent: 1em;
+	margin-bottom: 1px;
+	margin-top: 1px;	
+}
+
+body[verse_per_line="true"] p {
+	text-indent: 0em;
+	margin: 1em 0;
 }
 
 /*SUB, SUP { line-height: 0; } */

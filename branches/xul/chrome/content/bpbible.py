@@ -1,12 +1,15 @@
 import cgi
 from swlib import pysw
+from backend.bibleinterface import biblemgr
 import mozutils
 import config
 from util.debug import dump, dprint, ERROR
+from display_options import all_options, get_js_option_value, options
+
 import util.dom_util
-import util.i18n
-if not hasattr(util.i18n, "langid"):
-	util.i18n.initialize()
+from xpcom import components
+
+from util.debug import is_debugging
 
 def bpbible_doCommand(event):
 	item_name = event.target.id
@@ -50,11 +53,21 @@ def lookup_reference():
 	browser.setAttribute("src", "bpbible://%s/%s" % (window.mod_name, i))
 	document.title = get_window_title(i)
 
+def process_tooltip():
+	d = document.getElementById("process_tooltip").getAttribute("attribute1")
+	if not d: 
+		# We reset it to make sure it changes; this is the reset, so ignore
+		return
+	
+	print "Got it! was", d
+	
 def do_load():
+	set_menu_items()
 	util.dom_util.document = document
 	lookup_reference()
-	window.open('chrome://bpbible/content/module_selector.xul', '', 'chrome');
-
+	window.open('chrome://bpbible/content/module_selector.xul', '', 
+				'chrome,scrollbars');
+	
 def get_window_title(reference):
 	return u"%s (%s) - BPBible" % (pysw.GetBestRange(reference, userOutput=True), window.mod_name)
 
@@ -68,3 +81,33 @@ def initialise_module_name(reference_item):
 			reference_item.value = parameters["reference"][0]
 	dprint(ERROR, "Initialising module name to %s" % module_name)
 	window.mod_name = module_name
+
+def set_menu_items():
+	for option in all_options():
+		menu_item = document.getElementById("menu_%s" % option)
+		if not menu_item:
+			dprint(ERROR, "Couldn't find menu item for option ", option)
+			continue
+
+		if options[option]:
+			menu_item.setAttribute("checked", "true")
+
+def toggle_option(event):
+	checked = event.target.hasAttribute("checked")
+
+	# strip off menu_
+	option = event.target.id[5:]
+	options[option] = checked
+	propagate_setting_change(option, "true" if checked else "false")
+
+def propagate_setting_change(type, value):
+	assert isinstance(value, str), "Wasn't a string"
+	wm = components.classes["@mozilla.org/appshell/window-mediator;1"]\
+				   .getService(components.interfaces.nsIWindowMediator);  
+	enumerator = wm.getEnumerator("")
+	while enumerator.hasMoreElements():
+		win = enumerator.getNext()
+		print win.location.href
+		if win.content and win.content.location.protocol == "bpbible:":
+			body = win.content.document.body
+			body.setAttribute(type, value)
