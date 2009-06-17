@@ -164,11 +164,11 @@ use_system_inactive_caption_colour = False
 #plain_xrefs = False
 
 
-preverse = '<a name="${osisRef}_start"></a>'
+preverse = '<a name="${osisRef}_start" osisRef="$osisRef"></a>'
 # templates
 body = (
 u'<a class="$numbertype" osisRef="$osisRef" href="bpbible://$version/$internal_reference">'
-u'$versenumber</a>$text $tags<a name="${osisRef}_end"></a>')
+u'$versenumber</a>$text $tags<a name="${osisRef}_end" osisRef="$osisRef"></a>')
 
 bible_template = SmartVerseTemplate(body=body, preverse=preverse)
 bible_template_without_headings = SmartVerseTemplate(body=body, headings=u'',
