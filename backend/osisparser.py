@@ -12,6 +12,7 @@ class OSISParser(filterutils.ParserBase):
 		self.morph_bufs = []
 		self.was_sword_ref = False
 		self.in_indent = False
+		self.in_morph_seg = False
 		self._end_hi = ""
 	
 	def start_hi(self, xmltag):
@@ -371,7 +372,26 @@ class OSISParser(filterutils.ParserBase):
 		img_path = os.path.realpath("%s/%s" % (data_path, src))
 		self.buf += '<img border=0 src="%s" />' % img_path
 			
+	def start_seg(self, xmltag):
+		type = xmltag.getAttribute("type")
+		if type in ("morph", "x-morph"):
+			self.buf += '<span class="morphSegmentation">'
+			if self.in_morph_seg:
+				dprint(WARNING, "Nested morph segs", self.u.key.getText())
 
+			self.in_morph_seg = True
+		else:
+			self.success = SW.INHERITED
+
+	
+	def end_seg(self, xmltag):
+		if self.in_morph_seg:
+			self.buf += "</span>"
+			self.in_morph_seg = False
+			
+		else:
+			self.success = SW.INHERITED
+		
 class OSISRenderer(SW.RenderCallback):
 	def __init__(self):
 		super(OSISRenderer, self).__init__()
