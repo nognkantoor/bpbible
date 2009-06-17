@@ -51,18 +51,24 @@ class Template(VerseTemplate):
 		return item in self.keys()
 
 class SmartBody(object):
-	whitespace = "(<INDENT-BLOCK-(START|END)[^>]*>)|(<br( [^>]*)?>)|(<p( [^>]*)?>)|(<!P>)"
+	whitespace = '(<blockquote[^>]*>)|(</blockquote>)|(<br( [^>]*)?>)|(<p( [^>]*)?>)|(<!P>)|(</div>)'
+	### We just include the </div> in our whitespace; if we include the
+	### opening div, then our verse numbers are moved into the indentedline,
+	### which we don't want
+	### |(<div class="indentedline"[^>]*>)|(</div>)'
+	
 	included_whitespace = "(%s)(%s|\s)*" % (whitespace, whitespace)
 	vpl_text = '<br class="verse_per_line" />'
 	
 	incl_whitespace_start = re.compile("^" + included_whitespace, re.IGNORECASE)
 	incl_whitespace_end = re.compile(included_whitespace + "$", re.IGNORECASE)
+	a_tags = '<a name="[^"]*_(start|end)" osisRef="[^"]*"></a>'
 	incl_whitespace_br_start = re.compile(
-		u"(?P<ws>%s)%s" % (included_whitespace, vpl_text),
+		u"(?P<ws>%s(%s)*)%s" % (included_whitespace, a_tags, vpl_text),
 		re.IGNORECASE
 	)
 	incl_whitespace_br_end = re.compile(
-		u"%s(?P<ws>%s)" % (vpl_text, included_whitespace),
+		u"%s(?P<ws>(%s)*%s)" % (vpl_text, a_tags, included_whitespace),
 		re.IGNORECASE
 	)
 	
