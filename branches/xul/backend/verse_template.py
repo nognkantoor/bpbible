@@ -51,28 +51,29 @@ class Template(VerseTemplate):
 		return item in self.keys()
 
 class SmartBody(object):
-	whitespace = '(<blockquote[^>]*>)|(</blockquote>)|(<br( [^>]*)?>)|(<p( [^>]*)?>)|(<!P>)|(</div>)'
+	# don't ever use capturing groups in here - they are slow
+	whitespace = '<(?:(?:blockquote[^>]*>)|(?:/blockquote>)|(?:br ?[^>]*>)|(?:p ?[^>]*>)|(?:!P>)|(?:/div>))'
 	### We just include the </div> in our whitespace; if we include the
 	### opening div, then our verse numbers are moved into the indentedline,
 	### which we don't want
 	### |(<div class="indentedline"[^>]*>)|(</div>)'
 	
-	included_whitespace = "(%s)(%s|\s)*" % (whitespace, whitespace)
+	included_whitespace = "(?:%s)(?:%s|\s)*" % (whitespace, whitespace)
 	vpl_text = '<br class="verse_per_line" />'
 	
 	incl_whitespace_start = re.compile("^" + included_whitespace, re.IGNORECASE)
 	incl_whitespace_end = re.compile(included_whitespace + "$", re.IGNORECASE)
-	a_tags = '<a name="[^"]*_(start|end)" osisRef="[^"]*"></a>'
+	a_tags = '<a name="[^"]*_(?:start|end)" osisRef="[^"]*"></a>'
 	incl_whitespace_br_start = re.compile(
-		u"(?P<ws>%s(%s)*)%s" % (included_whitespace, a_tags, vpl_text),
+		u"(?P<ws>%s(?:%s)*)%s" % (included_whitespace, a_tags, vpl_text),
 		re.IGNORECASE
 	)
 	incl_whitespace_br_end = re.compile(
-		u"%s(?P<ws>(%s)*%s)" % (vpl_text, a_tags, included_whitespace),
+		u"%s(?P<ws>(?:%s)*%s)" % (vpl_text, a_tags, included_whitespace),
 		re.IGNORECASE
 	)
 	
-	empty_versenumber = re.compile(u"<a class=\"(verse|chapter)number[^\"]*\"[^>]+></a>\s?")
+	empty_versenumber = re.compile(u"<a class=\"(?:verse|chapter)number[^\"]*\"[^>]+></a>\s?")
 	
 	def __init__(self, body, verse_per_line=True):
 		self.body = body
@@ -92,8 +93,6 @@ class SmartBody(object):
 			dict["numbertype"] = "chapternumber"
 		else:
 			dict["numbertype"] = "versenumber"
-			
-			
 		
 		whitespace = []
 		def collect(match):
