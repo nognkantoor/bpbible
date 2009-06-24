@@ -30,17 +30,17 @@ function highlight_range(start, end) {
 	
 	var e = end;
 	// Now, we need to travel up from our end point, collecting everything to
-	// the left of our start node.	
+	// the left of our start node.
 	while (e.parentNode != common_parent) {
 		r.selectNodeContents(e.parentNode);
 		r.setEndBefore(e);
-		extract_range(r);		
+		extract_range(r);
 		e = e.parentNode;
 	}
 
 	/* and now we need to get the part at the top of our range, between the
 	 * two topmost points */
-	r.setStartAfter(s);
-	r.setEndBefore(e);
+	r.setStartBefore(s);
+	r.setEndAfter(e);
 	extract_range(r);
 }
