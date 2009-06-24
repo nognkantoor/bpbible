@@ -110,11 +110,15 @@ class SmartBody(object):
 		
 		dict["text"] = text
 
+		verse_per_line = self.verse_per_line
+		if verse_0:
+			verse_per_line = False
+
 		ret = u"%s%s%s%s\n" % (
 			u''.join(leading_whitespace),
 			self.body.safe_substitute(dict),
 			u''.join(whitespace),
-			self.vpl_text * self.verse_per_line,			
+			self.vpl_text * verse_per_line
 		)
 		
 		# remove empty verse number
