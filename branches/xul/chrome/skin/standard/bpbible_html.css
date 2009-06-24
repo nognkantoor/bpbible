@@ -95,7 +95,7 @@ span.divineName, span.small-caps {
  * NOTE: this should be the first background-color in the CSS, so that it
  * doesn't override others
  */
-.highlight, .highlight div, .highlight h6 {
+.highlight, .highlight div {
 	background-color: hsl(240, 100%, 90%);
 }
 
@@ -269,13 +269,25 @@ body {
 
 /* Options */
 body[columns="true"] > #content {
-	-moz-column-width: 20em;
+	-moz-column-width: 23em;
 	text-align: justify;
 
 	/* we need padding on the right; with columns we can't seem to do this
 	 * with padding or margin; but outline works...
 	 * so we will add an invisible outline */
-	outline: 8px solid transparent;
+	outline: 8px solid transparent;	 
+	position: absolute;
+	bottom: 0;
+	top: 0;
+}
+
+body[columns="true"] {
+	position: absolute;
+	bottom: 0px;
+	top: 0px;
+
+	/* 100% can create unneeded horizontal scrollbars */
+	width: 99%;
 }
 
 #HyphenatorToggleBox {

@@ -32,14 +32,10 @@ function set_columns(to) {
 		$("#content").addClass("hyphenate");
 		var hyphenatorSettings = {
 			onhyphenationdonecallback : function () {
-				handle_resize();
 				if(was_on_loading) 
 					scroll_to_current(null);
 
-				handle_resize(true);
-				//handle_resize(true);
-				//document.body.height = window.innerHeight - 25;
-				$(window).bind('resize', false, handle_resize);
+				$(window).bind('resize', handle_resize);
 				if(!hyphenation_setting) {
 					Hyphenator.toggleHyphenation();
 				}
@@ -65,22 +61,6 @@ function handle_resize(twice, dont_reflow) {
 
 	// Body has an 8px margin
 	c.height($(window).height() - c.offset().top - 8);
-	//dump($(window).height() - c.offset().top - 8 + '\n');
-
-	// OK, I admit it - this is a nasty hack
-	// We need the document to reflow, and changing the body height between
-	// 100% and inherit makes it do this
-	// TODO: remove this hack
-	if(!dont_reflow) {
-		$(document.body).height(next);
-		next = next == "inherit" ? "100%" : "inherit";
-	}
-
-	// And when we first load the page, we need to do this twice, or we get a
-	// scroll-bar
-	if(twice) {
-		handle_resize(false);
-	}
 }
 
 function toggle() {
