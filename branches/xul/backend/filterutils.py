@@ -67,6 +67,7 @@ strongsgreek = strongshebrew = None
 strongs_cache = {}
 strongs_cacher = None
 registered = False
+tag = SW.XMLTag()
 
 class ParserBase(object):
 	def __init__(self):
@@ -83,7 +84,7 @@ class ParserBase(object):
 		self.success = SW.INHERITED
 		self.u = userdata
 	
-		tag = SW.XMLTag("<%s>" % token)
+		tag.setText("<%s>" % token)		
 		which_one = "start_%s"
 		if tag.isEndTag():
 			which_one = "end_%s"
