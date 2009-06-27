@@ -181,3 +181,95 @@ class BasicTreeView(object):
 	def getRowProperties(self, index, column): pass
 	def getCellProperties(self, index, column, prop): pass
 	def getColumnProperties(self, column, element): pass
+
+class ListTreeView(object):
+	"""This tree view is used as a wrapper for lists of strings.
+
+	This is used by the dictionary lazy topic list.
+	"""
+	_com_interfaces_ = components.interfaces.nsITreeView
+
+ 	def __init__(self, items=None):
+		self.treeBox = None
+		self.items = items
+
+	"""
+	def set_items(self, items):
+		if self.items:
+			self.rowCountChanged(0, -len(self.items))
+		self.items = items
+		self.rowCountChanged(0, len(self.items))
+
+	def setup_tree_events(self, tree):
+		self.tree = tree
+		self.tree.addEventListener("click", self.click_on_item, True)
+		self.tree.addEventListener("dblclick", self.double_click_on_item, True)
+
+	def click_on_item(self, event):
+		self.on_selection("click", self.visibleData[self.tree.currentIndex])
+
+	def double_click_on_item(self, event):
+		self.on_selection("dblclick", self.visibleData[self.tree.currentIndex])
+	"""
+
+	# nsITreeView methods.
+ 	def get_rowCount(self):
+		return len(self.items)
+
+	def setTree(self, treeBox):
+		self.treeBox = treeBox
+
+	def getCellText(self, index, column):
+		return self.items[index]
+
+	def isContainer(self, index):
+		return False
+
+	def isContainerOpen(self, index):
+		return False
+
+	def isContainerEmpty(self, index):
+		return False
+
+	def isSeparator(self, index):
+		return False
+
+	def isSorted(self):
+		return False
+
+	def isEditable(self, index, column):
+		return False
+
+	def getParentIndex(self, index):
+		return -1
+
+	def getLevel(self, index):
+		return 0
+
+	def hasNextSibling(self, index, after):
+		return index != (len(self.items) - 1)
+
+	def toggleOpenState(self, index):
+		assert False, "It is not possible to open items in a string list."
+
+	def rowCountChanged(self, index, number_of_items):
+		if self.treeBox:
+			self.treeBox.rowCountChanged(index, number_of_items)
+
+	def invalidateRow(self, index):
+		# If you call expand_all() before this is associated with a tree box
+		# then it will fail.
+		if self.treeBox:
+			self.treeBox.invalidateRow(index)
+
+	def getImageSrc(self, index, column): pass
+	def getProgressMode(self, index, column): pass
+	def getCellValue(self, index, column): pass
+	def cycleHeader(self, col): pass
+	def selectionChanged(self): pass
+	def cycleCell(self, index, column): pass
+	def performAction(self, action): pass
+	def performActionOnCell(self, action, index, column): pass
+	def getRowProperties(self, index, column): pass
+	def getCellProperties(self, index, column, prop): pass
+	def getColumnProperties(self, column, element): pass

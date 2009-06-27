@@ -16,6 +16,8 @@ class FileSaveException(Exception):
 	pass
 
 class Book(object):
+	is_verse_keyed = False
+	is_dictionary = False
 	type = None
 	def __init__(self, parent, version = ""):
 		self.parent = parent
@@ -632,6 +634,7 @@ class Book(object):
 				
 class Commentary(Book):
 	type = "Commentaries"
+	is_verse_keyed = True
 
 	@classproperty
 	def noun(cls):
@@ -640,6 +643,8 @@ class Commentary(Book):
 
 class Bible(Book):
 	type = "Biblical Texts"
+	is_verse_keyed = True
+
 	@classproperty
 	def noun(cls):
 		return _("Bible")

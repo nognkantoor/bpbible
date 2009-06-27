@@ -134,6 +134,7 @@ class LazyTopicList(object):
 class Dictionary(Book):
 	type = "Lexicons / Dictionaries"
 	noun = "dictionary"
+	is_dictionary = True
 
 	def __init__(self, parent, version):
 		super(Dictionary, self).__init__(parent, version)
