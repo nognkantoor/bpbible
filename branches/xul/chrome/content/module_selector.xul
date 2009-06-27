@@ -32,7 +32,8 @@
     <vbox style="width: 300px">
       <tree id="module_tree" 
             flex="1" 
-            hidecolumnpicker="true">
+            hidecolumnpicker="true"
+            seltype="single">
         <treecols>
           <treecol id="maincolumn" flex="1"  primary="true" hideheader="true" />
         </treecols>

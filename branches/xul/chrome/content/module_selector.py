@@ -20,7 +20,7 @@ def set_browser_text(text):
 def on_module_choice(event_type, module, book):
 	module_name = module.Name()
 	debug.dprint(debug.ERROR, "event type", event_type, "module", str(module), module_name, "book", str(book))
-	if event_type == "click":
+	if event_type == "select":
 		if book.is_verse_keyed:
 			debug.dprint(debug.ERROR, 'Changing current module to', module_name)
 			window.mod_name = module_name
