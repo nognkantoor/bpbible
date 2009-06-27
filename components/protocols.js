@@ -129,7 +129,7 @@ BPBibleChannel.prototype = {
 	},
 
 	cancel: function(status) {
-		self.status = status;
+		this.status = status;
 	},
 
 	suspend: function() {
