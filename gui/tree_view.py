@@ -69,12 +69,16 @@ class BasicTreeView(object):
 
 	def setup_tree_events(self, tree):
 		self.tree = tree
-		self.tree.addEventListener("click", self.click_on_item, True)
+		self.tree.addEventListener("select", self.select_item, True)
 		self.tree.addEventListener("dblclick", self.double_click_on_item, True)
 
-	def click_on_item(self, event):
-		self.on_selection("click", self.visibleData[self.tree.currentIndex])
+	def select_item(self, event):
+		self.on_selection("select", self.visibleData[self.tree.currentIndex])
 
+	# XXX: Double click isn't the right event.  You get double clicks even
+	# when you double click on the tree's scroll bars, and you don't get an
+	# event if enter is pressed.
+	# Should investigate performAction(), to see which actions it passes.
 	def double_click_on_item(self, event):
 		self.on_selection("dblclick", self.visibleData[self.tree.currentIndex])
 
@@ -192,25 +196,6 @@ class ListTreeView(object):
  	def __init__(self, items=None):
 		self.treeBox = None
 		self.items = items
-
-	"""
-	def set_items(self, items):
-		if self.items:
-			self.rowCountChanged(0, -len(self.items))
-		self.items = items
-		self.rowCountChanged(0, len(self.items))
-
-	def setup_tree_events(self, tree):
-		self.tree = tree
-		self.tree.addEventListener("click", self.click_on_item, True)
-		self.tree.addEventListener("dblclick", self.double_click_on_item, True)
-
-	def click_on_item(self, event):
-		self.on_selection("click", self.visibleData[self.tree.currentIndex])
-
-	def double_click_on_item(self, event):
-		self.on_selection("dblclick", self.visibleData[self.tree.currentIndex])
-	"""
 
 	# nsITreeView methods.
  	def get_rowCount(self):
