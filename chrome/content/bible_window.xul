@@ -4,7 +4,7 @@
 
 <!DOCTYPE window SYSTEM "chrome://bpbible/locale/bpbible.dtd">
 
-<window id="module_selector"
+<window id="bible_window"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
         xmlns:html="http://www.w3.org/1999/xhtml"
         title="Bible window"
