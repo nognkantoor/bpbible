@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://bpbible/skin/bpbible.css" type="text/css"?>
+
+<!DOCTYPE window SYSTEM "chrome://bpbible/locale/bpbible.dtd">
+
+<window id="dictionary_window"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml"
+        title="Dictionary window"
+        style="width: 900px; height: 750px;"
+        script-type="application/x-python"
+        persist="screenX screenY width height"
+        windowtype="navigator:browser"        
+        onload="on_load();">
+
+  <script type="application/x-python" 
+          src="chrome://bpbible/content/dictionary_window.py" />
+
+  <!-- Dictionary content. -->
+  <hbox id="appcontent" flex="1">
+    <vbox flex="1">
+      <browser id="browser"
+              disablehistory="true"
+              src="bpbible:" 
+              style="width: 100%;" 
+              type="content-primary" 
+              flex="1" />
+    </vbox>
+    <splitter collapse="after"><grippy /></splitter>
+    <vbox style="width: 200px" flex="1">
+      <textbox id="dictionary_textbox" /> 
+      <tree id="dictionary_list" 
+            flex="1" 
+            hidecolumnpicker="true"
+            seltype="single">
+        <treecols>
+          <treecol id="maincolumn" flex="1"  primary="true" hideheader="true" />
+        </treecols>
+        <treechildren id="dictionary_list_base">
+        </treechildren>
+      </tree>
+    </vbox>
+  </hbox>
+</window>
+

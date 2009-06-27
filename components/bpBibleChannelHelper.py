@@ -34,12 +34,20 @@ class bpBibleChannelHelper:
 		
 
 		book = biblemgr.get_module_book_wrapper(module_name)
-		if book:
+		if book.is_verse_keyed:
 			c = book.GetChapter(ref, ref, config.current_verse_template)
-			c = c.replace("<!P>", "</p><p>")
+		elif book.is_dictionary:
+			try:
+				index = int(ref)
+				ref = book.GetTopics()[index]
+			except ValueError:
+				pass
+
+			c = book.GetReference(ref)
 		else:
 			dprint(ERROR, "Book `%s' not found." % module_name)
 			c = ''
+		c = c.replace("<!P>", "</p><p>")
 
 		resources = []
 		skin_prefixs = ["skin/standard", "skin"]

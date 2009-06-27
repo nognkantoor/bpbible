@@ -21,12 +21,18 @@ def on_module_choice(event_type, module, book):
 	module_name = module.Name()
 	debug.dprint(debug.ERROR, "event type", event_type, "module", str(module), module_name, "book", str(book))
 	if event_type == "click":
-		debug.dprint(debug.ERROR, 'Changing current module to', module_name)
-		window.mod_name = module_name
-		lookup_reference()
+		if book.is_verse_keyed:
+			debug.dprint(debug.ERROR, 'Changing current module to', module_name)
+			window.mod_name = module_name
+			lookup_reference()
 	elif event_type == "dblclick":
-		reference = document.getElementById("toolbar_location").value
-		debug.dprint(debug.ERROR, 'Loading Bible window', module_name, reference)
-		url = ('chrome://bpbible/content/bible_window.xul?module_name=%s&reference=%s' %
-			(urllib.quote(module_name), urllib.quote(reference)))
-		bible_window = window.open(url, '', 'chrome,scrollbars');
+		if book.is_verse_keyed:
+			reference = document.getElementById("toolbar_location").value
+			debug.dprint(debug.ERROR, 'Loading Bible window', module_name, reference)
+			url = ('chrome://bpbible/content/bible_window.xul?module_name=%s&reference=%s' %
+				(urllib.quote(module_name), urllib.quote(reference)))
+			bible_window = window.open(url, '', 'chrome,scrollbars')
+		elif book.is_dictionary:
+			debug.dprint(debug.ERROR, 'Loading Dictionary window', module_name)
+			url = 'chrome://bpbible/content/dictionary_window.xul?module_name=%s' % urllib.quote(module_name)
+			window.open(url, '', 'chrome,scrollbars')
