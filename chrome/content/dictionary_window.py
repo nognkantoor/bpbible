@@ -39,7 +39,6 @@ def dictionary_textbox_input(event):
 		do_not_change_textbox_value = True
 		dictionary_list.view.selection.select(idx)
 		do_not_change_textbox_value = False
-		# XXX: How do you access the treeBoxObject from Python?
 		dictionary_list.boxObject.\
 			QueryInterface(components.interfaces.nsITreeBoxObject).\
 			scrollToRow(idx)
