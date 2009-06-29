@@ -40,7 +40,9 @@ def dictionary_textbox_input(event):
 		dictionary_list.view.selection.select(idx)
 		do_not_change_textbox_value = False
 		# XXX: How do you access the treeBoxObject from Python?
-		#dictionary_list.treeBoxObject.scrollToRow(idx)
+		dictionary_list.boxObject.\
+			QueryInterface(components.interfaces.nsITreeBoxObject).\
+			scrollToRow(idx)
 
 def load_dictionary_entry_by_index(index):
 	browser = document.getElementById("browser")

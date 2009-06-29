@@ -196,6 +196,7 @@ class ListTreeView(object):
  	def __init__(self, items=None):
 		self.treeBox = None
 		self.items = items
+		self.selection = None
 
 	# nsITreeView methods.
  	def get_rowCount(self):
