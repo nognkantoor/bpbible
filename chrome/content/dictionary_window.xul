@@ -28,14 +28,14 @@
               flex="1" />
     </vbox>
     <splitter collapse="after"><grippy /></splitter>
-    <vbox style="width: 200px" flex="1">
+    <vbox style="width: 200px">
       <textbox id="dictionary_textbox" /> 
       <tree id="dictionary_list" 
             flex="1" 
             hidecolumnpicker="true"
             seltype="single">
         <treecols>
-          <treecol id="maincolumn" flex="1"  primary="true" hideheader="true" />
+          <treecol id="maincolumn" flex="1" hideheader="true" />
         </treecols>
         <treechildren id="dictionary_list_base">
         </treechildren>
