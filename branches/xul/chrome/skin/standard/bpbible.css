@@ -3,6 +3,9 @@
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 window {
-  background-color    : silver;
   font-family: arial;
+}
+
+tree {
+	margin: 0; /* Under windows this is 0 4px by default - don't know why... */
 }
