@@ -167,7 +167,7 @@ use_system_inactive_caption_colour = False
 preverse = '<a name="${osisRef}_start" osisRef="$osisRef"></a>'
 # templates
 body = (
-u'<a class="$numbertype" osisRef="$osisRef" href="bpbible://$version/$internal_reference">'
+u'<a class="$numbertype" osisRef="$osisRef" href="bpbible://page/$version/$internal_reference">'
 u'$versenumber</a>$text $tags<a name="${osisRef}_end" osisRef="$osisRef"></a>')
 
 bible_template = SmartVerseTemplate(body=body, preverse=preverse)
@@ -176,7 +176,7 @@ bible_template_without_headings = SmartVerseTemplate(body=body, headings=u'',
 
 body = (u'''
 	<a class="$numbertype currentverse"
-	   href="bpbible://$version/$internal_reference"
+	   href="bpbible://page/$version/$internal_reference"
 	   osisRef="$osisRef">
 	   $versenumber</a>$text $tags
 	<a name="${osisRef}_end"></a>''')
@@ -191,7 +191,7 @@ other_template = VerseTemplate(
 	body=u"<b>$range</b><br>$text<p>($description)</p> \n"
 )
 dictionary_template = VerseTemplate(
-	body=u"<br>$text<p>($description)</p> \n"
+	body=u"$text<p>($description)</p> \n"
 )
 
 

@@ -49,7 +49,7 @@ def load_dictionary_entry_by_index(index):
 	browser.setAttribute("src", "bpbible://")
 	# Get the dictionary entry.
 	# This is got by index to avoid issues with case-sensitive key names and case-insensitive URLs.
-	browser.setAttribute("src", "bpbible://%s/%d" % (window.mod_name, index))
+	browser.setAttribute("src", "bpbible://page/%s/%d" % (window.mod_name, index))
 	document.title = get_window_title(index)
 
 def get_window_title(index):

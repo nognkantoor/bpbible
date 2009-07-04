@@ -50,7 +50,7 @@ def lookup_reference():
 	browser.setAttribute("src", "bpbible://")
 
 	# now set it
-	browser.setAttribute("src", "bpbible://%s/%s" % (window.mod_name, i))
+	browser.setAttribute("src", "bpbible://page/%s/%s" % (window.mod_name, i))
 	document.title = get_window_title(i)
 
 def process_tooltip():

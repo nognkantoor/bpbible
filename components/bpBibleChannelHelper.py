@@ -11,22 +11,22 @@ class bpBibleChannelHelper:
 	_reg_clsid_ = "b79e8f5b-5aee-47e2-b831-d3a2f7609549"
 	_reg_contractid_ = "@bpbible.com/bpBibleChannelHelper;1"
 
-	def getDocument( self, module_name, param0 ):
+	def get_content_type(self, aURI):
+		return 'text/html'
+
+	def get_document(self, aURI):
 		import time
 		t = time.time()
 
-		# Result: wstring
-		# In: param0: wstring
-		print "PARAM0", param0, 
-		dprint(ERROR, "PARAM0", param0, "MODULE_NAME", module_name)
-		
-		ref = SW.URL.decode(param0).c_str()[1:]
-		assert "!" not in ref
+		action = str(aURI.host)
+		page = str(aURI.path)
 
-		print `ref`
+		ref = SW.URL.decode(page).c_str()[1:]
+
 		if not ref: return "<html><body>Content not loaded</body></html>"
-		print "Ref contains '!'?", "!" in ref
-		print ref
+		assert action == "page", "Unknown action %s" % action
+
+		module_name, ref = ref.split("/")
 
 		stylesheets = ["bpbible_html.css"]
 		scripts = ["jquery-1.3.2.js", "highlight.js", "bpbible_html.js",
@@ -36,6 +36,7 @@ class bpBibleChannelHelper:
 		book = biblemgr.get_module_book_wrapper(module_name)
 		if book.is_verse_keyed:
 			c = book.GetChapter(ref, ref, config.current_verse_template)
+			stylesheets.append("bpbible_verse_keyed.css")
 		elif book.is_dictionary:
 			try:
 				index = int(ref)
