@@ -64,9 +64,7 @@ BPBibleProtocol.prototype = {
 	},
 	
 	newChannel: function(aURI) {
-		var channel = new BPBibleChannel();
-		channel.URI = aURI;
-		channel.originalURI = aURI;
+		var channel = new BPBibleChannel(aURI);
 		return channel;
 	},
 
@@ -75,13 +73,14 @@ BPBibleProtocol.prototype = {
 	}
 };
 
-function BPBibleChannel() {
+function BPBibleChannel(aURI) {
 	this.logMessage("Creating Channel");
 	this._bpb = Components.classes
 				["@bpbible.com/bpBibleChannelHelper;1"]
 				.createInstance(Components.interfaces.bpBibleChannelHelper);
-	
-
+	this.URI = aURI;
+	this.originalURI = aURI;
+	this.contentType = this._bpb.get_content_type(aURI);
 }
 
 BPBibleChannel.prototype = {
@@ -94,15 +93,7 @@ BPBibleChannel.prototype = {
 
 	/* internal */
 
-	_async_type: null,
-	_command: null,
-	_termType: null,
-	_convertStream: null,
-	_ssh: null,
 	_bpb: null,
-	_authSvc: null,
-	listener: null,
-	context: null,
 
 	logMessage: function(message) {
 		var consoleSvc = Components.classes["@mozilla.org/consoleservice;1"].
@@ -166,7 +157,7 @@ BPBibleChannel.prototype = {
 			
 			this.logMessage("Requesting path: " + this.URI.path + " for host " + this.URI.host + " and spec " + this.URI.spec);
 
-			var html = this._bpb.getDocument(this.URI.host, this.URI.path);
+			var html = this._bpb.get_document(this.URI);
 			aListener.onStartRequest(this, aContext);
 			var converter = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"]
 							.createInstance(Components.interfaces.nsIScriptableUnicodeConverter);

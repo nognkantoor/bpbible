@@ -1,37 +1,3 @@
-/* Chapter and verse numbers */
-a.chapternumber {
-	float: left;
-	display: block;
-	line-height: 130%;
-	font-size: 200%;
-	text-decoration: none;
-	-moz-padding-end: 3px;
-	color: hsl(240, 35%, 60%);
-}
-
-[dir="rtl"] a.chapternumber {
-	float: right;
-}
-
-a.versenumber {
-	-moz-padding-end: 2px;
-	text-decoration: none;
-	font-size: small;
-	vertical-align: 0.32em;
-	line-height: 0;
-	color: hsl(240, 35%, 50%);
-	
-}
-
-a.currentverse {
-	color: hsl(120, 35%, 50%);
-}
-
-a.currentverse.chapternumber {
-	color: hsl(120, 35%, 60%);
-}
-
-
 /* Headings */
 /* TODO: Matt 5:2 - <p> comes *before* heading - our text indent goes
  * missing... */
@@ -150,30 +116,6 @@ div.indentedline[width="6"] {
 div.indentedline[width="0"] {
 	-moz-padding-start: 5em;
 	text-indent: -5em;
-}
-
-blockquote.lg > a.versenumber, 
-blockquote.lg > span.highlight > a.versenumber
-{
-	position: relative;
-	float: left;
-	left: -2.5em;
-	line-height: inherit;
-}
-
-blockquote.lg a.chapternumber
-{
-	-moz-margin-start: -2em;
-	line-height: 100%;
-	font-size: 150%;
-}
-
-[dir="rtl"] blockquote.lg > a.versenumber,
-[dir="rtl"] blockquote.lg > span.highlight > a.versenumber
-{
-	left: 0em;
-	float: right;
-	right: -2.5em;
 }
 
 /* Strong's headwords */
@@ -296,26 +238,6 @@ body[columns="true"] {
 
 body[columns="true"] > #HyphenatorToggleBox {
 	visibility: visible;
-}
-
-br.verse_per_line {
-	display: none;
-}
-
-body[verse_per_line="true"] br.verse_per_line {
-	display: inline;
-}
-
-/* Paragraphs */
-p {
-	text-indent: 1em;
-	margin-bottom: 1px;
-	margin-top: 1px;	
-}
-
-body[verse_per_line="true"] p {
-	text-indent: 0em;
-	margin: 1em 0;
 }
 
 /*SUB, SUP { line-height: 0; } */
