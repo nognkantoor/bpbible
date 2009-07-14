@@ -185,6 +185,7 @@ class BasicTreeView(object):
 	def getRowProperties(self, index, column): pass
 	def getCellProperties(self, index, column, prop): pass
 	def getColumnProperties(self, column, element): pass
+	def canDrop(self, index, orientation): return False
 
 class ListTreeView(object):
 	"""This tree view is used as a wrapper for lists of strings.
@@ -259,3 +260,4 @@ class ListTreeView(object):
 	def getRowProperties(self, index, column): pass
 	def getCellProperties(self, index, column, prop): pass
 	def getColumnProperties(self, column, element): pass
+	def canDrop(self, index, orientation): return False	

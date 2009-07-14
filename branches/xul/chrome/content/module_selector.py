@@ -2,6 +2,7 @@ import urllib
 from backend.bibleinterface import biblemgr
 from module_tree_view import ModuleTreeView
 from util import debug
+from swlib.pysw import SW
 
 treeView = None
 
@@ -13,6 +14,7 @@ def load_module_tree_view():
 	tree.view = treeView
 	treeView.setup_tree_events(tree)
 	treeView.on_module_choice += on_module_choice
+	tree.addEventListener("contextmenu", check_context_menu, True)
 
 def set_browser_text(text):
 	document.getElementById("bodycontent").innerHTML = text.replace("<!P>", "&lt;!P&gt;")
@@ -36,3 +38,16 @@ def on_module_choice(event_type, module, book):
 			debug.dprint(debug.ERROR, 'Loading Dictionary window', module_name)
 			url = 'chrome://bpbible/content/dictionary_window.xul?module_name=%s' % urllib.quote(module_name)
 			window.open(url, '', 'chrome,scrollbars')
+
+
+def check_context_menu(event):
+	selection = treeView.visibleData[treeView.tree.currentIndex].data
+	if not isinstance(selection, SW.Module):
+		event.preventDefault()
+
+def show_module_information():
+	selection = treeView.visibleData[treeView.tree.currentIndex].data
+	assert isinstance(selection, SW.Module)
+	window.open(
+		'chrome://bpbible/content/book_information_window.xul?module_name=%s' 
+		% selection.Name(), '', 'chrome,scrollbars');
