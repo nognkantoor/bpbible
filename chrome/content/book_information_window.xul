@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://bpbible/skin/bpbible.css" type="text/css"?>
+<?xml-stylesheet href="chrome://bpbible/skin/book_information_window.css" type="text/css"?>
+
+<!DOCTYPE window SYSTEM "chrome://bpbible/locale/bpbible.dtd">
+
+<window id="book_information"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml"
+        title="&moduleInformation.title;"
+        style="width: 500px; height: 600px;"
+        script-type="application/x-python"
+        persist="screenX screenY width height"
+        windowtype="navigator:browser"
+        onload="load_information()">
+
+  <script type="application/x-python" 
+          src="chrome://bpbible/content/bpbible.py" />
+  <script>
+def load_information():
+  initialise_module_name(None)
+  
+  browser = document.getElementById("browser")
+  browser.setAttribute("src", "bpbible://moduleinformation/" +window.mod_name)
+  </script>
+
+  <hbox id="content" flex="1">
+      <browser id="browser"
+               disablehistory="true"
+               src="bpbible:" 
+               style="width: 100%;" 
+               type="content-primary" 
+               flex="1" />
+  </hbox>
+</window>
