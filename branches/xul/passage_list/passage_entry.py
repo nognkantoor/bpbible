@@ -1,5 +1,6 @@
 from swlib.pysw import VerseList
 from util.observerlist import ObserverList
+from verse_to_passage_entry_map import singleton_verse_to_passage_entry_map
 
 _passage_entry_id_dict = {}
 
@@ -45,7 +46,7 @@ class PassageEntry(object):
 	def get_passage(self):
 		return self._passage
 	
-	def set_passage(self, passage):
+	def set_passage(self, passage, new_passage=False):
 		"""Sets the passage for this passage entry.
 
 		If the passage is a string, then it will be converted to a passage if
@@ -54,8 +55,9 @@ class PassageEntry(object):
 		"""
 		old_passage = self._passage
 		self._set_passage(passage)
-		if self._passage != old_passage:
+		if self._passage != old_passage and not new_passage:
 			self.passage_changed_observers(self._passage)
+			singleton_verse_to_passage_entry_map.update_passage_entry(self, old_passage)
 	
 	def _set_passage(self, passage):
 		"""Sets the passage without notifying that the passage has changed."""
@@ -117,6 +119,11 @@ class PassageEntry(object):
 			#sys.stderr.write("%s, passages equal: %s, comment equal: %s\n" % (self, self.passage == other.passage, self.comment == other.comment))
 		except:
 			return False
+
+	def __cmp__(self, other):
+		if self.passage is None or other.passage is None:
+			return -1
+		return cmp(self.passage[0], other.passage[0])
 
 class PassageError(Exception):
 	pass

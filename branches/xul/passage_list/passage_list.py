@@ -1,7 +1,11 @@
 from passage_entry import PassageEntry
+from verse_to_passage_entry_map import singleton_verse_to_passage_entry_map
 from util.observerlist import ObserverList
 from swlib.pysw import VerseList
 import sqlite
+import bisect
+
+SPECIAL_TOPIC_PREFIX = "BPBIBLE_SPECIAL_TOPIC_"
 
 _passage_list_id_dict = {}
 
@@ -15,7 +19,7 @@ class BasePassageList(object):
 	"""
 	contains_passages = True
 	__table__ = "topic"
-	__fields_to_store__ = ["name", "description", "include_subtopic", "order_number", "parent"]
+	__fields_to_store__ = ["name", "description", "include_subtopic", "order_passages_by", "order_number", "parent"]
 
 	def __init__(self, description=""):
 		self._description = description
@@ -30,11 +34,14 @@ class BasePassageList(object):
 		global _passage_list_id_dict
 		_passage_list_id_dict[self.get_id()] = self
 
-		self.passages = []
+		self._natural_order_passages = []
+		self._passage_order_passages = None
 		self.add_passage_observers = ObserverList()
 		self.remove_passage_observers = ObserverList()
+		self.passage_order_changed_observers = ObserverList()
 		self.id = None
 		self.order_number = 0
+		self._order_passages_by = "NATURAL_ORDER"
 	
 	def add_subtopic(self, subtopic):
 		"""Adds the given sub-topic to the end of the list of sub-topics."""
@@ -62,6 +69,7 @@ class BasePassageList(object):
 		sqlite.store_topic(subtopic)
 		#print self.subtopics, index, subtopic.id
 		self.add_subtopic_observers(subtopic)
+		subtopic.apply_to_all_child_passages(singleton_verse_to_passage_entry_map.add_passage_entry)
 	
 	def add_empty_subtopic(self, name, description=""):
 		"""Adds an empty passage list with the given name and description.
@@ -84,6 +92,7 @@ class BasePassageList(object):
 			del self.subtopics[index]
 			sqlite.remove_item(topic)
 			self.remove_subtopic_observers(topic)
+			topic.apply_to_all_child_passages(singleton_verse_to_passage_entry_map.remove_passage_entry)
 		except ValueError:
 			raise MissingTopicError(topic)
 	
@@ -97,19 +106,25 @@ class BasePassageList(object):
 		index: The index to insert the passage before.
 			If this is None, then the passage will be appended to the list.
 		"""
+		# XXX: This is needed to undo copy and paste.
+		#assert (index is None or self._order_passages_by == "NATURAL_ORDER")
 		if index is None:
-			index = len(self.passages)
-		if self.passages:
-			if index < len(self.passages):
-				passage.order_number = self.passages[index].order_number
-				for later_passage in self.passages[index:]:
+			index = len(self._natural_order_passages)
+		if self._natural_order_passages:
+			if index < len(self._natural_order_passages):
+				passage.order_number = self._natural_order_passages[index].order_number
+				for later_passage in self._natural_order_passages[index:]:
 					later_passage.order_number += 1
 				sqlite.connection.execute("UPDATE passage SET order_number = order_number + 1 WHERE parent = ? AND order_number >= ?", (self.id, passage.order_number))
 			else:
-				passage.order_number = self.passages[-1].order_number + 1
-		self.passages.insert(index, passage)
+				passage.order_number = self._natural_order_passages[-1].order_number + 1
+		self._natural_order_passages.insert(index, passage)
+		if self._order_passages_by == "PASSAGE_ORDER":
+			index = bisect.bisect(self._passage_order_passages, passage)
+			self._passage_order_passages.insert(index, passage)
 		passage.parent = self
 		sqlite.save_or_update_item(passage)
+		singleton_verse_to_passage_entry_map.add_passage_entry(passage)
 		self.add_passage_observers(passage)
 
 	def remove_passage(self, passage):
@@ -120,9 +135,13 @@ class BasePassageList(object):
 		If the passage is not present, then a MissingPassageError is raised.
 		"""
 		try:
-			index = self.passages.index(passage)
-			del self.passages[index]
+			index = self._natural_order_passages.index(passage)
+			del self._natural_order_passages[index]
+			if self._passage_order_passages is not None:
+				index = self._passage_order_passages.index(passage)
+				del self._passage_order_passages[index]
 			sqlite.remove_item(passage)
+			singleton_verse_to_passage_entry_map.remove_passage_entry(passage)
 			self.remove_passage_observers(passage, index)
 		except ValueError:
 			raise MissingPassageError(passage)
@@ -132,7 +151,7 @@ class BasePassageList(object):
 
 		recursive: If true, search sub lists as well.
 		"""
-		for passage in self.passages:
+		for passage in self._natural_order_passages:
 			if passage.contains_verse(verse_key):
 				return True
 		if recursive:
@@ -140,6 +159,13 @@ class BasePassageList(object):
 				if topic.contains_verse(verse_key, recursive=True):
 					return True
 		return False
+
+	def apply_to_all_child_passages(self, callable, recursive=True):
+		for passage in self._natural_order_passages:
+			callable(passage)
+		if recursive:
+			for topic in self.subtopics:
+				topic.apply_to_all_child_passages(callable, recursive=True)
 
 	def get_id(self):
 		"""Gets a unique identifier for this list.
@@ -175,13 +201,14 @@ class BasePassageList(object):
 		"""Makes a clean copy of this passage list (including its passages
 		and subtopics) and returns it.
 		"""
-		new_list = PassageList(name=self.name, description=self.description)
-		sqlite.save_or_update_item(new_list)
+		new_topic = PassageList(name=self.name, description=self.description)
+		sqlite.save_or_update_item(new_topic)
 		for topic in self.subtopics:
-			new_list.add_subtopic(topic.clone())
-		for passage in self.passages:
-			new_list.add_passage(passage.clone())
-		return new_list
+			new_topic.add_subtopic(topic.clone())
+		for passage in self._natural_order_passages:
+			new_topic.add_passage(passage.clone())
+		new_topic.order_passages_by = self.order_passages_by
+		return new_topic
 
 	# XXX: Wrapper to save schema migration, see sqlite.py.
 	def get_include_subtopic(self):
@@ -191,11 +218,50 @@ class BasePassageList(object):
 		self.display_tag = new_value
 
 	include_subtopic = property(get_include_subtopic, set_include_subtopic)
+
+	def get_order_passages_by(self):
+		return self._order_passages_by
+
+	def set_order_passages_by(self, order_passages_by, force_rebuild=False):
+		if order_passages_by == self._order_passages_by and not force_rebuild:
+			return
+
+		if order_passages_by == "" or order_passages_by is None:
+			order_passages_by = "NATURAL_ORDER"
+
+		self._order_passages_by = order_passages_by
+
+		if order_passages_by == "NATURAL_ORDER":
+			self._passage_order_passages = None
+		else:
+			self._passage_order_passages = self._natural_order_passages[:]
+			self._passage_order_passages.sort()
+
+		self.passage_order_changed_observers(self.order_passages_by)
+
+	order_passages_by = property(get_order_passages_by, set_order_passages_by)
+
+	def get_passages(self):
+		if self.order_passages_by == "NATURAL_ORDER":
+			return self._natural_order_passages
+		else:
+			return self._passage_order_passages
+
+	def set_passages(self, passages):
+		self._natural_order_passages = passages
+		# Force the ordered passage list to be rebuilt properly if necessary.
+		self.set_order_passages_by(self.order_passages_by, force_rebuild=True)
+
+	passages = property(get_passages, set_passages)
+
+	@property
+	def is_special_topic(self):
+		return self.name.startswith(SPECIAL_TOPIC_PREFIX)
 	
 	def __eq__(self, other):
 		try:
 			return self.subtopics == other.subtopics \
-					and self.passages == other.passages
+					and self._natural_order_passages == other._natural_order_passages
 
 			# For help in debugging.
 			#import sys
@@ -250,6 +316,12 @@ class PassageList(BasePassageList):
 		return " > ".join(self.get_topic_trail())
 	
 	full_name = property(get_full_name)
+
+	@property
+	def can_display_tag(self):
+		if not self.display_tag or self.is_special_topic:
+			return False
+		return self.parent.can_display_tag
 	
 	def __eq__(self, other):
 		try:
@@ -262,27 +334,18 @@ class PassageList(BasePassageList):
 		return '<PassageList %s>' % repr(self.name)
 	
 	@staticmethod
-	def create_from_verse_list(name, verse_list, description="", comment=""):
+	def create_from_verse_list(name, verse_list, description="", comment="", display_tag=True):
 		"""Creates a passage list with the given name.
 
 		verse_list: The list of verses to create the passage list from.
 		description: The description for the passage list.
 		comment: The comment to attach to every passage entry.
+		display_tag: Should the tag be displayed for this topic.
 		"""
-		passage_list = PassageList(name, description)
+		passage_list = PassageList(name, description, display_tag=display_tag)
 		for verse in verse_list:
 			passage_list.add_passage(PassageEntry(VerseList([verse]), comment))
 		return passage_list
-
-def _create_passage_list(name, description, passages, subtopics):
-	passage_list = PassageList(name, description)
-	for passage in passages:
-		passage_list.add_passage(passage)
-
-	for subtopic in subtopics:
-		passage_list.add_subtopic(subtopic)
-	
-	return passage_list
 
 class PassageListManager(BasePassageList):
 	"""This class provides the root passage list manager."""
@@ -323,6 +386,13 @@ class PassageListManager(BasePassageList):
 		return True
 
 	display_tag = property(display_tag, lambda self, new: None)
+
+	@property
+	def can_display_tag(self):
+		return True
+
+	def get_all_passage_entries_for_verse(self, verse_key):
+		return singleton_verse_to_passage_entry_map.get_passage_entries_for_verse_key(verse_key)
 
 	def get_topic_trail(self):
 		return ()
@@ -383,15 +453,9 @@ class PassageListManager(BasePassageList):
 		topics = [topic_name.strip() for topic_name in name.split(">")]
 		return self._find_or_create_topics(topics)
 
-def _create_manager(lists, passages):
-	manager = PassageListManager()
-	for list in lists:
-		manager.add_subtopic(list)
-
-	for passage in passages:
-		manager.add_passage(passage)
-
-	return manager
+	@property
+	def comments_special_topic(self):
+		return self.find_or_create_topic(SPECIAL_TOPIC_PREFIX + "comments")
 
 import config
 
@@ -403,6 +467,7 @@ def get_primary_passage_list_manager(filename=DEFAULT_FILENAME):
 	"""Gets the primary passage list manager for the application."""
 	global _global_passage_list_manager
 	if _global_passage_list_manager is None:
+		singleton_verse_to_passage_entry_map.clear()
 		_global_passage_list_manager = sqlite.load_manager(filename)
 		import guiconfig
 		guiconfig.mainfrm.on_close += _global_passage_list_manager.close

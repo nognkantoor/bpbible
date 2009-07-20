@@ -196,6 +196,8 @@ def build_installer():
 		os.mkdir("BPBiblePortable\\App\\AppInfo")
 		# App\AppInfo\appicon.ico
 		os.system("copy %s %s" % ("graphics\\bpbible.ico", "BPBiblePortable\\App\\AppInfo\\appicon.ico"))
+		os.system("copy %s %s" % ("graphics\\bible-16x16.png", "BPBiblePortable\\App\\AppInfo\\appicon_16.png"))
+		os.system("copy %s %s" % ("graphics\\bible-32x32.png", "BPBiblePortable\\App\\AppInfo\\appicon_32.png"))
 		# App\AppInfo\appinfo.ini
 		appinfo_contents = open("%s.template" % "make_portable\\appinfo.ini", "r").read()
 		if portable_prerelease_status_number:
@@ -216,6 +218,7 @@ def build_installer():
 		os.mkdir("BPBiblePortable\\App\\DefaultData")
 		os.mkdir("BPBiblePortable\\App\\DefaultData\\settings")
 		os.system("copy %s %s" % ("make_portable\\sword.conf", "BPBiblePortable\\DefaultData\\settings"))
+		os.system("copy %s %s" % ("make_portable\\BPBiblePortableSettings.ini", "BPBiblePortable\\DefaultData\\settings"))
 
 		# App\BPBible
 		os.rename("dist", "BPBiblePortable\\App\\BPBible")

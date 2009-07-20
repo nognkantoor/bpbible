@@ -558,9 +558,9 @@ class MainFrame(wx.Frame, AuiLayer):
 		
 		web_links = dict(
 			gui_website="http://bpbible.com",
-			gui_documentation="http://code.google.com/p/bpbible/w/list",
+			gui_documentation="http://code.google.com/p/bpbible/w/list?q=label:user-documentation&sort=pagename",
 			gui_issues="http://code.google.com/p/bpbible/issues/list",
-			gui_books="http://www.crosswire.org/sword/modules/index.jsp"
+			gui_books="http://code.google.com/p/bpbible/wiki/InstallingBooks",
 		)
 		
 		def weblink_handler(weblink):
@@ -720,41 +720,73 @@ class MainFrame(wx.Frame, AuiLayer):
 		return menu
 	
 	
+	def on_bookname_language_choice(self, event):
+		print self.language_bookname_mapping[event.Id]
+		util.i18n.locale_settings["language_book_names"][util.i18n.langid] = self.language_bookname_mapping[event.Id]
+		self.restart()
+	
 	def on_language_choice(self, event):
 		util.i18n.locale_settings["language"] = self.language_mapping[event.Id]
 		self.restart()
-		
-	def set_menus_up(self):
-		self.file_menu = self.MenuBar.GetMenu(0)
-		for item in self.file_menu.MenuItems:
-			if item.ItemLabel == _("&Language"):
-				language_menu = item.SubMenu
-				break
-		else:
-			assert False, "Language menu could not be found"
-		
-		self.language_mapping = {}
-		for text, (display_name, locale, abbrev, conf) \
-			in sorted(util.i18n.languages.items(), 
-				key=lambda (text, (display_name, x, y, z)): display_name):
+	
+	def fill_language_menu(self, menu, data, current, func, mapping):
+		for text, display_name in sorted(data, key=lambda (t, d): d):			
+			result = util.i18n.get_locale(text)
+			if result:
+				worked, own_locale, own_encoding = result
+				own_key = display_name.encode(own_encoding)
+				own_trans = own_locale.translate(own_key)
+				own_trans = own_trans.decode(own_encoding)
 			
-			worked, own_locale, own_encoding = util.i18n.get_locale(text)
-			own_key = display_name.encode(own_encoding)
-			own_trans = own_locale.translate(own_key)
-			own_trans = own_trans.decode(own_encoding)
+			else:
+				own_trans = None
 
 			key = display_name.encode(pysw.locale_encoding)
 			trans = pysw.locale.translate(key)
 			trans = trans.decode(pysw.locale_encoding)
 
-			if trans != own_trans:
+			if trans != own_trans and own_trans:
 				trans += " - %s" % own_trans
 
-			menu_item = language_menu.AppendRadioItem(wx.ID_ANY, trans)
-			menu_item.Check(text == util.i18n.locale_settings["language"])
+			menu_item = menu.AppendRadioItem(wx.ID_ANY, trans)
+			menu_item.Check(text == current)
 
-			self.language_mapping[menu_item.Id] = text
-			self.Bind(wx.EVT_MENU, self.on_language_choice, menu_item)
+			mapping[menu_item.Id] = text
+			self.Bind(wx.EVT_MENU, func, menu_item)
+	
+	def set_menus_up(self):
+		self.file_menu = self.MenuBar.GetMenu(0)
+		for item in self.file_menu.MenuItems:
+			if item.ItemLabel == _("&Language"):
+				language_menu = item.SubMenu
+				for iitem in language_menu.MenuItems:
+					if iitem.ItemLabel == _("&Bible book names"):
+						bible_book_name_menu = iitem.SubMenu
+						break
+				else:
+					assert False, "Bible book name menu could not be found"
+
+				break
+		else:
+			assert False, "Language menu could not be found"
+		
+		self.language_mapping = {}		
+
+		self.fill_language_menu(language_menu, 
+			[(text, display_name) for text, (display_name, x, y, z) 
+				in util.i18n.languages.items()],
+			util.i18n.locale_settings["language"],
+			self.on_language_choice, self.language_mapping)
+		self.language_bookname_mapping = {}
+		self.fill_language_menu(bible_book_name_menu, 
+			[(text, display_name) for text, (display_name, x, y) 
+				in util.i18n.get_bookname_languages()],
+			util.i18n.locale_settings["language_book_names"].get(
+				util.i18n.locale_settings["language"]
+			),
+			self.on_bookname_language_choice, self.language_bookname_mapping)
+		
+
 
 
 		
@@ -945,11 +977,20 @@ class MainFrame(wx.Frame, AuiLayer):
 			_("Topic Tags"),
 			_("Display the topics that each verse is tagged with.")
 		)
+
+		"""
+		expand_topic_passages = self.options_menu.AppendCheckItem(
+			wx.ID_ANY,
+			_("Expand Topic Passages"),
+			_("Display the complete passage text for passages in the topic tooltip")
+		)
+		"""
 		
 
 		self.Bind(wx.EVT_MENU, self.toggle_expand_cross_references, 
 			cross_references)
 		self.Bind(wx.EVT_MENU, self.toggle_display_tags, display_tags)
+		#self.Bind(wx.EVT_MENU, self.toggle_expand_topic_passages, expand_topic_passages)
 		self.Bind(wx.EVT_MENU, 
 			lambda evt:self.set_verse_per_line(evt.IsChecked()), 
 			verse_per_line)
@@ -957,6 +998,7 @@ class MainFrame(wx.Frame, AuiLayer):
 		filter_settings = config_manager["Filter"]
 		cross_references.Check(filter_settings["footnote_ellipsis_level"])
 		display_tags.Check(passage_list.settings.display_tags)
+		#expand_topic_passages.Check(passage_list.settings.expand_topic_passages)
 		verse_per_line.Check(bible_settings["verse_per_line"])
 
 	
@@ -978,6 +1020,11 @@ class MainFrame(wx.Frame, AuiLayer):
 	def toggle_display_tags(self, event):
 		passage_list.settings.display_tags = event.IsChecked()
 		self.UpdateBibleUI(settings_changed=True, source=SETTINGS_CHANGED)
+
+	"""
+	def toggle_expand_topic_passages(self, event):
+		passage_list.settings.expand_topic_passages = event.IsChecked()
+	"""
 
 	def do_search(self, event):
 		"""Search in the currently selected book, defaulting to the Bible if

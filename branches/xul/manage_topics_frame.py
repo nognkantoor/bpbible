@@ -10,13 +10,16 @@ from xrc.xrc_util import attach_unknown_control
 from gui import guiutil
 from manage_topics_operations import (ManageTopicsOperations,
 		CircularDataException, BaseOperationsContext)
-
+from topic_selector import TopicSelector
 from swlib.pysw import VerseList
+from util.i18n import N_
+from util import osutils
 
 class ManageTopicsFrame(xrcManageTopicsFrame):
 	def __init__(self, parent):
 		super(ManageTopicsFrame, self).__init__(parent)
 		attach_unknown_control("topic_tree", lambda parent: TopicTree(self, parent), self)
+		attach_unknown_control("topic_selector", TopicSelector, self)
 		attach_unknown_control("passage_list_ctrl", lambda parent: PassageListCtrl(self, parent), self)
 		self.SetIcons(guiconfig.icons)
 		self._manager = get_primary_passage_list_manager()
@@ -37,6 +40,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		self._passage_list_topic = None
 		self.is_passage_selected = False
 		self.selected_passages = []
+		self.topic_selector.topic_changed_observers.add_observer(self._set_selected_topic)
 		self._setup_item_details_panel()
 		self._init_passage_list_ctrl_headers()
 		self._setup_passage_list_ctrl()
@@ -44,7 +48,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		self._bind_events()
 		self.Size = (725, 590)
 		self.passage_list_splitter.SashGravity = 1.0
-		self.passage_list_splitter.SashPosition = 340
+		wx.CallAfter(self.passage_list_splitter.SetSashPosition, 340)
 
 	def _bind_events(self):
 		self.Bind(wx.EVT_CLOSE, self._on_close)
@@ -97,6 +101,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 			return
 		index = topic.passages.index(passage_entry)
 		self._select_list_entry_by_index(index)
+		self.passage_list_ctrl.EnsureVisible(index)
 		self.passage_list_ctrl.SetFocus()
 
 	def _get_tree_selected_topic(self):
@@ -106,6 +111,9 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		return self.topic_tree.GetPyData(selection)
 	
 	def _set_selected_topic(self, topic):
+		if topic is self.selected_topic:
+			return
+
 		tree_item = self._find_topic(self.topic_tree.GetRootItem(), topic)
 		if tree_item is None:
 			tree_item = self.topic_tree.GetRootItem()
@@ -139,6 +147,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		self._selected_topic = new_topic
 		self.selected_passages = []
 		self._change_topic_details(new_topic)
+		self.topic_selector.selected_topic = new_topic
 
 	selected_topic = property(get_selected_topic, set_selected_topic)
 
@@ -178,6 +187,9 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 			self._add_topic_node(subtopic, parent_node)
 	
 	def _add_topic_node(self, passage_list, parent_node):
+		if passage_list.is_special_topic:
+			return
+
 		node = self.topic_tree.AppendItem(parent_node, passage_list.name)
 		self.topic_tree.SetPyData(node, passage_list)
 		self._add_sub_topics(passage_list, node)
@@ -378,8 +390,11 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		name = _(u"Search: %s") % search_string
 		description = _(u"Results from the search `%s'.") % search_string
 
+		# Tags are not displayed by default for saved search results because
+		# they are not really user created and it looks dubious having tags
+		# "Search: My search" littering the screen.
 		self._create_topic(self._manager,
-				lambda: PassageList.create_from_verse_list(name, search_results, description)
+				lambda: PassageList.create_from_verse_list(name, search_results, description, display_tag=False)
 			)
 	
 	def _create_passage(self, topic):
@@ -395,6 +410,9 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 		event.Skip()
 	
 	def _remove_observers(self, parent_topic):
+		if parent_topic.is_special_topic:
+			return
+
 		parent_topic.add_subtopic_observers.remove(self._add_new_topic_node)
 		parent_topic.remove_subtopic_observers.remove(self._remove_topic_node)
 		parent_topic.name_changed_observers.remove(self._rename_topic_node)
@@ -425,6 +443,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 	def _add_passage_list_observers(self):
 		self._passage_list_topic.add_passage_observers += self._insert_topic_passage
 		self._passage_list_topic.remove_passage_observers += self._remove_topic_passage
+		self._passage_list_topic.passage_order_changed_observers += self._passage_order_changed
 
 	def _remove_passage_list_observers(self):
 		if self._passage_list_topic is None:
@@ -432,6 +451,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 
 		self._passage_list_topic.add_passage_observers -= self._insert_topic_passage
 		self._passage_list_topic.remove_passage_observers -= self._remove_topic_passage
+		self._passage_list_topic.passage_order_changed_observers -= self._passage_order_changed
 		for passage in self._passage_list_topic.passages:
 			self._remove_passage_list_passage_observers(passage)
 
@@ -456,6 +476,11 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 				if len(self._passage_list_topic.passages) == index:
 					index -= 1
 				self._select_list_entry_by_index(index)
+
+	def _passage_order_changed(self, order_passages_by):
+		self._setup_passage_list_ctrl()
+		# Preserve the selection.
+		pass
 
 	def _add_passage_list_passage_observers(self, passage_entry):
 		passage_entry.passage_changed_observers.add_observer(self._change_passage_passage, (passage_entry,))
@@ -503,6 +528,7 @@ class ManageTopicsFrame(xrcManageTopicsFrame):
 	def _passage_activated(self, event):
 		passage_entry = self.selected_topic.passages[event.GetIndex()]
 		guiconfig.mainfrm.set_bible_ref(str(passage_entry), source=TOPIC_LIST)
+		guiconfig.mainfrm.Raise()
 
 	def select_passages(self, passages, focused_passage):
 		"""Selects the given passages in the passage list control.
@@ -854,9 +880,13 @@ class PassageListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
 		drop_source.SetData(data)
 		result = drop_source.DoDragDrop(wx.Drag_DefaultMove)
 
-	@guiutil.frozen
 	def _handle_drop(self, x, y, drag_result):
 		"""Handles moving the passage to the new location."""
+		# It doesn't make any sense reordering passages if it is not in
+		# natural order.
+		if self._topic_frame.selected_topic.order_passages_by != "NATURAL_ORDER":
+			return
+
 		index, flags = self.HitTest(wx.Point(x, y))
 		if index == wx.NOT_FOUND or index == self._drag_index:
 			return
@@ -865,6 +895,10 @@ class PassageListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
 		# XXX: This does not handle copying the passage.
 		self._topic_frame._operations_manager.move_current_passage(new_index=index)
 		self._topic_frame.select_passages(selected_passages, self.drag_passage_entry)
+	
+	# list goes blank under wxGTK when dragging and dropping if this is frozen
+	if not osutils.is_gtk():
+		_handle_drop = guiutil.frozen(_handle_drop)
 
 class PassageListDropTarget(wx.PyDropTarget):
 	"""Allows passages to be reordered in the current topic.
@@ -916,17 +950,31 @@ class TopicPassageDropTarget(wx.PyDropTarget):
 			self._topic_tree.on_drop_passage(x, y, selected_passages, result)
 		return result
 
+TOPIC_ORDER_OPTIONS = [
+	N_("Unordered"),
+	N_("Order by Passage"),
+]
+
+TOPIC_ORDER_BACKEND_OPTIONS = [
+	"NATURAL_ORDER",
+	"PASSAGE_ORDER",
+]
+
 class TopicDetailsPanel(xrcTopicDetailsPanel):
 	def __init__(self, parent, operations_manager):
 		super(TopicDetailsPanel, self).__init__(parent)
 		self.topic = None
 		self.name_text.Bind(wx.EVT_KILL_FOCUS, self._lost_focus)
 		self.description_text.Bind(wx.EVT_KILL_FOCUS, self._lost_focus)
+		self.order_passages_choice.Bind(wx.EVT_CHOICE, self._order_passages_choice_item_selected)
 		self.display_tag_checkbox.Bind(wx.EVT_CHECKBOX, self._display_tag_changed)
 		self.old_name = u""
 		self.old_description = u""
+		self.old_order_passages_by = u""
 		self._operations_manager = operations_manager
 		self.combine_action = False
+		for option in TOPIC_ORDER_OPTIONS:
+			self.order_passages_choice.Append(_(option))
 
 	def Show(self, show=True):
 		super(TopicDetailsPanel, self).Show(show)
@@ -943,10 +991,12 @@ class TopicDetailsPanel(xrcTopicDetailsPanel):
 
 		self.old_name = new_topic.name
 		self.old_description = new_topic.description
+		self.old_order_passages_by = new_topic.order_passages_by
 		self.topic = new_topic
 		self.name_text.Value = new_topic.name
 		self.display_tag_checkbox.Value = bool(new_topic.display_tag)
 		self.description_text.Value = new_topic.description
+		self.order_passages_choice.SetSelection(TOPIC_ORDER_BACKEND_OPTIONS.index(new_topic.order_passages_by))
 
 	def focus(self):
 		"""Sets the focus on this panel for editing."""
@@ -967,19 +1017,31 @@ class TopicDetailsPanel(xrcTopicDetailsPanel):
 
 		name = self.name_text.Value
 		description = self.description_text.Value
-		if name != self.old_name or description != self.old_description:
+		order_passages_by = TOPIC_ORDER_BACKEND_OPTIONS[self.order_passages_choice.GetSelection()]
+		if (name != self.old_name or
+				description != self.old_description or
+				order_passages_by != self.old_order_passages_by):
 			self._operations_manager.set_topic_details(
-					self.topic, name, description,
+					self.topic, name, description, order_passages_by,
 					combine_action=self.combine_action,
 				)
 			self.old_name = name
 			self.old_description = description
+			self.old_order_passages_by = order_passages_by
 			self.combine_action = True
 
 	def _display_tag_changed(self, event):
 		display_tag = bool(self.display_tag_checkbox.IsChecked())
 		self._operations_manager.set_display_tag(
 				self.topic, display_tag,
+				combine_action=self.combine_action,
+			)
+		self.combine_action = True
+
+	def _order_passages_choice_item_selected(self, event):
+		order_passages_by = TOPIC_ORDER_BACKEND_OPTIONS[self.order_passages_choice.GetSelection()]
+		self._operations_manager.set_order_passages_by(
+				self.topic, order_passages_by,
 				combine_action=self.combine_action,
 			)
 		self.combine_action = True

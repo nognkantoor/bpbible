@@ -44,9 +44,12 @@ class TopicSelector(wx.TextCtrl):
 		return self._selected_topic
 
 	def set_selected_topic(self, topic):
+		selected_topic_changed = (topic is not self._selected_topic)
 		self._selected_topic = topic
 		self._update_topic_text()
-		self.topic_changed_observers(topic)
+
+		if selected_topic_changed:
+			self.topic_changed_observers(topic)
 
 	selected_topic = property(get_selected_topic, set_selected_topic,
 			doc="The currently selected topic for the control.")
@@ -66,8 +69,13 @@ class TopicSelector(wx.TextCtrl):
 	def _setup_dropdown_data(self):
 		filter = self.GetValue()
 		if filter:
-			# XXX: Handle individual words.
-			filtered_topics = [(name, index) for index, (name, _) in enumerate(self._topics) if filter.lower() in name.lower()]
+			if ">" in filter:
+				filtered_words = [filter.lower()]
+			else:
+				filtered_words = [word.strip() for word in filter.lower().split()
+						if (word and word != ">")]
+			filtered_topics = [(name, index) for index, (name, _) in enumerate(self._topics)
+					if all(filtered_word in name.lower() for filtered_word in filtered_words)]
 		else:
 			filtered_topics = [(name, index) for index, (name, _) in enumerate(self._topics)]
 
@@ -104,6 +112,9 @@ class TopicSelector(wx.TextCtrl):
 		self._get_topics(self._manager)
 
 	def _get_topics(self, topic):
+		if topic.is_special_topic:
+			return
+
 		self._topics.append((topic.full_name, topic))
 		for subtopic in topic.subtopics:
 			self._get_topics(subtopic)
@@ -113,6 +124,7 @@ class TopicSelector(wx.TextCtrl):
 			self.ChangeValue(_("None"))
 		else:
 			self.ChangeValue(self._selected_topic.full_name)
+		self.SetInsertionPoint(0)
 
 	def _on_text_changed(self, event):
 		self._show_dropdown()
@@ -160,15 +172,15 @@ class TopicSelector(wx.TextCtrl):
 	def _select_currently_selected(self):
 		selection = self._topic_list.GetFirstSelected()
 		if selection == -1:
-			if self._topic_list.GetItemCount() == 1:
-				selection = 0
-			else:
+			selection = 0
+			if self._topic_list.GetItemCount() == 0:
 				return
 
 		topic_index = self._topic_list.GetItemData(selection)
 		self.selected_topic = self._topics[topic_index][1]
 
 	def _on_focus_got(self, event):
+		self.SetInsertionPoint(0)
 		self.SetSelection(-1, -1)
 
 	def _on_focus_lost(self, event):
