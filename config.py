@@ -168,7 +168,7 @@ preverse = '<a name="${osisRef}_start" osisRef="$osisRef"></a>'
 # templates
 body = (
 u'<a class="$numbertype" osisRef="$osisRef" href="bpbible://page/$version/$internal_reference">'
-u'$versenumber</a>$text $tags<a name="${osisRef}_end" osisRef="$osisRef"></a>')
+u'$versenumber</a>$text $usercomments $tags<a name="${osisRef}_end" osisRef="$osisRef"></a>')
 
 bible_template = SmartVerseTemplate(body=body, preverse=preverse)
 bible_template_without_headings = SmartVerseTemplate(body=body, headings=u'',

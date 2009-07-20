@@ -1,6 +1,7 @@
 from util.observerlist import ObserverList
 from passage_list import (BasePassageList, PassageList, PassageEntry,
 		InvalidPassageError)
+import sys
 
 class ManageTopicsOperations(object):
 	def __init__(self, passage_list_manager, context):
@@ -50,18 +51,24 @@ class ManageTopicsOperations(object):
 
 	def set_display_tag(self, topic, display_tag, combine_action=False):
 		self.set_topic_details(
-				topic, topic.name, topic.description,
+				topic, topic.name, topic.description, topic.order_passages_by,
 				display_tag, combine_action=combine_action
+			)
+
+	def set_order_passages_by(self, topic, order_passages_by, combine_action=False):
+		self.set_topic_details(
+				topic, topic.name, topic.description, order_passages_by,
+				topic.display_tag, combine_action=combine_action
 			)
 
 	def set_topic_name(self, topic, name, combine_action=False):
 		self.set_topic_details(topic, name, topic.description, combine_action=combine_action)
 
-	def set_topic_details(self, topic, name, description, display_tag=None, combine_action=False):
+	def set_topic_details(self, topic, name, description, order_passages_by=None, display_tag=None, combine_action=False):
 		if display_tag is None:
 			display_tag = topic.display_tag
 		self._perform_action(SetTopicDetailsAction(
-				self._passage_list_manager, topic, name, description, display_tag,
+				self._passage_list_manager, topic, name, description, order_passages_by, display_tag,
 			), combine_action=combine_action)
 
 	def set_passage_details(self, passage_entry, passage, comment, allow_undo=True, combine_action=False):
@@ -70,9 +77,11 @@ class ManageTopicsOperations(object):
 			), allow_undo=allow_undo, combine_action=combine_action)
 
 	def cut(self):
+		sys.stderr.write("CUT\n")
 		self._setup_clipboard(keep_original=False)
 
 	def copy(self):
+		sys.stderr.write("COPY\n")
 		self._setup_clipboard(keep_original=True)
 
 	def _setup_clipboard(self, keep_original):
@@ -85,6 +94,7 @@ class ManageTopicsOperations(object):
 		self.paste_available_changed_observers()
 
 	def paste(self):
+		sys.stderr.write("PASTE\n")
 		if not self._clipboard_data:
 			return
 
@@ -135,6 +145,7 @@ class ManageTopicsOperations(object):
 
 	def undo(self):
 		"""Undoes the most recently performed action."""
+		sys.stderr.write("UNDO\n")
 		if not self.can_undo:
 			raise OperationNotAvailableError()
 		recent_action = self._actions.pop()
@@ -145,6 +156,7 @@ class ManageTopicsOperations(object):
 
 	def redo(self):
 		"""Redoes the most recently undone action."""
+		sys.stderr.write("REDO\n")
 		if not self.can_redo:
 			raise OperationNotAvailableError()
 		undone_action = self._undone_actions.pop()
@@ -170,6 +182,7 @@ class ManageTopicsOperations(object):
 		This is useful for building up a list of items in actual_item and
 		creating a composite action.
 		"""
+		sys.stderr.write("PERFORM " + str(action) + "\n")
 		if callable(action):
 			if isinstance(action_item, list):
 				action = CompositeAction([action(item) for item in action_item])
@@ -327,11 +340,12 @@ class SetPassageDetailsAction(Action):
 		return SetPassageDetailsAction(self.manager, self.passage_entry, self.old_passage, self.old_comment)
 
 class SetTopicDetailsAction(Action):
-	def __init__(self, manager, topic, name, description, display_tag):
+	def __init__(self, manager, topic, name, description, order_passages_by, display_tag):
 		super(SetTopicDetailsAction, self).__init__()
 		self.topic = topic
 		self.name = name
 		self.description = description
+		self.order_passages_by = order_passages_by
 		self.display_tag = display_tag
 		self.manager = manager
 
@@ -346,15 +360,17 @@ class SetTopicDetailsAction(Action):
 		self.old_name = self.topic.name
 		self.old_description = self.topic.description
 		self.old_display_tag = self.topic.display_tag
+		self.old_order_passages_by = self.topic.order_passages_by
 		self.topic.name = self.name
 		self.topic.description = self.description
+		self.topic.order_passages_by = self.order_passages_by
 		self.topic.display_tag = self.display_tag
 		self.manager.save_item(self.topic)
 
 	def _get_reverse_action(self):
 		return SetTopicDetailsAction(
 				self.manager, self.topic,
-				self.old_name, self.old_description, self.old_display_tag,
+				self.old_name, self.old_description, self.old_order_passages_by, self.old_display_tag,
 			)
 
 class CopyAction(CompositeAction):
@@ -399,7 +415,7 @@ def _test():
 	"""
 	>>> __builtins__['_'] = lambda x: x
 	>>> from passage_list import get_primary_passage_list_manager
-	>>> from swlib.pysw import VK
+	>>> from swlib.pysw import VerseList
 	>>> import os
 	>>> filename = "passages_test.sqlite"
 	>>> try:
@@ -716,6 +732,7 @@ def _test():
 	'Genesis 9:5'
 	>>> passage2.comment
 	'newer comment'
+	>>> _check_get_all_passage_entries_for_verse(manager, manager)
 
 	Check creating a new topic.  This must create a default topic, but then
 	combine it with the next edit item action if necessary so that undo
@@ -743,11 +760,11 @@ def _test():
 	Topic 'None': add subtopic observer called.
 	>>> _add_subtopic(manager, topic_zzz2)
 	Topic 'None': add subtopic observer called.
-	>>> _add_passage(topic_zzz, PassageEntry(VK("ex 2:2")))
+	>>> _add_passage(topic_zzz, PassageEntry(VerseList("ex 2:2")))
 	Topic 'ZZZ': add passage observer called.
-	>>> _add_passage(topic_zzz, PassageEntry(VK("ex 2:3")))
+	>>> _add_passage(topic_zzz, PassageEntry(VerseList("ex 2:3")))
 	Topic 'ZZZ': add passage observer called.
-	>>> _add_passage(topic_zzz, PassageEntry(VK("ex 2:4")))
+	>>> _add_passage(topic_zzz, PassageEntry(VerseList("ex 2:4")))
 	Topic 'ZZZ': add passage observer called.
 	>>> topic_zzz.passages
 	[PassageEntry('Exodus 2:2', ''), PassageEntry('Exodus 2:3', ''), PassageEntry('Exodus 2:4', '')]
@@ -772,7 +789,7 @@ def _test():
 	[PassageEntry('Exodus 2:3', '')]
 	>>> topic_zzz2.passages
 	[PassageEntry('Exodus 2:2', ''), PassageEntry('Exodus 2:4', ''), PassageEntry('Exodus 2:2', ''), PassageEntry('Exodus 2:4', '')]
-	>>> _set_passage_details(topic_zzz2.passages[0], VK("lev 3:3"), "")
+	>>> _set_passage_details(topic_zzz2.passages[0], VerseList("lev 3:3"), "")
 	>>> topic_zzz2.passages
 	[PassageEntry('Leviticus 3:3', ''), PassageEntry('Exodus 2:4', ''), PassageEntry('Exodus 2:2', ''), PassageEntry('Exodus 2:4', '')]
 	>>> operations_manager.undo()
@@ -793,6 +810,7 @@ def _test():
 	Topic 'ZZZ': add passage observer called.
 	>>> topic_zzz.passages
 	[PassageEntry('Exodus 2:3', ''), PassageEntry('Exodus 2:4', ''), PassageEntry('Exodus 2:2', '')]
+	>>> _check_get_all_passage_entries_for_verse(manager, manager)
 
 	Check that they work over no passages too:
 	>>> _remove_passage([])
@@ -813,19 +831,19 @@ def _test():
 	>>> new_topic.description
 	'description'
 
-	>>> _set_passage_details(passage1, VK("gen 8:8"), "comment.", combine_action=False)
+	>>> _set_passage_details(passage1, VerseList("gen 8:8"), "comment.", combine_action=False)
 	Passage 'Genesis 8:8': passage changed observer called.
 	Passage 'Genesis 8:8': comment changed observer called.
-	>>> _set_passage_details(passage1, VK("gen 8:8"), "comment 2.", combine_action=True)
+	>>> _set_passage_details(passage1, VerseList("gen 8:8"), "comment 2.", combine_action=True)
 	Passage 'Genesis 8:8': comment changed observer called.
 	>>> operations_manager.undo()
 	Passage 'Genesis 3:5': passage changed observer called.
 	Passage 'Genesis 3:5': comment changed observer called.
-	>>> new_passage = PassageEntry(VK("gen 9:2"))
+	>>> new_passage = PassageEntry(VerseList("gen 9:2"))
 	>>> _add_passage(manager.subtopics[2], new_passage)
-	>>> _set_passage_details(new_passage, VK("gen 8:8"), "", combine_action=True)
-	>>> _set_passage_details(new_passage, VK("gen 8:8"), "comment.", combine_action=True)
-	>>> _set_passage_details(new_passage, VK("gen 8:8"), "comment 2.", combine_action=False)
+	>>> _set_passage_details(new_passage, VerseList("gen 8:8"), "", combine_action=True)
+	>>> _set_passage_details(new_passage, VerseList("gen 8:8"), "comment.", combine_action=True)
+	>>> _set_passage_details(new_passage, VerseList("gen 8:8"), "comment 2.", combine_action=False)
 	>>> str(new_passage)
 	'Genesis 8:8'
 	>>> new_passage.comment
@@ -839,7 +857,7 @@ def _test():
 	PassageEntry('Genesis 8:8', 'comment.')
 	>>> operations_manager.undo()
 	>>> manager.subtopics[2].passages[-1]
-	PassageEntry('Genesis 50:1 - 26', '')
+	PassageEntry('Genesis 50:1', '')
 
 	>>> _remove_subtopic(new_topic)
 	Topic 'topic1 (new name)': remove subtopic observer called.
@@ -856,6 +874,8 @@ def _test():
 
 	>>> loaded_manager == manager
 	True
+
+	>>> _check_get_all_passage_entries_for_verse(loaded_manager, loaded_manager)
 	
 	>>> loaded_manager.close()
 
@@ -956,7 +976,7 @@ class PassageWrapper(object):
 		return False
 
 	def find_index(self):
-		return self._passage.parent.passages.index(self._passage)
+		return self._passage.parent._natural_order_passages.index(self._passage)
 
 	def remove_from_parent(self):
 		self._passage.parent.remove_passage(self._passage)
@@ -1052,6 +1072,15 @@ def _passage_observer(operation, passage):
 	def __observer(*args, **kwargs):
 		print "Passage '%s': %s observer called." % (passage, operation)
 	return __observer
+
+def _check_get_all_passage_entries_for_verse(manager, topic):
+	for passage_entry in topic.passages:
+		for verse_key in passage_entry.passage:
+			for verse in verse_key:
+				assert (passage_entry in manager.get_all_passage_entries_for_verse(verse),
+					repr(passage_entry) + " not contained in " + str(verse))
+	for subtopic in topic.subtopics:
+		_check_get_all_passage_entries_for_verse(manager, subtopic)
 
 if __name__ == "__main__":
 	_test()
