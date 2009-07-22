@@ -206,7 +206,7 @@ span.morphSegmentation {
 
 /* Global style */
 body { 
-	line-height: 1.3em;
+	line-height: 1.5em;
 }
 
 /* Options */
@@ -240,15 +240,34 @@ body[columns="true"] > #HyphenatorToggleBox {
 	visibility: visible;
 }
 
+div.page_segment {
+	position: relative;
+}
+
 /*SUB, SUP { line-height: 0; } */
 
 /* Debug */
 div.timer {
 	position: fixed;
 	right: 0px;
-	bottom: 0px;
 	border: thin solid black;
 	background-color: hsla(0, 100%, 50%, .35);
+	display: none;
+}
+
+body > div.timer {
+	position: fixed;
+	bottom: 0px;
+	display: block;
+}
+
+div.page_segment:hover div.timer {
+	top: 0px;
+	position: absolute;
+	padding: 1px;
+	margin: 2px;
+	-moz-border-radius: 5px;
+	display: block;
 }
 
 [dir="rtl"] div.timer {
@@ -256,3 +275,22 @@ div.timer {
 	right: inherit;
 }
 
+div.segment, div.no_more_text.end-start {
+	border-bottom: solid 1px #ddd;
+	padding-bottom: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+div.no_more_text {
+	font-style: italic;
+	color: #888;
+}
+
+div.segment.nocontent {
+	border: none;
+}
+
+div.page_segment#original_segment > div.segment.current_segment {
+	background-color: hsl(240, 100%, 90%);
+
+}
