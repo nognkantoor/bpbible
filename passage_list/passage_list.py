@@ -469,8 +469,9 @@ def get_primary_passage_list_manager(filename=DEFAULT_FILENAME):
 	if _global_passage_list_manager is None:
 		singleton_verse_to_passage_entry_map.clear()
 		_global_passage_list_manager = sqlite.load_manager(filename)
-		import guiconfig
-		guiconfig.mainfrm.on_close += _global_passage_list_manager.close
+		### BM: this shouldn't be here...
+		#import guiconfig
+		#guiconfig.mainfrm.on_close += _global_passage_list_manager.close
 	return _global_passage_list_manager
 
 class MissingTopicError(Exception):
