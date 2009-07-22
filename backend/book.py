@@ -231,6 +231,8 @@ class Book(object):
 		#only for bible keyed books
 		verselist.setPosition(TOP)
 		verselist.Persist(1)
+		u_vk = pysw.UserVK()
+		u_vk.Headings(1)
 		versekey = SW.VerseKey()
 		versekey.Headings(1)
 		mod = module or self.mod
@@ -258,10 +260,6 @@ class Book(object):
 				#	versekey.Headings(1)
 				osisRef = versekey.getOSISRef()
 				internal_reference = versekey.getText()
-				if internal_reference.endswith(":0"):
-					reference = ""
-				else:
-					reference = pysw.internal_to_user(internal_reference)
 
 
 
@@ -274,6 +272,12 @@ class Book(object):
 					
 				else:
 					text = render_text()
+
+				if skip_linked_verses and not text:
+					# don't include empty text; typically this may be at the
+					# start of the chapter or something...
+					incrementer.increment(1)
+					continue
 
 				user_comments = self.get_user_comments(versekey)
 
@@ -321,6 +325,21 @@ class Book(object):
 					verse = "%d" % start_verse
 				else:
 					verse = "%d-%d" % (start_verse, end_verse)
+				
+				u_vk.setText(internal_reference)				
+				if internal_reference.endswith(":0"):
+					if start_verse != end_verse:
+						print "WARNING: unhandled linked verse with verse 0"
+						
+					if versekey.Chapter() == 0:
+						reference = u_vk.getBookName()
+					else:
+						reference = u_vk.get_book_chapter()
+
+				else:
+					reference = u_vk.get_book_chapter()
+					reference += ":" + verse
+					
 
 				body_dict = dict(text=text,
 							versenumber = process_digits(verse,
@@ -636,6 +655,7 @@ class Book(object):
 class Commentary(Book):
 	type = "Commentaries"
 	is_verse_keyed = True
+	chapter_view = False
 
 	@classproperty
 	def noun(cls):
@@ -645,6 +665,7 @@ class Commentary(Book):
 class Bible(Book):
 	type = "Biblical Texts"
 	is_verse_keyed = True
+	chapter_view = True
 
 	@classproperty
 	def noun(cls):
