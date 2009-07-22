@@ -95,7 +95,7 @@ We set windowtype here for XUSH... pretending to be firefox.
              the overlays of PyShell and similar extensions.
         -->
         <menupopup id="menu_ToolsPopup">
-          <menuitem label="Javascript Console" 
+          <menuitem label="Error Console" 
                     oncommand="window.open('chrome://global/content/console.xul', '', 'chrome,dialog=no,toolbar')" />
           
 
