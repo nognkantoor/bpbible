@@ -216,7 +216,10 @@ class VK(SW.VerseKey):#, object):
 			SW.VerseKey.__init__(self)
 			self.Headings(1)
 			
-			if isinstance(key, tuple):
+			if isinstance(key, str):
+				self.text = key
+
+			elif isinstance(key, tuple):
 				min, max = key
 				tmp_lk = self.ParseVerseList(min)
 				if tmp_lk.Count():
