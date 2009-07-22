@@ -1,9 +1,17 @@
+function d(str) {
+	if (typeof console != "undefined" && console.log) console.log(str);
+	if ((typeof str == "string" && !str.match(/\n$/)) || typeof str == "number")
+		dump(str + "\n");
+	else dump(str);
+}
+
 // dump to the js console (xulrunner -jsconsole)
 function jsdump(str)
 {
-	Components.classes['@mozilla.org/consoleservice;1']
+	dump(str);
+/*	Components.classes['@mozilla.org/consoleservice;1']
 			  .getService(Components.interfaces.nsIConsoleService)
-			  .logStringMessage(str);
+			  .logStringMessage(str);*/
 }
 
 function jserror(str)
@@ -11,72 +19,45 @@ function jserror(str)
 	Components.utils.reportError(str);
 }
 
-function get_current_verse() {
-	var current_verse = $("a.currentverse");
-	if(current_verse.length != 1) {
-		jsdump("Wrong number of current verses: " + current_verse.length);
-		return null;
-	}
-	return current_verse;
-}
-
-function get_current_verse_ref() {
-	var current_verse = get_current_verse();
-	return current_verse.attr("osisRef");
-}
-
-function get_current_verse_bounds() {
-	var osisRef = get_current_verse_ref();
-	var start = $('a[name="' + osisRef + '_start"]');
-	var end = $('a[name="' + osisRef + '_end"]');
-	return [start, end];
-}
-
 function pick_element(selector, range, before) {
 	var last = null;
 	var done = false;
 	$(selector).each(function() {
+		// 0 means inside range, 1 means we have passed it
+		// If we are not before, and we are inside the range, but we are 
+		// right on the right-hand edge of it, (or on the far left hand edge
+		// if before is set) we should use this one
 		var r = range.comparePoint(this, 0);
-		if(r > 0 || (before && r == 0)) {
+		if (r == 0) {
 			if(before) {
-				/* alert(this.getAttribute("osisRef")); */
+				// If we are looking for the previous one, and we have now
+				// entered the range, use the last one, as long as we have
+				// something significant selected in the previous verse
+				var newRange1 = range.cloneRange();
+				newRange1.setStartAfter(this);
+				if(range.toString().replace(/^\s+/, '') == newRange1.toString().replace(/^\s+/, ''))
+				{
+					last = this;
+				}
+				done = true;
+			}
+			else {
 				var newRange1 = range.cloneRange();
 				newRange1.setEndAfter(this);
-				var newRange2 = newRange1.cloneRange();
-				newRange2.setStartBefore(this);
-				var s1 = newRange1.toString().replace(/$\s+/, '');
-				var s2 = newRange2.toString().replace(/$\s+/, '');
+				if(range.toString().replace(/\s+$/, '') == newRange1.toString().replace(/\s+$/, ''))
+				{
+					last = this;
+					done = true;
+				}
+			}
+			
+			if(!done)
+				last = this;
 
-				alert(s1 + s2);
-				alert("'" + s1 + "'\\\\'" + s2 + "'");
-				
-				if(s1 == s2) {
-					alert("Equal");
-					last = this;
-					
-				}
-			}
-			
-			// We are now past it
-			// If before is true, we pick the last one, otherwise we pick this
-			// one
-			if(before && r == 0 && false) {
-				/* Check if we are only nominally in a text node (i.e. we are
-				 * right at the end of it, but we don't contain any content)
-				 * This can happen if we are selecting verses, and it is
-				 * important that if that is the case, we don't include one 
-				 * verse too many... */
-				if(range.startContainer.nodeType == Node.TEXT_NODE
-					&& range.startOffset == range.startContainer.length) {
-					// Now we need to check that if it hadn't included the
-					// empty previous part, it would have been right on our
-					// verse number.
-					last = this;
-				}
-			}
-			
+			return !done;
+		}
+		if (r > 0) {
 			if(!before) last = this;
-			
 			if(before && !last) {
 				alert("Before but not last? pre-something content selected?");
 				last = this;
@@ -105,52 +86,142 @@ function get_normalized_selection(){
 	var range = selection.getRangeAt(0);
 	if(range.collapsed) return null;
 	return range;
-
-	// We can move forward over: 
-	// . Text nodes where we are at the end
-	// . empty <a> tags
-	while(
-		(range.startContainer.nodeType == Node.TEXT_NODE
-			&& range.startOffset == range.startContainer.length)
-		|| (range.startContainer.nodeName == "A" &&
-			range.startContainer.children.length == 0)
-		|| (range.startContainer.nodeName == "BR" &&
-			range.startContainer.class	  == "verse_per_line" &&
-			range.startContainer.children.length == 0)) {
-		alert("Skipping over");
-		var next = range.startContainer.nextSibling;
-		if(!next) next = range.startContainer.parentNode;
-		if(!next) {
-			alert("Don't we have a parent or sibling here???");
-			return null;
-		}
-
-		range.setStart(next, 0);
-		if(range.collapsed) {
-			alert("Range collapsed while normalizing???");
-			return null;
-		}
-	}
-	alert(range.startContainer.nodeName);
-
-	return range;
 }
 
-function get_selected_verse_ref() {
-	var range = get_normalized_selection();
-	if(!range) {
-		var ref = get_current_verse_ref();
-		return [ref, ref];
+function get_scroll_offset() {
+	return 300;
+	return window.innerHeight;
+}
+
+function load_above() {
+	var cnt = 0;
+	const LOAD_OFFSET = get_scroll_offset();
+	var ref =  $("#content").children()[0];
+	var ref_height = $(ref).offset().top;
+	while (window.scrollY < LOAD_OFFSET && cnt < 10) {
+		var c = load_text($(".page_segment:first")[0], true);
+		if (!c) break;
+		c.prependTo("#content");
+		var diff = $(ref).offset().top - ref_height;
+		if (diff != Math.ceil(diff)) 
+			d("Non-rounded pixel values in load_above: " + diff);
+		window.scrollBy(0, diff);
+		
+		cnt++;
 	}
 	
-	var last = null;
-	var start = pick_element("a[name$=_start]", range, true);
-	var end = pick_element("a[name$=_end]", range, false);
-	return [start.getAttribute("osisRef"), end.getAttribute("osisRef")];
+	if(cnt == 10) d("Didn't work\n");
+}
+
+function load_below() {
+	const LOAD_OFFSET = get_scroll_offset();
+	
+	cnt = 0;
+	while (window.scrollMaxY - window.scrollY < LOAD_OFFSET && cnt < 10) {
+		var c = load_text($(".page_segment::last")[0], false);
+		if (!c) break;
+		c.appendTo("#content");
+		cnt++;
+	}
+	if(cnt == 10) d("Didn't work\n");
+}
+
+var reentrancy_check = false;
+function ensure_sufficient_content(scroll_after) {
+	// We may be called re-entrantly if it is scrolling while we add content,
+	// for example. This is very bad to allow (we can load one chapter more
+	// than once
+	if(reentrancy_check) return;
+	reentrancy_check = true;
+	if(document.body.getAttribute("columns") == "true")
+	{
+		d("Not proceeding as this doesn't work for columns yet...");
+		reentrancy_check = false;
+		
+		return;
+	}
+
+	load_above();
+	load_below();
+	
+	if(scroll_after) window.setTimeout(function() {scroll_to_current()}, 0);
+	reentrancy_check = false;	
+}
+
+function load_text(item, before) {
+	var i = item.getElementsByClassName("segment");
+	if (!i.length) {
+		//d("Reached first/last item, quitting\n");
+		return null;
+	}
+
+	if (i.length != 1) {
+		alert("ERROR: Too many page_segments, aborting\n");
+		return null;		
+	}
+
+	var ref_id = i[0].getAttribute("ref_id");
+
+	var request = new XMLHttpRequest();
+	var t;
+	
+	// We don't like XML errors, but unless we change this mime-type (or I
+	// suppose in the channel), we get them.
+	request.overrideMimeType("text/x-bm");
+
+	try {
+		request.open("GET", "bpbible://content/pagefrag/" + $("body").attr("module") + "/" + ref_id + "/" + (before?"previous": "next"), false);
+		request.send(null);
+		t = request.responseText;
+	} catch (e) {
+		// Fallback for in firebug in firefox or something - pretty boring
+		d(e);
+		t = "<div class='page_segment'><div class='segment' ref_id='test'>text<br>test<ul><li>item1<li>item2</ul></div></div>";
+	}
+	return $(t);
+}
+
+$(document).ready(function(){
+	$('a.footnote').bind("mouseenter", function(){
+		//load_text();
+
+		
+		d("Dispatching event\n");
+		var element = document.createElement("MyExtensionDataElement");
+		element.setAttribute("id", "process_tooltip");
+		element.setAttribute("attribute1", "foobar");
+		document.documentElement.appendChild(element);
+
+		var evt = document.createEvent("Event");
+		evt.initEvent("process_tooltip", true, false);
+		element.dispatchEvent(evt);
+
+		/* I hope/presume that dispatchEvent is synchronous... :D */
+		element.parentNode.removeChild(element);
+	});
+	
+	// Scroll to current first; if this is big enough and we are far enough
+	// down, we may not have to load content above us.
+	scroll_to_current();
+
+	$(window).scroll(function() {ensure_sufficient_content()});
+	$(window).resize(function() {ensure_sufficient_content()});
+	
+	// But make sure we do scroll at the end of our ensuring
+	ensure_sufficient_content(true);
+});
+
+function get_start_point(){
+	// Overridden in bpbible_html_verse_keyed.js
+	var o = $("#original_segment");
+	
+	// Make sure it is highlighted
+	o.children().filter("div:not(.nocontent)").addClass("current_segment");
+	return o;
 }
 
 function scroll_to_current(start) {
-	if(!start) start = get_current_verse_bounds()[0];
+	if(!start) start = get_start_point();
 	//alert(start);
 	// Now scroll down to the right point
 	var off = start.offset();
@@ -165,28 +236,3 @@ function scroll_to_current(start) {
 	window.scrollTo(l, t);
 }
 
-$(document).ready(function() {
-	var [start, end] = get_current_verse_bounds();
-	
-	// Highlight the verse's background
-	highlight_range(start[0], end[0]);
-	scroll_to_current(start);
-	
-});
-
-$(document).ready(function(){
-	$('a.footnote').bind("mouseenter", function(){
-		dump("Dispatching event\n");
-		var element = document.createElement("MyExtensionDataElement");
-		element.setAttribute("id", "process_tooltip");
-		element.setAttribute("attribute1", "foobar");
-		document.documentElement.appendChild(element);
-
-		var evt = document.createEvent("Event");
-		evt.initEvent("process_tooltip", true, false);
-		element.dispatchEvent(evt);
-
-		/* I hope/presume that dispatchEvent is synchronous... :D */
-		element.parentNode.removeChild(element);
-	});
-});

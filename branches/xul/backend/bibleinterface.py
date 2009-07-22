@@ -329,7 +329,7 @@ class BibleInterface(object):
 biblemgr = BibleInterface("ESV", "TSK", "ISBE") 
 
 biblemgr.dictionary.templatelist.append(config.dictionary_template)
-biblemgr.commentary.templatelist.append(config.other_template)
+biblemgr.commentary.templatelist.append(config.commentary_template)
 biblemgr.bible.templatelist.append(config.bible_template)
 
 # TODO: TESTING

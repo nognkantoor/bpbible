@@ -22,7 +22,7 @@ def load_information():
   initialise_module_name(None)
   
   browser = document.getElementById("browser")
-  browser.setAttribute("src", "bpbible://moduleinformation/" +window.mod_name)
+  browser.setAttribute("src", "bpbible://content/moduleinformation/" +window.mod_name)
   </script>
 
   <hbox id="content" flex="1">
