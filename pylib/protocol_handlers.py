@@ -1,12 +1,12 @@
 from backend.bibleinterface import biblemgr
-from swlib.pysw import SW
+from swlib.pysw import SW, VK
 import os
 import config
 from util.debug import dprint, ERROR
 from display_options import all_options, get_js_option_value
 from util.string_util import convert_rtf_to_html
 from util.unicode import try_unicode
-from util import languages
+from util import languages, default_timer
 
 BASE_HTML = '''\
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
@@ -31,10 +31,10 @@ doQuit(True)
 </body></html>'''
 
 class ProtocolHandler(object):
-	def get_content_type(self, aURI):
+	def get_content_type(self, path):
 		return 'text/html'
 	
-	def get_document(self, aURI):
+	def get_document(self, path):
 		return "No content specified"
 	
 	def _get_html(self, module, content, bodyattrs="", timer="", 
@@ -78,35 +78,47 @@ class ProtocolHandler(object):
 
 
 class NullProtocolHandler(ProtocolHandler):
-	def get_document(self, aURI):
+	def get_document(self, path):
 		return "<html><body>Content not loaded</body></html>"
 
 class PageProtocolHandler(ProtocolHandler):
-	def get_document(self, aURI):
-		import time
-		t = time.time()
-
-		page = str(aURI.path)
-
-		ref = SW.URL.decode(page).c_str()[1:]
+	def _get_document_parts(self, path):
+		ref = SW.URL.decode(path).c_str()
 		assert ref, "No reference"
 
 		module_name, ref = ref.split("/")
+		return self._get_document_parts_for_ref(module_name, ref)
+
+	def _get_document_parts_for_ref(self, module_name, ref):
+		import time
+		t = default_timer()
 
 		stylesheets = ["bpbible_html.css"]
 		scripts = ["jquery-1.3.2.js", "highlight.js", "bpbible_html.js",
 				  "hyphenate.js", "columns.js"]
 
 		book = biblemgr.get_module_book_wrapper(module_name)
+		module = book.mod
 		if book.is_verse_keyed:
-			c = book.GetChapter(ref, ref, config.current_verse_template)
+			if book.chapter_view:
+				c = book.GetChapter(ref, ref, config.current_verse_template)
+				ref_id = VK(ref).get_book_chapter()
+				scripts.append("bpbible_html_chapter_view.js")
+				
+			else:
+				c = book.GetReference(ref, headings=True)
+				ref_id = ref
+
 			stylesheets.append("bpbible_verse_keyed.css")
+
 		elif book.is_dictionary:
 			try:
 				index = int(ref)
 				ref = book.GetTopics()[index]
-			except ValueError:
-				pass
+				ref_id = index
+			except ValueError, e:
+				print "AARRGGHH, swallowing ValueError", repr(e)
+				ref_id = ref
 
 			c = book.GetReference(ref)
 		else:
@@ -118,18 +130,102 @@ class PageProtocolHandler(ProtocolHandler):
 		for option in all_options():
 			options.append('%s="%s"' % (option, get_js_option_value(option)))
 
-		return self._get_html(
-			biblemgr.bible.mod, c,
-			bodyattrs=' '.join(options), 
+		options.append('module="%s"' % module.Name())
+		clas = ""
+		if not c:
+			clas = " nocontent"
+
+		c = "<div class='segment%s' ref_id='%s'>%s</div>" % (clas, ref_id, c)
+
+		return dict(
+			module=module, content=c,
+			bodyattrs=' '.join(options),
 			stylesheets=stylesheets,
 			scripts=scripts,
-			timer="<div class='timer'>Time taken: %.3f</div>" % (time.time() - t))
-		
-class ModuleInformationHandler(ProtocolHandler):
-	def get_document(self, aURI):
-		page = str(aURI.path)
+			timer="<div class='timer'>Time taken: %.3f (ref_id %s)</div>" % (default_timer() - t, ref_id))
+	
+	def get_document(self, path):
+		#print "Getting document", path
+		d = self._get_document_parts(path)
+		d["content"] = '<div class="page_segment" id="original_segment">%s</div>' % d["content"]
+		return self._get_html(**d)
 
-		module_name = SW.URL.decode(page).c_str()[1:]
+class PageFragmentHandler(PageProtocolHandler):
+	def get_document(self, path):
+		#print "GET DOCUMENT"
+		ref = SW.URL.decode(path).c_str()
+		assert ref.count("/") == 2, "Should be two slashes in a fragment url"
+
+		#print "REF was", ref
+		module_name, ref, direction = ref.split("/")
+		assert direction in ("next", "previous")
+		#print module_name, ref, direction
+
+		dir = {"next": 1, "previous": -1}[direction]
+		book = biblemgr.get_module_book_wrapper(module_name)
+		mod = book.mod		
+		no_more = False
+		if book.is_verse_keyed:
+			vk = VK(ref, headings=not book.chapter_view)
+			if book.chapter_view:
+				vk.chapter += dir
+				if vk.Error():
+					print "No more in that direction", dir
+					no_more = True
+				else:
+				
+					# go back just a little, so that when we go forward on the module
+					# we won't overshoot... (at least, that is our plan - we hope it
+					# won't be baffled...)
+					vk.Verse(vk.Verse() - dir)
+					if vk.Error():
+						print "VK had an error taking away a verse", dir
+	
+			if not no_more:
+				old_mod_skiplinks = mod.getSkipConsecutiveLinks()
+				mod.setSkipConsecutiveLinks(True)
+				try:
+					vk.Persist(1)
+					mod.setKey(vk)
+					#print repr(mod.Error())
+					mod.increment(dir)
+
+					if mod.Error() != '\x00':
+						print "Mod had an error"
+						no_more = True
+					else:
+						if book.chapter_view:
+							new_ref = vk.get_book_chapter()
+						else:
+							new_ref = vk.text
+				finally:
+					mod.setKey(SW.Key())
+					mod.setSkipConsecutiveLinks(old_mod_skiplinks)
+		
+		elif book.is_dictionary:
+			t = book.GetTopics()
+			index = int(ref) + dir
+			if index < 0 or index >= len(t):
+				no_more = True
+			else:
+				new_ref = str(index)
+			
+		if no_more:
+			return '''
+			<div class="page_segment" empty="true">
+				<div class='no_more_text end-%(end)s'>
+					You are at the %(end)s of this book
+				</div>
+			</div>''' % dict(end={
+				-1: "start",
+				 1: "end",
+			}[dir])
+		
+		return '<div class="page_segment">%(content)s%(timer)s</div>' % self._get_document_parts_for_ref(module_name, new_ref)
+	
+class ModuleInformationHandler(ProtocolHandler):
+	def get_document(self, path):
+		module_name = SW.URL.decode(path).c_str()
 
 		book = biblemgr.get_module_book_wrapper(module_name)
 		if not book:
@@ -158,9 +254,10 @@ class ModuleInformationHandler(ProtocolHandler):
 		t %= ''.join(rows)
 
 		return self._get_html(module, t, stylesheets=["book_information_window.css"])
-
+	
 handlers = {
 	"page": PageProtocolHandler(), 
+	'pagefrag': PageFragmentHandler(),
 	'': NullProtocolHandler(),
 	'moduleinformation': ModuleInformationHandler(),
 }

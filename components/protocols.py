@@ -52,14 +52,27 @@ class BPBibleProtocol:
 
 	def allowPort(self, port, scheme):
 		return False;
+	
+	def _breakup_url(self, aURI):
+		assert aURI.host == "content" or not aURI.host, \
+			"only content is supported at the moment..."
+
+		page = str(aURI.path)[1:]
+		d = page.split("/", 1)
+		if len(d) == 1:
+			d.append('')
+
+		protocol, path = d
+		
+		assert protocol in protocol_handlers.handlers, \
+			"No handler for host type %s" % protocol
+
+		return protocol, path
 
 	def get_content_type(self, aURI):
-		assert aURI.host in protocol_handlers.handlers, \
-			"No handler for host type %s" % aURI.host
-		return protocol_handlers.handlers[aURI.host].get_content_type(aURI)
+		protocol, path = self._breakup_url(aURI)
+		return protocol_handlers.handlers[protocol].get_content_type(path)
 
 	def get_document(self, aURI):
-		assert aURI.host in protocol_handlers.handlers, \
-			"No handler for host type %s" % aURI.host
-		return protocol_handlers.handlers[aURI.host].get_document(aURI)
-
+		protocol, path = self._breakup_url(aURI)
+		return protocol_handlers.handlers[protocol].get_document(path)
