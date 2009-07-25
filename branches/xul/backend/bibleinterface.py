@@ -51,7 +51,7 @@ class BibleInterface(object):
 			self.bible.type:		self.bible,
 			self.commentary.type:	self.commentary,
 			self.dictionary.type:	self.dictionary,
-			self.genbook.type:		self.dictionary,
+			self.genbook.type:		self.genbook,
 		}
 	
 	def init_options(self):
@@ -328,6 +328,7 @@ class BibleInterface(object):
 
 biblemgr = BibleInterface("ESV", "TSK", "ISBE") 
 
+biblemgr.genbook.templatelist.append(config.genbook_template)
 biblemgr.dictionary.templatelist.append(config.dictionary_template)
 biblemgr.commentary.templatelist.append(config.commentary_template)
 biblemgr.bible.templatelist.append(config.bible_template)

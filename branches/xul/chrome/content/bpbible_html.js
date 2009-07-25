@@ -99,7 +99,7 @@ function load_above() {
 	var ref =  $("#content").children()[0];
 	var ref_height = $(ref).offset().top;
 	while (window.scrollY < LOAD_OFFSET && cnt < 10) {
-		var c = load_text($(".page_segment:first")[0], true);
+		var c = load_text($(".page_segment:first-child")[0], true);
 		if (!c) break;
 		c.prependTo("#content");
 		var diff = $(ref).offset().top - ref_height;
@@ -118,7 +118,7 @@ function load_below() {
 	
 	cnt = 0;
 	while (window.scrollMaxY - window.scrollY < LOAD_OFFSET && cnt < 10) {
-		var c = load_text($(".page_segment::last")[0], false);
+		var c = load_text($(".page_segment:last-child")[0], false);
 		if (!c) break;
 		c.appendTo("#content");
 		cnt++;
@@ -211,16 +211,14 @@ $(document).ready(function(){
 	ensure_sufficient_content(true);
 });
 
-function get_start_point(){
-	// Overridden in bpbible_html_verse_keyed.js
-	var o = $("#original_segment");
-	
-	// Make sure it is highlighted
-	o.children().filter("div:not(.nocontent)").addClass("current_segment");
-	return o;
+function get_scroll_point() {
+	return {top:  window.innerHeight < 240 ? 
+		Math.max(window.innerHeight/2 - 40, 0) : 120,
+			left: window.innerWidth/2};
 }
 
 function scroll_to_current(start) {
+	// get_start_point define in page_view and chapter_view
 	if(!start) start = get_start_point();
 	//alert(start);
 	// Now scroll down to the right point
@@ -230,8 +228,9 @@ function scroll_to_current(start) {
 	/* Try and keep in middle
 	 -40 is to correct for verse length, as we do not want start of 
 	 verse to start half way down, but the middle to be in the middle */
-	t -= window.innerHeight / 2 - 40;
-	l -= window.innerWidth / 2;
+	var offset = get_scroll_point();
+	t -= offset.top;
+	l -= offset.left;
 	
 	window.scrollTo(l, t);
 }

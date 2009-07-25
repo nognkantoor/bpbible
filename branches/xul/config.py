@@ -193,6 +193,9 @@ commentary_template = VerseTemplate(
 dictionary_template = VerseTemplate(
 	body=u"<div class='dictionary_entry'><h3>$reference</h3>$text\n</div>"
 )
+genbook_template = VerseTemplate(
+	body=u"<div class='genbook_entry'><div class='genbook_key' level='$level'>$breadcrumbed_reference</div>$text\n</div>"
+)
 
 
 # TODO: do we want this to have tags? I'd guess not

@@ -33,11 +33,18 @@ def on_module_choice(event_type, module, book):
 			debug.dprint(debug.ERROR, 'Loading Bible window', module_name, reference)
 			url = ('chrome://bpbible/content/bible_window.xul?module_name=%s&reference=%s' %
 				(urllib.quote(module_name), urllib.quote(reference)))
-			bible_window = window.open(url, '', 'chrome,scrollbars')
+			bible_window = window.open(url, '', 'chrome,scrollbars,resizable')
+		
 		elif book.is_dictionary:
 			debug.dprint(debug.ERROR, 'Loading Dictionary window', module_name)
 			url = 'chrome://bpbible/content/dictionary_window.xul?module_name=%s' % urllib.quote(module_name)
-			window.open(url, '', 'chrome,scrollbars')
+			window.open(url, '', 'chrome,scrollbars,resizable')
+
+		elif book.is_genbook:
+			debug.dprint(debug.ERROR, 'Loading Genbook window', module_name)
+			url = 'chrome://bpbible/content/genbook_window.xul?module_name=%s' % urllib.quote(module_name)
+			window.open(url, '', 'chrome,scrollbars,resizable')
+		
 
 
 def check_context_menu(event):
@@ -50,4 +57,4 @@ def show_module_information():
 	assert isinstance(selection, SW.Module)
 	window.open(
 		'chrome://bpbible/content/book_information_window.xul?module_name=%s' 
-		% selection.Name(), '', 'chrome,scrollbars');
+		% selection.Name(), '', 'chrome,scrollbars,resizable');

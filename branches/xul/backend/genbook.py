@@ -20,6 +20,7 @@ class TreeNode(object):
 class GenBook(Book):
 	type = 'Generic Books'	
 	noun = "book"
+	is_genbook = True
 
 	def GetReference(self, ref, context = None, max_verses = 500,
 			stripped=False, end_ref=None):
@@ -80,7 +81,8 @@ class GenBook(Book):
 				SW.URL.encode(module.getKeyText()).c_str()
 			
 			d1["text"] = text
-			d1["breadcrumbed_reference"] = ref.breadcrumb(delimiter=">")
+			d1["breadcrumbed_reference"] = ref.breadcrumb(delimiter=" > ")		
+			d1["level"] = ref.getLevel()
 			
 			verses += template.body.substitute(d1)
 			if not end_ref or end_ref == ref:
