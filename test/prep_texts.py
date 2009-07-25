@@ -29,6 +29,8 @@ lumi\xe8re d'avec les t\xe9n\xe8bres.
 	("$$$Key2",
 	"""This is actually a third key
 """),
+	('$$$Key"\'Quotes',
+	"The fact that we have quotes shouldn't stop us"),
 
 	("TTTTTTTTTTTTTTTTTTTTTTTT",
 	"""This is a test\n\n\nWith three newlines above
