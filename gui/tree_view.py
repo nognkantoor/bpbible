@@ -46,6 +46,31 @@ class TreeItem(object):
 		# shouldn't be seen, so no i18n needed
 		return TreeItem("No items")
 
+class LazyTreeItem(TreeItem):
+	"""Builds up a tree lazily based on a data object which supports 
+	__iter__ and __unicode__"""
+	def __init__(self, data, has_children=None):
+		super(LazyTreeItem, self).__init__(unicode(data), data)
+		self.expanded = False
+
+	@property
+	def children(self):
+		if self.expanded:
+			return self._children
+
+		for item in self.data:
+			self.add_child(unicode(item), LazyTreeItem(item))
+
+		self.expanded = True
+		return self._children
+	
+	def has_children(self):
+		if hasattr(self.data, "has_children"):
+			return self.data.has_children()
+
+		return super(LazyTreeItem, self).has_children()
+
+
 class BasicTreeView(object):
 	_com_interfaces_ = components.interfaces.nsITreeView
 
@@ -55,13 +80,18 @@ class BasicTreeView(object):
 		self.selection = None
 		self.visibleData = []
 
-	def setup(self, root_items):
+	def setup(self, root_items, is_root=False):
 		self.visibleData = []
-		self.dummy_root_item = TreeItem("Dummy root item")
+		if is_root:
+			self.dummy_root_item = root_items
+		else:
+			self.dummy_root_item = TreeItem("Dummy root item")
+
 		self.dummy_root_item.level = -1
-		for item in root_items:
-			self.dummy_root_item.add_child(text=None, item=item)
-		self.visibleData = root_items
+		if not is_root:
+			for item in root_items:
+				self.dummy_root_item.add_child(text=None, item=item)
+		self.visibleData = list(self.dummy_root_item.children)
 		dprint(ERROR, "Visible data", self.visibleData)
 
 	def expand_all(self):

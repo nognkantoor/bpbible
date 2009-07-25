@@ -18,6 +18,8 @@ class FileSaveException(Exception):
 class Book(object):
 	is_verse_keyed = False
 	is_dictionary = False
+	is_genbook = False
+	chapter_view = False
 	type = None
 	def __init__(self, parent, version = ""):
 		self.parent = parent
@@ -655,7 +657,6 @@ class Book(object):
 class Commentary(Book):
 	type = "Commentaries"
 	is_verse_keyed = True
-	chapter_view = False
 
 	@classproperty
 	def noun(cls):

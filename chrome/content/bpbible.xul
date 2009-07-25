@@ -71,7 +71,7 @@ We set windowtype here for XUSH... pretending to be firefox.
     <menubar id="menubar_explorer">
       <menu id="menu_file" label="&file.label;" accesskey="&file.accesskey;">
         <menupopup id="popup_file">
-          <menuitem label="View all books" oncommand="window.open('chrome://bpbible/content/module_selector.xul', '', 'chrome,scrollbars');" />
+          <menuitem label="View all books" oncommand="window.open('chrome://bpbible/content/module_selector.xul', '', 'chrome,scrollbars,resizable');" />
           <menuitem id="menu_FileQuitItem"
                     label="&fileExit.label;"
                     accesskey="&fileExit.accesskey;"
@@ -96,7 +96,7 @@ We set windowtype here for XUSH... pretending to be firefox.
         -->
         <menupopup id="menu_ToolsPopup">
           <menuitem label="Error Console" 
-                    oncommand="window.open('chrome://global/content/console.xul', '', 'chrome,dialog=no,toolbar')" />
+                    oncommand="window.open('chrome://global/content/console.xul', '', 'chrome,dialog=no,toolbar,resizable')" />
           
 
         </menupopup>

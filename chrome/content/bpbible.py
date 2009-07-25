@@ -66,7 +66,7 @@ def do_load():
 	util.dom_util.document = document
 	lookup_reference()
 	window.open('chrome://bpbible/content/module_selector.xul', '', 
-				'chrome,scrollbars');
+				'chrome,scrollbars,resizable');
 	
 def get_window_title(reference):
 	return u"%s (%s) - BPBible" % (pysw.GetBestRange(reference, userOutput=True), window.mod_name)

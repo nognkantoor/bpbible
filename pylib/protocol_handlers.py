@@ -5,7 +5,7 @@ import config
 from util.debug import dprint, ERROR
 from display_options import all_options, get_js_option_value
 from util.string_util import convert_rtf_to_html
-from util.unicode import try_unicode
+from util.unicode import try_unicode, to_unicode
 from util import languages, default_timer
 
 BASE_HTML = '''\
@@ -86,7 +86,8 @@ class PageProtocolHandler(ProtocolHandler):
 		ref = SW.URL.decode(path).c_str()
 		assert ref, "No reference"
 
-		module_name, ref = ref.split("/")
+		module_name, ref = ref.split("/", 1)
+		ref = ref.decode("utf8")
 		return self._get_document_parts_for_ref(module_name, ref)
 
 	def _get_document_parts_for_ref(self, module_name, ref):
@@ -99,28 +100,37 @@ class PageProtocolHandler(ProtocolHandler):
 
 		book = biblemgr.get_module_book_wrapper(module_name)
 		module = book.mod
+		if book.chapter_view:
+			scripts.append("bpbible_html_chapter_view.js")
+			stylesheets.append("bpbible_chapter_view.css")
+		else:
+			scripts.append("bpbible_html_page_view.js")
+			stylesheets.append("bpbible_page_view.css")			
+	
 		if book.is_verse_keyed:
 			if book.chapter_view:
 				c = book.GetChapter(ref, ref, config.current_verse_template)
 				ref_id = VK(ref).get_book_chapter()
-				scripts.append("bpbible_html_chapter_view.js")
 				
 			else:
 				c = book.GetReference(ref, headings=True)
 				ref_id = ref
 
-			stylesheets.append("bpbible_verse_keyed.css")
 
 		elif book.is_dictionary:
 			try:
 				index = int(ref)
+				ref_id = ref
 				ref = book.GetTopics()[index]
-				ref_id = index
 			except ValueError, e:
 				print "AARRGGHH, swallowing ValueError", repr(e)
 				ref_id = ref
 
 			c = book.GetReference(ref)
+
+		elif book.is_genbook:
+			c = book.GetReference(ref)
+			ref_id = ref
 		else:
 			dprint(ERROR, "Book `%s' not found." % module_name)
 			c = ''
@@ -135,7 +145,7 @@ class PageProtocolHandler(ProtocolHandler):
 		if not c:
 			clas = " nocontent"
 
-		c = "<div class='segment%s' ref_id='%s'>%s</div>" % (clas, ref_id, c)
+		c = '<div class="segment%s" ref_id="%s">%s</div>' % (clas, SW.URL.encode(ref_id.encode("utf8")).c_str(), c)
 
 		return dict(
 			module=module, content=c,
@@ -154,10 +164,12 @@ class PageFragmentHandler(PageProtocolHandler):
 	def get_document(self, path):
 		#print "GET DOCUMENT"
 		ref = SW.URL.decode(path).c_str()
-		assert ref.count("/") == 2, "Should be two slashes in a fragment url"
+		#print "GET FRAGMENT", ref
+		#assert ref.count("/") == 2, "Should be two slashes in a fragment url"
 
 		#print "REF was", ref
-		module_name, ref, direction = ref.split("/")
+		module_name, rest = ref.split("/", 1)
+		ref, direction = rest.rsplit("/", 1)
 		assert direction in ("next", "previous")
 		#print module_name, ref, direction
 
@@ -208,8 +220,32 @@ class PageFragmentHandler(PageProtocolHandler):
 			if index < 0 or index >= len(t):
 				no_more = True
 			else:
-				new_ref = str(index)
+				new_ref = unicode(index)
 			
+		elif book.is_genbook:
+			ref = "/" + ref
+			tk = book.GetKey()
+			tk.Persist(1)
+			assert tk.thisown
+			newtk = book.GetKey()
+			newtk.thisown = True
+			mod.setKey(tk)
+			print "Getting next for", ref
+			tk.setText(ref)
+			print tk.getText()
+			if mod.Error() != '\x00':
+				print "Error on initial set?"
+			mod.increment(dir)
+			if mod.Error() == '\x00' and tk.getText():
+				new_ref = to_unicode(tk.getText(), mod)[1:] # trim off the leading /
+				print "Got new_ref", new_ref
+			else:
+				no_more = True
+			
+			mod.setKey(newtk)
+		else:
+			print "Book type not handled", module_name
+		
 		if no_more:
 			return '''
 			<div class="page_segment" empty="true">
