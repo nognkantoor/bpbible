@@ -74,3 +74,9 @@ blockquote.lg a.chapternumber
 	float: right;
 	right: -2.5em;
 }
+
+div.segment, div.no_more_text.end-start {
+	border-bottom: solid 1px #ddd;
+	padding-bottom: 0.5em;
+	margin-bottom: 0.5em;
+}

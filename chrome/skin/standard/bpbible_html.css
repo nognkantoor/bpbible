@@ -275,22 +275,11 @@ div.page_segment:hover div.timer {
 	right: inherit;
 }
 
-div.segment, div.no_more_text.end-start {
-	border-bottom: solid 1px #ddd;
-	padding-bottom: 0.5em;
-	margin-bottom: 0.5em;
-}
-
 div.no_more_text {
 	font-style: italic;
 	color: #888;
 }
 
 div.segment.nocontent {
-	border: none;
-}
-
-div.page_segment#original_segment > div.segment.current_segment {
-	background-color: hsl(240, 100%, 90%);
-
+	display: none;
 }
