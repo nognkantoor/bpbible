@@ -1,3 +1,4 @@
+from collections import defaultdict
 from backend.bibleinterface import biblemgr
 from swlib.pysw import SW
 from gui.tree_view import TreeItem, BasicTreeView
@@ -15,10 +16,24 @@ class ModuleTreeView(BasicTreeView):
 		self.top_level_items = []
 
 		self.module_types = (
-			(_("Bibles"), biblemgr.bible),
-			(_("Commentaries"), biblemgr.commentary),
-			(_("Dictionaries"), biblemgr.dictionary),
-			(_("Other books"), biblemgr.genbook),
+			("Bibles", biblemgr.bible),
+			("Commentaries", biblemgr.commentary),
+			("Dictionaries", biblemgr.dictionary),
+			("Other books", biblemgr.genbook),
+		)
+
+		self.extra_categories = (
+			"Daily Devotional",
+			"Maps",
+		)
+
+		self.all_categories = (
+			"Bibles",
+			"Commentaries",
+			"Dictionaries",
+			"Maps",
+			"Daily Devotional",
+			"Other books",
 		)
 
 		self.on_selection += self.on_version_tree
@@ -42,7 +57,8 @@ class ModuleTreeView(BasicTreeView):
 		
 	def on_version_tree(self, event_type, item):
 		if isinstance(item.data, SW.Module):
-			self.on_module_choice(event_type, item.data, item.parent.data)
+			book = biblemgr.get_module_book_wrapper(item.data.Name())
+			self.on_module_choice(event_type, book.mod, book)
 		else:
 			self.on_category_choice(event_type, item.data, item.parent.data)
 		
@@ -93,12 +109,20 @@ class ModuleTreeView(BasicTreeView):
 	
 	
 	def add_first_level_groups(self):
-		for text, book in self.module_types:
-			self.top_level_items.append(TreeItem(text, data=book, filterable=False))
+		modules = defaultdict(lambda: [])
+		for book_category, book in self.module_types:
+			for module in book.GetModules():
+				category = module.getConfigEntry("Category")
+				if category not in self.extra_categories:
+					category = book_category
+				modules[category].append(module)
+		for category in self.all_categories:
+			if modules[category]:
+				# XXX: Will this do horrible things and hold onto reference to all the modules for ever and a day?
+				self.top_level_items.append(TreeItem(category, data=modules[category], filterable=False))
 
 	def add_children(self, tree_item):
-		modules = tree_item.data.GetModules()
-		for module in modules: 
+		for module in tree_item.data: 
 			self.add_module(tree_item, module)
 	
 	def add_module(self, tree_item, module, inactive_description=""):
