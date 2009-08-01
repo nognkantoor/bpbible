@@ -283,3 +283,21 @@ div.no_more_text {
 div.segment.nocontent {
 	display: none;
 }
+
+/* Styling for the gospel harmony reference tables. */
+table.harmonytable	{
+	border-collapse: collapse;
+}
+
+table.harmonytable th, table.harmonytable td	{
+	border: 1px solid #B0B0B0;
+	padding: 5px;
+}
+
+table.harmonytable th {
+	text-align: left;
+}
+
+table.harmonytable td {
+	vertical-align: text-top;
+}
