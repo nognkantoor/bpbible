@@ -391,6 +391,29 @@ class OSISParser(filterutils.ParserBase):
 			
 		else:
 			self.success = SW.INHERITED
+
+	def start_harmonytable(self, xmltag):
+		from backend.bibleinterface import biblemgr
+		references = xmltag.getAttribute('refs').split("|")
+		if not references:
+			return
+
+		header_row = u"<tr>%s</tr>" % (
+			u"".join(
+				u"<th>%s</th>" % GetBestRange(reference, userOutput=True)
+				for reference in references
+			))
+		body_row = u"<tr>%s</tr>" % (
+			u"".join(
+				u"<td>%s</td>" % biblemgr.bible.GetReference(reference)
+				for reference in references
+			))
+		table = u'<table class="harmonytable">%s%s</table>' % (header_row, body_row)
+		self.buf += table.encode("utf8")
+
+	def end_harmonytable(self, xmltag):
+		# Prevent SWORD choking on this.
+		pass
 		
 class OSISRenderer(SW.RenderCallback):
 	def __init__(self):

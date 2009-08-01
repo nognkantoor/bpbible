@@ -25,13 +25,17 @@ class ModuleTreeView(BasicTreeView):
 		self.extra_categories = (
 			"Daily Devotional",
 			"Maps",
+			"Images",
+			"Gospel Harmonies",
 		)
 
 		self.all_categories = (
 			"Bibles",
 			"Commentaries",
 			"Dictionaries",
+			"Gospel Harmonies",
 			"Maps",
+			"Images"
 			"Daily Devotional",
 			"Other books",
 		)
