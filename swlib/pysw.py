@@ -1587,6 +1587,10 @@ class TK(SW.TreeKeyIdx):
 			del breadcrumb[-1]
 
 		return delimiter.join(breadcrumb[::-1])
+
+	# This is used by the tree view.
+	def has_children(self):
+		return self.hasChildren()
 	
 	def get_text(self):
 		self.check_changed()
@@ -1631,6 +1635,7 @@ class ImmutableTK(TK):
 	def Persist(self, value=None):
 		assert value is None, "Don't change this key's persist"
 		return super(ImmutableTK, self).Persist()
+
 	increment = setText = set_text = root = firstChild = error
 	nextSibling = previousSibling = parent = error
 	Index = error
