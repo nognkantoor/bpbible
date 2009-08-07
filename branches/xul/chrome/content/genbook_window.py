@@ -1,7 +1,8 @@
 import cgi
-from gui.tree_view import BasicTreeView, LazyTreeItem
-from swlib.pysw import ImmutableTK
+import mozutils
+from genbook_tree_view import GenbookTreeView
 from backend.bibleinterface import biblemgr
+from swlib import pysw
 from util.debug import dump, dprint, ERROR
 from util.unicode import to_unicode
 
@@ -10,12 +11,10 @@ tree_view = None
 def on_load():
 	global tree_view
 	initialise_module_name()
-	tk = biblemgr.genbook.GetKey()
-	itk = ImmutableTK(tk)
-	ImmutableTK.has_children = ImmutableTK.hasChildren
+	dprint(ERROR, str(biblemgr.genbook.is_gospel_harmony), str(biblemgr.genbook.mod.Name()))
+	document.getElementById("reference_lookup_hbox").hidden = not biblemgr.genbook.is_gospel_harmony
 	
-	tree_view = BasicTreeView()
-	tree_view.setup(LazyTreeItem(itk), is_root=True)
+	tree_view = GenbookTreeView(window.mod_name)
 	genbook_tree = document.getElementById("genbook_tree")
 	genbook_tree.view = tree_view
 	genbook_tree.addEventListener("select", genbook_list_select, True)
@@ -33,6 +32,30 @@ def load_genbook_entry_by_index(index):
 	browser.setAttribute("src", "bpbible://")
 	browser.setAttribute("src", "bpbible://content/page/%s%s" % (window.mod_name, t))
 	document.title = get_window_title(data)
+
+def handle_reference_keypress(event):
+	if event.keyCode == event.DOM_VK_RETURN:
+		lookup_reference()
+
+def go(event):
+	lookup_reference()
+
+def lookup_reference():
+	item = document.getElementById("textbox_reference")
+	assert item
+	dump("Looking up reference in Genbook: %s" % item.value)
+	try:
+		reference = pysw.GetVerseStr(item.value, userInput=True, raiseError=True)
+	except pysw.VerseParsingError, v:
+		mozutils.doAlert(str(v))
+		return
+
+	genbook_key = biblemgr.genbook.find_reference(reference)
+	dump("Reference maps to Genbook key: %s" % genbook_key)
+	if genbook_key is None:
+		mozutils.doAlert("%s is not in this harmony." % reference)
+		return
+	tree_view.go_to_key(genbook_key)
 
 def get_window_title(data):
 	return u"%s (%s) - BPBible" % (data.breadcrumb(), window.mod_name)

@@ -1,7 +1,8 @@
-#from swlib.Sword import *
-from swlib.pysw import SW, TK
+import re
+from swlib.pysw import SW, TK, VerseList
 from backend.book import Book
 from util.unicode import to_str, to_unicode
+import mozutils
 
 class TreeNode(object):
 	def __init__(self, parent, data): 
@@ -21,6 +22,10 @@ class GenBook(Book):
 	type = 'Generic Books'	
 	noun = "book"
 	is_genbook = True
+
+	def __init__(self, parent, version=""):
+		super(GenBook, self).__init__(parent, version)
+		self._gospel_harmony_references = {}
 
 	def GetReference(self, ref, context = None, max_verses = 500,
 			stripped=False, end_ref=None):
@@ -97,12 +102,14 @@ class GenBook(Book):
 		return verses
 			
 			
-	def GetKey(self):
+	def GetKey(self, key_text=None):
 		if not self.mod:
 			return None
 		mod_tk = SW.TreeKey.castTo(self.mod.getKey())
 		mod_tk.root()
 		tk = TK(mod_tk, self.mod)
+		if key_text is not None:
+			tk.setText(to_str(key_text, self.mod))
 		return tk
 	
 	def GetTopicsTree(self):#gets topic lists
@@ -176,3 +183,48 @@ class GenBook(Book):
 
 		# don't show any children for this
 		return key, False
+
+	def find_reference(self, reference):
+		for tree_key_references in self.gospel_harmony_references:
+			for harmony_reference in tree_key_references[1]:
+				if harmony_reference.VerseInRange(reference):
+					return tree_key_references[0]
+
+		return None
+
+	@property
+	def is_gospel_harmony(self):
+		return self.mod.getConfigEntry("Category") == "Gospel Harmonies"
+
+	@property
+	def gospel_harmony_references(self):
+		if self.mod is None or not self.is_gospel_harmony:
+			return []
+
+		if self.mod.Name() not in self._gospel_harmony_references:
+			self._gospel_harmony_references[self.mod.Name()] = self._load_gospel_harmony_references()
+
+		return self._gospel_harmony_references[self.mod.Name()]
+
+	def _load_gospel_harmony_references(self):
+		mod_tk = SW.TreeKey.castTo(self.mod.getKey())
+		mod_tk.root()
+		tk = TK(mod_tk, self.mod)
+		references = []
+
+		def add_references(tk, references):
+			self.mod.setKey(tk)
+			entry = self.mod.getRawEntry()
+			entry_references = '|'.join(re.findall('<harmonytable refs="([^"]*)"></harmonytable>', entry))
+			if entry_references:
+				references.append((
+					tk.getText(),
+					[VerseList(reference, userInput=False) for reference in entry_references.split('|')]
+				))
+
+			for child_tk in tk:
+				add_references(child_tk, references)
+
+		add_references(tk, references)
+
+		return references
