@@ -58,10 +58,9 @@ function highlight_range(start, end) {
 		}
 			
 		var try_this_indented = try_indented;
-		if (e.parentNode.className.match(/\bindentedline\b/) 
+		try_indented = (e.parentNode.className.match(/\bindentedline\b/) 
 			&& e == e.parentNode.lastChild) 
-			try_indented = true;
-		
+
 		if(extract_range(r) && try_this_indented) {
 			//d("Moving up a level");
 			// We just put in another level in extract_range - we don't want
@@ -80,8 +79,9 @@ function highlight_range(start, end) {
 	
 	r.setStartAfter(s);
 	r.setEndBefore(e);
-	if(try_indented)
+	if(try_indented) {
 		r.setEndAfter(e);
+	}
 	
 	extract_range(r);
 }
