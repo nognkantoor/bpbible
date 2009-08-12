@@ -90,7 +90,7 @@ class PageProtocolHandler(ProtocolHandler):
 		ref = ref.decode("utf8")
 		return self._get_document_parts_for_ref(module_name, ref)
 
-	def _get_document_parts_for_ref(self, module_name, ref):
+	def _get_document_parts_for_ref(self, module_name, ref, do_current_ref=True):
 		import time
 		t = default_timer()
 
@@ -99,6 +99,7 @@ class PageProtocolHandler(ProtocolHandler):
 				  "hyphenate.js", "columns.js"]
 
 		book = biblemgr.get_module_book_wrapper(module_name)
+		assert book, "Module wrapper not found for book " + module_name
 		module = book.mod
 		if book.chapter_view:
 			scripts.append("bpbible_html_chapter_view.js")
@@ -109,7 +110,11 @@ class PageProtocolHandler(ProtocolHandler):
 	
 		if book.is_verse_keyed:
 			if book.chapter_view:
-				c = book.GetChapter(ref, ref, config.current_verse_template)
+				if do_current_ref:
+					c = book.GetChapter(ref, ref, config.current_verse_template)
+				else:
+					c = book.GetChapter(ref)
+
 				ref_id = VK(ref).get_book_chapter()
 				
 			else:
@@ -257,7 +262,7 @@ class PageFragmentHandler(PageProtocolHandler):
 				 1: "end",
 			}[dir])
 		
-		return '<div class="page_segment">%(content)s%(timer)s</div>' % self._get_document_parts_for_ref(module_name, new_ref)
+		return '<div class="page_segment">%(content)s%(timer)s</div>' % self._get_document_parts_for_ref(module_name, new_ref, do_current_ref=False)
 	
 class ModuleInformationHandler(ProtocolHandler):
 	def get_document(self, path):
