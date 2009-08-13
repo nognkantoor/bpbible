@@ -429,11 +429,17 @@ class OSISParser(filterutils.ParserBase):
 				u"<th>%s</th>" % GetBestRange(reference, userOutput=True)
 				for reference in references
 			))
+		# This is a nasty hack to work around the fact that OSIS rendering in
+		# SWORD is not properly reentrant.
+		# Without copying the internal dictionary some references do not
+		# display at all.
+		my_internal_dict = self.__dict__.copy()
 		body_row = u"<tr>%s</tr>" % (
 			u"".join(
 				u"<td>%s</td>" % biblemgr.bible.GetReference(reference)
 				for reference in references
 			))
+		self.__dict__ = my_internal_dict
 		table = u'<table class="harmonytable">%s%s</table>' % (header_row, body_row)
 		self.buf += table.encode("utf8")
 
