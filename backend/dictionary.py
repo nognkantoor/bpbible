@@ -150,7 +150,8 @@ class Dictionary(Book):
 
 		assert not end_ref, "Dictionaries don't support ranges"
 
-		render_text = self.get_rendertext()
+		render_text, render_start, render_end = self.get_rendertext()
+		#TODO: use render_start and render_end?
 		
 		template = self.templatelist[-1]
 		key = self.mod.getKey()

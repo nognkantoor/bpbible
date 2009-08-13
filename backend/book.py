@@ -3,6 +3,7 @@ import passage_list
 from swlib.pysw import VK, SW, GetBestRange, GetVerseStr, TOP, process_digits
 from swlib import pysw
 from backend.verse_template import VerseTemplate, SmartBody
+from backend import osisparser
 from util import observerlist
 from util import classproperty
 from util.debug import dprint, WARNING, ERROR
@@ -214,6 +215,7 @@ class Book(object):
 		self.vk.Headings(old_headings)
 
 		text += template.finalize(u''.join(verses))
+		text += self.end_of_render
 		text += template.footer.safe_substitute(d)
 		if remove_extra_whitespace:
 			text = SmartBody.incl_whitespace_end.sub(u'', text)
@@ -244,7 +246,8 @@ class Book(object):
 		verses_left = max_verses
 
 		ERR_OK = chr(0)
-		render_text = self.get_rendertext(mod)
+		render_text, render_start, render_end = self.get_rendertext(mod)
+		if render_start: render_start()
 
 		try:
 			incrementer = mod if skip_linked_verses else verselist
@@ -376,7 +379,7 @@ class Book(object):
 					heading_dict.update(body_dict)
 					heading_dicts.append(heading_dict)
 					
-				yield body_dict, heading_dicts	
+				yield body_dict, heading_dicts
 
 				incrementer.increment(1)
 				verses_left -= 1
@@ -384,7 +387,10 @@ class Book(object):
 		finally:
 			mod.setKey(SW.Key())
 			mod.setSkipConsecutiveLinks(old_mod_skiplinks)
-
+		
+		self.end_of_render = ""
+		if render_end:
+			self.end_of_render = render_end()
 
 	def get_user_comments(self, verse_key):
 		if not isinstance(self, Bible):
@@ -574,13 +580,20 @@ class Book(object):
 		module = mod or self.mod
 		render_text = module.RenderText
 
+		start = finish = None
 		if module.getConfigEntry("SourceType") in (None, "Plaintext"):
 			def render_text(*args):
 				text = module.RenderText(*args)
 				text = text.replace("\n", "<br />")
 				return re.sub(" ( +)", lambda x:"&nbsp;"*len(x.group(1)), text)
 
-		return render_text
+		else:
+			if ord(module.Markup()) == SW.FMT_OSIS:
+				start = osisparser.p.block_start
+				finish = osisparser.p.block_end
+
+
+		return render_text, start, finish
 	
 	def has_feature(self, feature, module=None):
 		if module is not None:
