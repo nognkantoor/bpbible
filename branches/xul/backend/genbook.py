@@ -37,7 +37,9 @@ class GenBook(Book):
 			return None
 		
 		template = self.templatelist[-1]
-		render_text = self.get_rendertext()
+		render_text, render_start, render_end = self.get_rendertext()
+		#TODO: use render_start and render_end?
+		
 		module = self.mod
 		
 		if isinstance(ref, TK) and end_ref:

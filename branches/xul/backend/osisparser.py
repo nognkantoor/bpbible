@@ -6,6 +6,9 @@ import os.path
 class OSISParser(filterutils.ParserBase):
 	def __init__(self, *args, **kwargs):
 		super(OSISParser, self).__init__(*args, **kwargs)
+		self.reset()
+	
+	def reset(self):
 		self.did_xref = False
 		
 		self.strongs_bufs = []
@@ -14,7 +17,17 @@ class OSISParser(filterutils.ParserBase):
 		self.in_indent = False
 		self.in_morph_seg = False
 		self._end_hi = ""
+		self.in_lg = False
 	
+	def block_start(self):
+		self.reset()
+		
+	def block_end(self):
+		if self.in_lg:
+			return '</blockquote>'
+		
+		return ""
+
 	def start_hi(self, xmltag):
 		assert not xmltag.isEmpty(), "Hi cannot be empty"
 		type = xmltag.getAttribute("type")
@@ -291,12 +304,21 @@ class OSISParser(filterutils.ParserBase):
 		self.buf += '</h6>'
 
 	def start_lg(self, xmltag):
-		if xmltag.getAttribute("eID"):
+		if xmltag and xmltag.getAttribute("eID"):
 			return self.end_lg(xmltag)
+
+		if self.in_lg:
+			dprint(WARNING, "Nested lg's? (or l outside lg, then lg?)")
+
+		self.in_lg = True
+		clas = ""
+		if not xmltag:
+			clas = " forced_lg"
 
 		self.buf += '<blockquote class="lg" width="0">'
 	
 	def end_lg(self, xmltag):
+		self.in_lg = False
 		self.buf += '</blockquote>'
 	
 	def write(self, text):
@@ -320,6 +342,10 @@ class OSISParser(filterutils.ParserBase):
 			print "<l />?!?", xmltag.toString()
 			self.success = SW.INHERITED
 			return
+
+		if not self.in_lg:
+			dprint(WARNING, "l outside lg??? (or block doesn't contain lg)")
+			self.start_lg(None)
 		
 		mapping = {
 			# usual poetry indent in ESV
