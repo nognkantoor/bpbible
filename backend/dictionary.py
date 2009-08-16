@@ -4,6 +4,9 @@ from backend.book import Book
 from util.unicode import to_str, to_unicode
 from util.debug import dprint, WARNING
 import re
+import datetime
+
+current_year = datetime.date.today().year
 
 topics_dict = dict()
 
@@ -130,6 +133,68 @@ class LazyTopicList(object):
 				
 
 		return self.topics[item]
+
+class DateConverterLazyTopicList(object):
+	def __init__(self, object):
+		self.object = object
+	
+	def __len__(self):
+		return len(self.object)
+	
+	def __getitem__(self, item):
+		return mmdd_to_date(self.object[item]) or self.object[item]
+	
+	@property
+	def has_new_methods(self):
+		return self.object.has_new_methods
+	
+	@property
+	def mod(self):
+		return self.object.mod
+
+def is_date_conversion_supported():
+	# vietnamese under windows doesn't complete the loop
+	#return wx.DateTime.Now().ParseFormat(wx.DateTime.Now().Format("%B %d"), "%B %d") != -1
+	# True for now.
+	return True
+
+def date_to_mmdd(date, return_formatted=True):
+	if not return_formatted and not is_date_conversion_supported():
+		try:
+			month, day = map(int, date.split(".", 1))
+		except ValueError:
+			pass
+		else:
+			return datetime.date(current_year, month, day)
+
+	# tack the following bits on the end to see if they help give us dates
+	# the second is February -> February 1
+	additions = ["", " 1"]
+
+	for addition in additions:
+		try:
+			date = datetime.datetime.strptime(date + addition, "%B %d")
+			if return_formatted:
+				return date.strftime("%m.%d")
+			return datetime.date(current_year, date.month, date.day)
+		except ValueError:
+			pass
+		
+	return None
+
+def mmdd_to_date(date):
+	if not is_date_conversion_supported():
+		return None
+
+	try:
+		month, day = map(int, date.split(".", 1))
+	except ValueError:
+		return None
+	else:
+		date = datetime.date(2008, month, day)
+
+	return date.strftime("%B ") + str(date.day)
+
 		
 class Dictionary(Book):
 	type = "Lexicons / Dictionaries"
@@ -191,19 +256,22 @@ class Dictionary(Book):
 	def clear_cache(self, parent=None):
 		topics_dict.clear()
 			
-	def GetTopics(self):#gets topic lists
+	def GetTopics(self, user_output=False):
 		if not self.mod:
 			return []
 		
 		# cache the topic lists
 		name = self.mod.Name()
-		if name in topics_dict:
-			return topics_dict[name]
-		
-		topics = LazyTopicList(self.mod)
-		topics_dict[name] = topics
+		if name not in topics_dict:
+			topics = LazyTopicList(self.mod)
+			topics_dict[name] = topics
+		else:
+			topics = topics_dict[name]
+
+		if user_output and self.is_daily_devotional:
+			return DateConverterLazyTopicList(topics)
 		return topics
-	
+
 	def snap_text(self, text, module=None):
 		mod = module or self.mod
 		if mod is None:
@@ -216,3 +284,6 @@ class Dictionary(Book):
 		mod.getRawEntryBuf()
 		return to_unicode(mod.getKeyText(), mod)
 
+	@property
+	def is_daily_devotional(self):
+		return self.has_feature("DailyDevotion")
