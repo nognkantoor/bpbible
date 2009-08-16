@@ -29,7 +29,15 @@
     </vbox>
     <splitter collapse="after"><grippy /></splitter>
     <vbox style="width: 200px">
-      <textbox id="dictionary_textbox" /> 
+      <hbox>
+        <textbox id="dictionary_textbox" /> 
+        <toolbarbutton id="datepicker_button"
+                image="chrome://bpbible/skin/images/calendar_view_day.png"
+                popup="datepicker_panel" />
+        <panel id="datepicker_panel">
+          <datepicker id="datepicker" type="grid"/>
+        </panel>
+      </hbox>
       <tree id="dictionary_list" 
             flex="1" 
             hidecolumnpicker="true"
