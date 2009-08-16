@@ -28,11 +28,17 @@ def dprint(errorlevel, message, *args):
 	if errorlevel >= level:	
 		args = [message] + [repr(arg) for arg in args]
 		message = "%s %s" % (time.strftime("%H:%M:%S"), " ".join(args))
-		print message
+		try:
+			print message
+		except IOError:
+			pass
 		dump(message)
 
 def dump(string):
-	from xpcom import components
+	try:
+		from xpcom import components
+	except ImportError:
+		return
 	components.classes['@mozilla.org/consoleservice;1']\
 		.getService(components.interfaces.nsIConsoleService)\
 		.logStringMessage(string)
