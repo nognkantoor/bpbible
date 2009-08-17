@@ -1,0 +1,5 @@
+/* we are in a popup, remove superflous margin */
+panel > datepicker {
+  margin: 0;
+  border: none;
+}

@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 
 <?xml-stylesheet href="chrome://bpbible/skin/bpbible.css" type="text/css"?>
+<?xml-stylesheet href="chrome://bpbible/skin/dictionary_window.css" type="text/css"?>
 
 <!DOCTYPE window SYSTEM "chrome://bpbible/locale/bpbible.dtd">
 
