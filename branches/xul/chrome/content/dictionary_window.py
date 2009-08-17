@@ -21,12 +21,15 @@ def on_load():
 		today = datetime.date.today()
 		document.getElementById("dictionary_textbox").value = today.strftime("%B ") + str(today.day)
 		dictionary_textbox_input(None)
-		window.datepicker = JSProxy(document.getElementById("datepicker"))
+		dp = document.getElementById("datepicker")
+		window.datepicker = JSProxy(dp)
+		dp.addEventListener("change", datepicker_change)
+		document.getElementById("datepicker_panel").addEventListener("popupshowing", datepicker_showing)
+		
 	else:
 		load_dictionary_entry_by_index(0)
+
 	document.getElementById("datepicker_button").hidden = not window.is_calendar
-	document.getElementById("datepicker").addEventListener("change", datepicker_change)
-	document.getElementById("datepicker_panel").addEventListener("popupshowing", datepicker_showing)
 	document.getElementById("dictionary_textbox").addEventListener("input", dictionary_textbox_input)
 
 def dictionary_list_select(event):
