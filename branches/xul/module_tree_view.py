@@ -35,7 +35,7 @@ class ModuleTreeView(BasicTreeView):
 			"Dictionaries",
 			"Gospel Harmonies",
 			"Maps",
-			"Images"
+			"Images",
 			"Daily Devotional",
 			"Other books",
 		)
