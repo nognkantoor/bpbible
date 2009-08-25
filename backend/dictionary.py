@@ -239,9 +239,12 @@ class Dictionary(Book):
 			reference_encoded=SW.URL.encode(self.mod.getKeyText()).c_str(),
 			
 		)
-		d["reference"] = d["range"]
-
+		if self.is_daily_devotional:
+			d["reference"] = mmdd_to_date(d["range"]) or d["range"]
+		else:
+			d["reference"] = d["range"]
 		verses = template.header.safe_substitute(d)
+
 		d1 = d
 		if raw:
 			d1["text"] = self.mod.getRawEntry()
