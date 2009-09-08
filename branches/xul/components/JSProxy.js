@@ -93,7 +93,7 @@ JSProxy.prototype = {
   // argument manipulation
   clearArgs: function()       { this.mArgs = []; },
   addNullArg: function()      { this.mArgs.push(null); },
-  addBooleanArg: function()   { this.mArgs.push(arg); },
+  addBooleanArg: function(arg){ this.mArgs.push(arg); },
   addStringArg: function(arg) { this.mArgs.push(arg); },
   addIntArg: function(arg)    { this.mArgs.push(parseInt(arg)); },
   addDoubleArg: function(arg) { this.mArgs.push(arg); },
