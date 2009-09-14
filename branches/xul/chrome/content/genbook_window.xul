@@ -31,7 +31,6 @@
     <vbox style="width: 200px">
       <hbox id="reference_lookup_hbox">
         <textbox id="textbox_reference" 
-                value="Genesis 1" 
                 onkeypress="handle_reference_keypress(event);" />
         <button oncommand="lookup_reference()" label="Go" />
       </hbox>
