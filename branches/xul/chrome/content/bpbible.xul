@@ -42,12 +42,6 @@ We set windowtype here for XUSH... pretending to be firefox.
   </keyset>
 
   <!-- JS uses this to pass events on to python code -->
-  <broadcaster id="process_tooltip" />
-  <observes element="process_tooltip" 
-            attribute="attribute1" 
-            onbroadcast="process_tooltip()"
-            />
-
   <commandset id="mainCommandSet" script-type="application/javascript">
     <!-- Find commands. -->
     <command id="cmd_find"
@@ -87,7 +81,14 @@ We set windowtype here for XUSH... pretending to be firefox.
                     label="Verse Per Line" 
                     type="checkbox"
                     oncommand="toggle_option(event)" />
-                    
+          <menuitem id="menu_continuous_scrolling" 
+                    label="Continuous Scrolling" 
+                    type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menuitem id="menu_coloured_quotes" 
+                    label="Colour quotations by speaker" 
+                    type="checkbox"
+                    oncommand="toggle_option(event)" />
         </menupopup>
       </menu>
       <menu id="menu_tools" label="&tools.label;" accesskey="&tools.accesskey;">
@@ -97,8 +98,21 @@ We set windowtype here for XUSH... pretending to be firefox.
         <menupopup id="menu_ToolsPopup">
           <menuitem label="Error Console" 
                     oncommand="window.open('chrome://global/content/console.xul', '', 'chrome,dialog=no,toolbar,resizable')" />
-          
 
+        </menupopup>
+      </menu>
+      <menu id="menu_debug" label="Debug">
+        <menupopup id="menu_DebugPopup">
+          <menuitem label="Reboot filtering"
+                    oncommand="do_reloading('reboot_filtering')">
+          </menuitem>
+          <menuitem label="Reboot Bits"
+                    oncommand="do_reloading('reboot_bits')">
+          </menuitem>
+          
+          <menuitem label="Reload chrome"
+                    oncommand="do_reloading('reload_chrome')">
+          </menuitem>
         </menupopup>
       </menu>
       <menu id="menu_help" label="&help.label;" accesskey="&help.accesskey;">
@@ -126,12 +140,18 @@ We set windowtype here for XUSH... pretending to be firefox.
   </toolbox>
 
   <vbox id="appcontent" flex="1">
+    <tooltip script-type="application/javascript" 
+             id="aHTMLTooltip" 
+             onpopupshowing="return FillInHTMLTooltip(document.tooltipNode);" 
+      />  
     <browser id="browser"
              disablehistory="true"
              src="bpbible:"
              style="width: 100%;"
              flex="1" 
-             type="content-primary" />
+             type="content-primary"
+             tooltip="aHTMLTooltip"
+             />
   </vbox>
   <vbox id="browser-bottombox">
     <findbar browserid="browser" id="FindToolbar" />

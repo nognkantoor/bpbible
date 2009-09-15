@@ -10,6 +10,8 @@ import util.dom_util
 from xpcom import components
 
 from util.debug import is_debugging
+import reload_util
+import frame_util
 
 def bpbible_doCommand(event):
 	item_name = event.target.id
@@ -35,6 +37,7 @@ def lookup_reference():
 	if not hasattr(window, "mod_name"):
 		initialise_module_name(item)
 	assert item
+	print item
 	dump("Looking up reference: %s" % item.value)
 	i = item.value
 	try:
@@ -54,31 +57,45 @@ def lookup_reference():
 	document.title = get_window_title(i)
 
 def process_tooltip():
-	d = document.getElementById("process_tooltip").getAttribute("attribute1")
+	pt = document.getElementById("process_tooltip")
+	d = pt.getAttribute("href")
+	firer = pt.getAttribute("firer")
+	f = window.content.document.getElementById(firer)
+	if not f:
+		print "No firer found????", firer
+	
+	frame_util.firer = f
+
 	if not d: 
 		# We reset it to make sure it changes; this is the reset, so ignore
 		return
 	
 	print "Got it! was", d
+	from protocols import protocol_handler
+	protocol_handler.on_hover(window, d, 0, 0)
 	
 def do_load():
 	set_menu_items()
 	util.dom_util.document = document
 	lookup_reference()
-	window.open('chrome://bpbible/content/module_selector.xul', '', 
-				'chrome,scrollbars,resizable');
+	add_tooltip_handlers()
+	#window.open('chrome://bpbible/content/module_selector.xul', '', 
+	#			'chrome,scrollbars,resizable');
 	
 def get_window_title(reference):
 	return u"%s (%s) - BPBible" % (pysw.GetBestRange(reference, userOutput=True), window.mod_name)
 
 def initialise_module_name(reference_item):
+	print reference_item
 	module_name = "ESV"
 	if window.location.search:
 		parameters = cgi.parse_qs(window.location.search[1:])
 		if parameters.has_key("module_name"):
 			module_name = parameters["module_name"][0]
 		if parameters.has_key("reference"):
-			reference_item.value = parameters["reference"][0]
+			print reference_item, "AND it's setAttribute", reference_item.setAttribute
+			reference_item.setAttribute("value", parameters["reference"][0])
+			#reference_item.value = parameters["reference"][0]
 	dprint(ERROR, "Initialising module name to %s" % module_name)
 	window.mod_name = module_name
 
@@ -111,3 +128,22 @@ def propagate_setting_change(type, value):
 		if win.content and win.content.location.protocol == "bpbible:":
 			body = win.content.document.body
 			body.setAttribute(type, value)
+
+
+def do_reloading(func):
+	reload(reload_util)
+	reload_util.__dict__[func]()
+
+def add_tooltip_handlers():
+	b = document.createElement("broadcaster")
+	b.id = "process_tooltip"
+	o = document.createElement("observes")
+	o.setAttribute("element", "process_tooltip")
+	o.setAttribute("attribute", "href")
+	o.addEventListener("broadcast", process_tooltip, False)
+	document.documentElement.appendChild(b)
+	document.documentElement.appendChild(o)
+	tt = document.createElement("panel")
+	tt.id = "tooltippanel"
+	tt.setAttribute("noautofocus", "true")
+	document.documentElement.appendChild(tt)
