@@ -5,8 +5,7 @@ from swlib.pysw import process_digits
 class VerseTemplate(object):
 	"""VerseTemplate is a class which defines templates for Bible Text""" 
 	def __init__(self, body=u"$text", header=u"", footer=u"", 
-	headings=u'<h6 class="heading" canonical="$canonical">$heading</h6>\n',
-	preverse=""):
+	headings=u'$heading\n', preverse=""):
 		self.header = str_template(header)
 		self.body = str_template(body)
 		self.footer = str_template(footer)
