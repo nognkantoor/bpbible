@@ -3,7 +3,7 @@ Methods that used to live on frames; these may be moved in the future
 """
 
 from backend.bibleinterface import biblemgr
-from contrib.JSProxy import JSProxy
+from contrib.jsproxy import JSProxy
 from protocol_handlers import TooltipConfigHandler
 def _get_modulename(window):
 	return window.content.document.body.getAttribute("module")
