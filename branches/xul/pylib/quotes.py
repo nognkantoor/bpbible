@@ -85,7 +85,9 @@ def read_quotes():
 				sat_range=range(100, 101), lum_range=range(70, 71)
 			), name))
 	
-			s.add('%s {border-bottom: %dpx solid; -moz-border-bottom-colors: %s}' % (
+			# TODO: we can optimize this by adding/removing stylesheet, rather
+			# than putting conditionals in rules
+			s.add('body[coloured_quotes="true"] %s {border-bottom: %dpx solid; -moz-border-bottom-colors: %s}' % (
 				' > '.join('.quote[who="%s"]' % n for q, e, c, n in stack),
 				len(stack) * 2,
 				' '.join(c + " " + c for q, e, c, n in reversed(stack))

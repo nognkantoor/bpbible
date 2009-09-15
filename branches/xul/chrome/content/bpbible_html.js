@@ -102,6 +102,7 @@ function load_above() {
 		var c = load_text($(".page_segment:first-child")[0], true);
 		if (!c) break;
 		c.prependTo("#content");
+		process_new_text(c);
 		var diff = $(ref).offset().top - ref_height;
 		if (diff != Math.ceil(diff)) 
 			d("Non-rounded pixel values in load_above: " + diff);
@@ -116,11 +117,12 @@ function load_above() {
 function load_below() {
 	const LOAD_OFFSET = get_scroll_offset();
 	
-	cnt = 0;
+	var cnt = 0;
 	while (window.scrollMaxY - window.scrollY < LOAD_OFFSET && cnt < 10) {
 		var c = load_text($(".page_segment:last-child")[0], false);
 		if (!c) break;
 		c.appendTo("#content");
+		process_new_text(c);
 		cnt++;
 	}
 	if(cnt == 10) d("Didn't work\n");
@@ -128,6 +130,10 @@ function load_below() {
 
 var reentrancy_check = false;
 function ensure_sufficient_content(scroll_after) {
+//	dump("Ensure sufficient content being called\n");
+	var ref =  $("#content").children()[0];
+	var ref_height = $(ref).offset().top;
+//	dump(window.scrollY + "\n");
 	// We may be called re-entrantly if it is scrolling while we add content,
 	// for example. This is very bad to allow (we can load one chapter more
 	// than once
@@ -181,15 +187,23 @@ function load_text(item, before) {
 	return $(t);
 }
 
-$(document).ready(function(){
-	$('a.footnote').bind("mouseenter", function(){
+function process_new_text(c) {
+	c.find('a[href]').bind("mouseenter", function(){
 		//load_text();
 
 		
 		d("Dispatching event\n");
 		var element = document.createElement("MyExtensionDataElement");
 		element.setAttribute("id", "process_tooltip");
-		element.setAttribute("attribute1", "foobar");
+		element.setAttribute("href", this.getAttribute("href"));
+		var hadId = Boolean(this.id);
+		if (hadId) {
+			alert("Had ID?!?");
+			var old_id = this.getAttribute("id");
+		} else {
+			this.id = "firer";
+		}
+		element.setAttribute("firer", this.id);
 		document.documentElement.appendChild(element);
 
 		var evt = document.createEvent("Event");
@@ -198,19 +212,49 @@ $(document).ready(function(){
 
 		/* I hope/presume that dispatchEvent is synchronous... :D */
 		element.parentNode.removeChild(element);
+		if (!hadId) {
+			this.id = "";
+		}
 	});
+}
 	
+
+$(document).ready(function(){
+	d("ready!!!!" + window.location.href);
+
+	d(window.top.document.title);
+/*	window.addEventListener( 'pageshow', function(e){ d('!!!!!!!!!!!!!!pageshow fired'); }, false );
+	window.addEventListener( 'pagehide', function(e){ d('!!!!!!!!!!!!!!pagehide fired'); }, false );*/
+
 	// Scroll to current first; if this is big enough and we are far enough
 	// down, we may not have to load content above us.
 	scroll_to_current();
 
-	$(window).scroll(function() {ensure_sufficient_content()});
-	$(window).resize(function() {ensure_sufficient_content()});
+	$("body").bind("DOMAttrModified", function(event) {
+		if(event.attrName == "continuous_scrolling")
+			set_continuous(event.newValue == "true");
+	});
+
+	set_continuous($('body[continuous_scrolling="true"]').length, true);
+	process_new_text($("#content"));
 	
-	// But make sure we do scroll at the end of our ensuring
-	ensure_sufficient_content(true);
 });
 
+function continuous_onsize() {ensure_sufficient_content()};
+function set_continuous(to) {
+//	alert("set", to);
+	if (!to) {
+		$(window).unbind('resize', continuous_onsize);
+		$(window).unbind('scroll', continuous_onsize);
+	} else {
+		$(window).scroll(continuous_onsize);
+		$(window).resize(continuous_onsize);
+	
+		// But make sure we do scroll at the end of our ensuring
+		// TODO: settings toggle shouldn't do the scrolling at the end...
+		ensure_sufficient_content(true);
+	}
+}
 function get_scroll_point() {
 	return {top:  window.innerHeight < 240 ? 
 		Math.max(window.innerHeight/2 - 40, 0) : 120,
@@ -234,4 +278,5 @@ function scroll_to_current(start) {
 	
 	window.scrollTo(l, t);
 }
+
 
