@@ -2,7 +2,6 @@ import re
 from swlib.pysw import SW, TK, VerseList
 from backend.book import Book
 from util.unicode import to_str, to_unicode
-import mozutils
 
 class TreeNode(object):
 	def __init__(self, parent, data): 
