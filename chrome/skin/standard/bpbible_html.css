@@ -1,3 +1,18 @@
+/* BM: the comment below refers specifically to the docking stuff at the
+ * moment, but I'm keeping it in here for now, even though it doesn't apply
+ * Additional rules I would rather were not here, but since we can't use
+ * browser type="content..." we have to have. */
+a[href] {
+	color: blue;
+	text-decoration: underline;
+}
+
+body {
+/*	font: 20pt/120% verdana, trebuchet ms;*/
+	background-color: -moz-Field;
+}
+/* End Additional Rules */
+
 /* Headings */
 /* TODO: Matt 5:2 - <p> comes *before* heading - our text indent goes
  * missing... */
@@ -14,10 +29,8 @@ h6.heading[canonical="true"] {
 /* Footnotes */
 a.footnote {
 	text-decoration: none;
-	font-size: 75%;
+	font: 65%/0 sans-serif;
 	vertical-align: 0.55em;	
-	line-height: 0;/*normal;*/
-/*	display: none;*/
 }
 
 /* e.g. ESV Gen 1:1 */
@@ -122,6 +135,8 @@ div.indentedline[width="0"] {
 a.strongs_headword {
 	text-decoration: none;
 	font-size: small;
+	-moz-user-select: none;
+	
 }
 /*a.strongs_headword:before { content: "<" }
 a.strongs_headword:after { content: ">" }*/
@@ -130,6 +145,7 @@ a.morph {
 	text-decoration: none;
 	font-size: small;
 	font-style: italic;
+	-moz-user-select: none;	
 }
 /*a.morph:before { content: "(" }
 a.morph:after { content: ")" }*/
@@ -206,12 +222,17 @@ span.morphSegmentation {
 
 /* Global style */
 body { 
-	line-height: 1.5em;
+	line-height: 1.5;
 }
 
+* {
+}
 /* Options */
 body[columns="true"] > #content {
-	-moz-column-width: 23em;
+	-moz-column-width: 18em;
+	-moz-column-rule: thin solid #aaa;
+	-moz-column-gap: 1em;
+
 	text-align: justify;
 
 	/* we need padding on the right; with columns we can't seem to do this
