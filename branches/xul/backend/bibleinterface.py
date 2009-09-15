@@ -12,7 +12,7 @@ from backend.dictionary import Dictionary
 
 from util import confparser
 from util.observerlist import ObserverList
-from util.debug import dprint, MESSAGE, WARNING
+from util.debug import dprint, MESSAGE, WARNING, ERROR
 from backend.filter import MarkupInserter
 from backend.genbook import GenBook
 import config
@@ -109,10 +109,12 @@ class BibleInterface(object):
 	def get_module_book_wrapper(self, module_name):
 		mod = self.modules_with_lowercase_name.get(module_name.lower())
 		if mod is None:
+			dprint(ERROR, "Mod is none", module_name)
 			return None
 
 		book = self.book_type_map.get(mod.Type())
 		if book is None:
+			dprint(ERROR, "book is none", module_name, mod.Type())
 			return None
 
 		book.SetModule(mod)
