@@ -12,12 +12,14 @@
         script-type="application/x-python"
         persist="screenX screenY width height"
         windowtype="navigator:browser"                
-        onload="load_module_tree_view(); lookup_reference();">
+        onload="load_module_tree_view(); lookup_reference(); add_tooltip_handlers()">
 
   <script type="application/x-python" 
           src="chrome://bpbible/content/module_selector.py" />
   <script type="application/x-python" 
           src="chrome://bpbible/content/bpbible.py" />
+  <script type="application/javascript" 
+          src="chrome://bpbible/content/bpbible.js" />
 
   <toolbox>
     <toolbar id="toolbar_explorer" mode="icons" style="width:300px;">
