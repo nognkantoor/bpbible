@@ -265,36 +265,14 @@ class Book(object):
 				#	versekey.Headings(1)
 				osisRef = versekey.getOSISRef()
 				internal_reference = versekey.getText()
-
-
-
-				if raw:
-					text = mod.getRawEntry().decode("utf-8", "replace")
 				
-				elif stripped:
-					text = mod.StripText().decode("utf-8", "replace")
-					
-					
-				else:
-					text = render_text()
-
-				if skip_linked_verses and not text:
+				rawentry = mod.getRawEntryBuf()
+				if skip_linked_verses and not rawentry.length():
 					# don't include empty text; typically this may be at the
 					# start of the chapter or something...
 					incrementer.increment(1)
 					continue
 
-				user_comments = self.get_user_comments(versekey)
-
-				# XXX: This needs to be done better than this.  Move into
-				# subclass somehow.
-				if isinstance(self, Bible) and display_tags:
-					tags = self.insert_tags(versekey, exclude_topic_tag)
-				else:
-					tags = ""
-
-				mod.getKey()
-				
 				start_verse = end_verse = versekey.Verse()
 				
 				# a patch adds isLinked, not in SWORD trunk yet
@@ -345,27 +323,41 @@ class Book(object):
 					reference = u_vk.get_book_chapter()
 					reference += ":" + verse
 					
-
-				body_dict = dict(text=text,
-							versenumber = process_digits(verse,
-								userOutput=True), 
-							chapternumber = process_digits(
-								str(versekey.Chapter()),
-								userOutput=True),
-							booknumber = ord(versekey.Book()),
-							bookabbrev = versekey.getBookAbbrev(),
-							bookname = versekey.getBookName(),
-							reference = reference,
-							internal_reference = internal_reference,
-							osisRef = osisRef,
-							tags = tags,
-							usercomments = user_comments,
+				body_dict = dict(
+					# text comes later
+					versenumber = process_digits(verse,
+						userOutput=True), 
+					chapternumber = process_digits(
+						str(versekey.Chapter()),
+						userOutput=True),
+					booknumber = ord(versekey.Book()),
+					bookabbrev = versekey.getBookAbbrev(),
+					bookname = versekey.getBookName(),
+					reference = reference,
+					internal_reference = internal_reference,
+					osisRef = osisRef,
 				)	
-						  
+				
+				# we want to do our pre-verse content first, but we can't
+				# without running it through the optionFilter first.
+				# we'll then have to run it through again after, otherwise our
+				# entryattributes may go walkabout
+				if not raw:
+					mod.optionFilter(rawentry, versekey)
+				
 				headings = self.get_headings(internal_reference, mod)
 				#versekey = VK.castTo(key)
 				heading_dicts = []
 				for heading, canonical in headings:
+					# the new-style pre-verse content lives wrapped up in
+					# <div>'s - it will contain the <title>, but the div will
+					# be stripped out.
+					# the old-style pre-verse content lives in <title>'s,
+					# which will also be stripped out. Unfortunately, it isn't
+					# that easy to tell whether it did have a title, so we
+					# employ a heuristic - if it starts with an <, it is a new
+					# one...
+					nh = heading.startswith("<")
 					if not raw:
 						if stripped:
 							heading = mod.StripText(heading).decode(
@@ -375,10 +367,39 @@ class Book(object):
 						else:
 							heading = render_text(heading)
 
+					if not nh:
+						heading = '<h6 class="heading" canonical="%s">%s</h6>\n' % (canonical, heading)
+
 					heading_dict = dict(heading=heading, canonical=canonical)
 					heading_dict.update(body_dict)
 					heading_dicts.append(heading_dict)
 					
+
+
+				# get our actual text
+				if raw:
+					text = rawentry.c_str().decode("utf-8", "replace")
+				
+				elif stripped:
+					text = mod.StripText(rawentry.c_str(), rawentry.length()).decode("utf-8", "replace")			
+
+				else:
+					text = render_text(rawentry.c_str(), rawentry.length())
+
+				user_comments = self.get_user_comments(versekey)
+
+				# XXX: This needs to be done better than this.  Move into
+				# subclass somehow.
+				if isinstance(self, Bible) and display_tags:
+					tags = self.insert_tags(versekey, exclude_topic_tag)
+				else:
+					tags = ""
+				
+				body_dict.update(dict(text=text,
+									  tags=tags,
+									  usercomments=user_comments))
+
+						  
 				yield body_dict, heading_dicts
 
 				incrementer.increment(1)
