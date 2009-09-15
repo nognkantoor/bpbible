@@ -58,7 +58,10 @@ class ProtocolHandler(object):
 		for skin_prefix, script_prefix, prefix \
 				in zip(skin_prefixs, script_prefixs, prefixs):
 			for item in stylesheets:
-				resources.append('<link rel="stylesheet" type="text/css" href="%s/%s/%s"/ >' % (prefix, skin_prefix, item))
+				if "://" in item:
+					resources.append('<link rel="stylesheet" type="text/css" href="%s"/ >' % (item))
+				else:
+					resources.append('<link rel="stylesheet" type="text/css" href="%s/%s/%s"/ >' % (prefix, skin_prefix, item))
 			for item in scripts:
 				resources.append('<script type="text/javascript" src="%s/%s/%s"></script>' % (prefix, script_prefix, item))
 
@@ -104,6 +107,7 @@ class PageProtocolHandler(ProtocolHandler):
 		if book.chapter_view:
 			scripts.append("bpbible_html_chapter_view.js")
 			stylesheets.append("bpbible_chapter_view.css")
+			stylesheets.append("bpbible://content/quotes_skin/")
 		else:
 			scripts.append("bpbible_html_page_view.js")
 			stylesheets.append("bpbible_page_view.css")			
@@ -296,10 +300,37 @@ class ModuleInformationHandler(ProtocolHandler):
 
 		return self._get_html(module, t, stylesheets=["book_information_window.css"])
 	
+class QuotesHandler(ProtocolHandler):
+	def get_content_type(self, path):
+		return 'text/css'
+	
+	def get_document(self, path):
+		import quotes
+		style, mapping = quotes.get_quotes()
+		return style
+
+class TooltipConfigHandler(ProtocolHandler):
+	registered = {}
+	upto = 0
+
+	@classmethod
+	def register(cls, config):
+		cls.upto += 1
+		k = str(cls.upto)
+		cls.registered[k] = config
+		return "bpbible://content/tooltip/%s" % k
+
+	def get_document(self, path):
+		config = self.registered.pop(path)
+		return self._get_html(config.get_module(), config.get_text(),
+		stylesheets = ["bpbible_html.css"])
+
 handlers = {
 	"page": PageProtocolHandler(), 
 	'pagefrag': PageFragmentHandler(),
 	'': NullProtocolHandler(),
 	'moduleinformation': ModuleInformationHandler(),
+	'quotes_skin': QuotesHandler(),
+	'tooltip': TooltipConfigHandler(),
 }
 
