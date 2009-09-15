@@ -1,7 +1,8 @@
 from backend import filterutils
 from swlib.pysw import SW, GetBestRange
-from util.debug import dprint, WARNING
+from util.debug import dprint, WARNING, ERROR
 import os.path
+import quotes
 
 class OSISParser(filterutils.ParserBase):
 	def __init__(self, *args, **kwargs):
@@ -18,7 +19,21 @@ class OSISParser(filterutils.ParserBase):
 		self.in_morph_seg = False
 		self._end_hi = ""
 		self.in_lg = False
-	
+		self._quotes = []
+		self._quotes_data = []
+
+	def write_quote(self, qID, who):
+		self.write("<span class='quote' qID='%s' who='%s' title='%s'>" % (qID,
+		who, who))
+
+	def blocklevel_start(self):
+		for qID, who in self._quotes_data:
+			self.write_quote(qID, who)
+			
+	def blocklevel_end(self):
+		for item in self._quotes_data:	
+			self.write("</span>")
+
 	def block_start(self):
 		self.reset()
 		
@@ -28,6 +43,87 @@ class OSISParser(filterutils.ParserBase):
 		
 		return ""
 
+	def start_q(self, tag):
+		style, quote_mapping = quotes.get_quotes()
+		#print "Q", tag.toString()
+		type      = tag.getAttribute("type");
+		who       = tag.getAttribute("who");
+		tmp		  = tag.getAttribute("level");
+		level	  = int(tmp) if tmp else 1
+		mark      = tag.getAttribute("marker");
+		# open <q> or <q sID... />
+		if ((not tag.isEmpty() and not tag.isEndTag()) or (tag.isEmpty() and tag.getAttribute("sID"))):
+			# if <q> then remember it for the </q>
+			if not tag.isEmpty():
+				self._quotes.append(tag.toString())
+
+			# Do this first so quote marks are included as WoC
+			if (who == "Jesus"):
+				self.write(self.u.wordsOfChristStart.c_str())
+
+			# first check to see if we've been given an explicit mark
+			if mark:
+				self.write(mark)
+			
+			# alternate " and '
+			elif (self.u.osisQToTick):
+				self.write('"' if (level % 2) else '\'')
+		
+			if tag.getAttribute("sID"):
+				qID = tag.getAttribute("sID").replace(".", "_")
+				d = quote_mapping.get(qID, "")
+				if not d:
+					dprint(WARNING, "No who found for qID", qID)
+
+				self.write_quote(qID, d)
+				self._quotes_data.append((qID, d))
+			else:
+				#print "non-sid Start", tag.toString()
+				pass
+				
+		# close </q> or <q eID... />
+		elif ((tag.isEndTag()) or (tag.isEmpty() and tag.getAttribute("eID"))):
+			# if it is </q> then pop the stack for the attributes
+			if (tag.isEndTag() and self._quotes):
+				tagData  = self._quotes.pop()
+				qTag = SW.XMLTag(tagData)
+
+				type    = qTag.getAttribute("type");
+				who     = qTag.getAttribute("who");
+				tmp     = qTag.getAttribute("level");
+				level   = int(tmp) if tmp else 1
+				mark    = qTag.getAttribute("marker");
+
+			qID = tag.getAttribute("eID")
+			if qID:
+				qID = qID.replace(".", "_")
+			
+				if not self._quotes_data:
+					dprint(ERROR, "Quotes data empty", qID,
+					self.u.key.getText())
+
+				else:
+					d = self._quotes_data.pop()
+					if d[0] != qID:
+						dprint(ERROR, "Mismatching closing quotes", d, qID)
+				self.write('</span>')
+			else:
+				print tag.toString()
+
+			# first check to see if we've been given an explicit mark
+			if (mark):
+				self.write(mark)
+
+			# finally, alternate " and ', if config says we should supply a mark
+			elif (self.u.osisQToTick):
+				self.write('"' if (level % 2) else '\'')
+
+			# Do this last so quote marks are included as WoC
+			if (who == "Jesus"):
+				self.write(self.u.wordsOfChristEnd.c_str())
+
+					
+	end_q = start_q
 	def start_hi(self, xmltag):
 		assert not xmltag.isEmpty(), "Hi cannot be empty"
 		type = xmltag.getAttribute("type")
@@ -100,9 +196,11 @@ class OSISParser(filterutils.ParserBase):
 		if not xmltag.isEmpty():
 			print "Can lb's really be non-empty?"
 		if type == "x-end-paragraph":
+			self.blocklevel_end()
 			self.buf += "</p>"
 		elif type == "x-begin-paragraph":
 			self.buf += "<p>"
+			self.blocklevel_start()
 
 	def start_w(self, xmltag):
 		self.strongs_bufs = []
@@ -288,6 +386,30 @@ class OSISParser(filterutils.ParserBase):
 		else:
 			self.success = SW.INHERITED	
 
+	def start_p(self, xmltag):
+		print "IN P"
+		self.buf += "<p>"
+		self.blocklevel_start()
+		if tag.isEmpty(): 
+			self.end_p(xmltag)
+
+	def end_p(self, xmltag):
+		self.blocklevel_end()
+		self.buf += "</p>"
+	
+	def start_div(self, xmltag):
+		if xmltag.getAttribute("type") != "paragraph":
+			self.success = SW.INHERITED
+		elif xmltag.getAttribute("eID"):
+			self.blocklevel_end()
+			self.buf += "</p>"
+		elif xmltag.getAttribute("sID"):
+			self.buf += "<p>"
+			self.blocklevel_start()
+		else:
+			print "What is this paragraph div?", xmltag.toString()
+
+
 		
 	# TODO:
 	# lg starting in previous chapter
@@ -377,11 +499,13 @@ class OSISParser(filterutils.ParserBase):
 
 		self.in_indent = True
 		self.buf += '<div class="indentedline" width="%d" source="l">' % indent
+		self.blocklevel_start()
 		#else:
 		#	self.success = SW.INHERITED
 
 	def end_l(self, xmltag):
 		if self.in_indent:
+			self.blocklevel_end()			
 			self.buf += "</div>"
 			self.in_indent = False
 			
