@@ -17,7 +17,7 @@ class GenbookTreeView(BasicTreeView):
 		
 		# position both at root
 		tk.root()
-		root_item = self.dummy_root_item
+		root_item = self.model
 
 		def look_for(tree_item, index):
 			while tk != ref_to_aim_for:
@@ -32,7 +32,7 @@ class GenbookTreeView(BasicTreeView):
 					assert result, \
 						"Couldn't get child even though should have a child"
 
-					if tree_item != self.dummy_root_item: 
+					if tree_item != self.model: 
 						self.expand_item(tree_item)
 					assert len(tree_item.children) > 0
 					tree_item = tree_item.children[0]

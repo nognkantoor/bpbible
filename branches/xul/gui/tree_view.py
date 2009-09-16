@@ -3,13 +3,14 @@ from util.debug import dprint, ERROR
 from xpcom import components
 
 class TreeItem(object):
-	def __init__(self, text, data=None, is_open=False, filterable=True):
+	def __init__(self, text, data=None, is_open=False, 
+			filterable=True, level=0):
 		self._children = []
 		self._text = text
 		self.data = data
 		self.filterable = filterable
 		self.is_open = is_open
-		self.level = 0
+		self.level = level
 		self.parent = None
 
 	@property
@@ -40,7 +41,7 @@ class TreeItem(object):
 		return item is last_child
 
 	def clone_item(self):
-		return TreeItem(self.text, self.data)
+		return TreeItem(self.text, self.data, level=self.level)
 
 	def null_item(self):
 		# shouldn't be seen, so no i18n needed
@@ -83,16 +84,44 @@ class BasicTreeView(object):
 	def setup(self, root_items, is_root=False):
 		self.visibleData = []
 		if is_root:
-			self.dummy_root_item = root_items
+			self.model = root_items
 		else:
-			self.dummy_root_item = TreeItem("Dummy root item")
+			self.model = TreeItem("Dummy root item")
 
-		self.dummy_root_item.level = -1
+		self.model.level = -1
 		if not is_root:
 			for item in root_items:
-				self.dummy_root_item.add_child(text=None, item=item)
-		self.visibleData = list(self.dummy_root_item.children)
+				self.model.add_child(text=None, item=item)
+		self.model = self.model
+		self.visibleData = list(self.model.children)
 		dprint(ERROR, "Visible data", self.visibleData)
+	
+	def filter(self, text):
+		def get_filtered_items(model_item):
+			return_item = model_item.clone_item()
+			for item in model_item.children:
+				ansa = get_filtered_items(item)
+				if ansa:
+					return_item.add_child(text=None, item=ansa)
+
+			# if we are not filterable, or the text is not in our text, and we
+			# haven't any children matching, return None
+			if (not model_item.filterable 
+				or text.upper() not in model_item.text.upper()) \
+				and not return_item.children:
+				return None
+
+			return return_item
+
+		root = get_filtered_items(self.model)
+		if not root:
+			root = self.model.null_item()
+
+		l = len(self.visibleData)
+		self.visibleData = list(root.children)
+		diff = len(root.children) - l
+		self.rowCountChanged(0, diff)
+		self.expand_all()
 
 	def expand_all(self):
 		self.expand_items(self.visibleData, recursive=True)
