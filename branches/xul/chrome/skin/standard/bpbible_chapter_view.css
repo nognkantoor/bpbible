@@ -5,7 +5,7 @@ a.chapternumber {
 	line-height: 130%;
 	font-size: 200%;
 	text-decoration: none;
-	-moz-padding-end: 3px;
+	-moz-margin-end: 3px;
 	color: hsl(240, 35%, 60%);
 }
 
@@ -14,7 +14,7 @@ a.chapternumber {
 }
 
 a.versenumber {
-	-moz-padding-end: 2px;
+	-moz-margin-end: 2px;
 	text-decoration: none;
 	font-size: small;
 	vertical-align: 0.32em;
@@ -23,11 +23,11 @@ a.versenumber {
 	
 }
 
-a.currentverse {
+a.currentverse, a.versenumber:hover {
 	color: hsl(120, 35%, 50%);
 }
 
-a.currentverse.chapternumber {
+a.currentverse.chapternumber, a.chapternumber:hover {
 	color: hsl(120, 35%, 60%);
 }
 
@@ -79,4 +79,22 @@ div.segment, div.no_more_text.end-start {
 	border-bottom: solid 1px #ddd;
 	padding-bottom: 0.5em;
 	margin-bottom: 0.5em;
+}
+
+.reference_bar {
+	background: rgba(255, 100, 0, 0.95);
+	position: fixed;
+	top: 0;
+	right: 0;
+/*	width: 100%;*/
+	-moz-border-radius-bottomleft: 1em;
+	z-index: 100;
+	text-align: right;
+	height: 1.5em;
+	text-decoration: bold;
+	padding: 0.1em 0.5em;
+}
+
+span.quote {
+	border-bottom: 1px dotted green;
 }
