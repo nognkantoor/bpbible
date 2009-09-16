@@ -78,8 +78,9 @@ class Book(object):
 		#return "<No module>"
 
 	def GetModuleList(self):
-		return sorted([name.lower() for name, mod in self.parent.modules.iteritems()
-				if mod.Type() == self.type or self.type is None])
+		return sorted([name for name, mod in self.parent.modules.iteritems()
+				if mod.Type() == self.type or self.type is None], 
+				key=lambda name:name.lower())
 	
 	def GetModules(self):
 		return sorted([mod for name, mod in self.parent.modules.iteritems()
