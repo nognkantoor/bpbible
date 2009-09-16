@@ -11,8 +11,71 @@ function highlight_verse(){
 	}
 }
 
+function fill_reference_bar() {
+	var top = window.scrollY;
+	var bottom = window.innerHeight + window.scrollY;
+
+	// Don't use chapter numbers
+	var start = $('a.vnumber');
+	var end = $('a.vnumber');
+	var ref1 = null, ref2 = null;
+	/* TODO: we can narrow down based on our page segments first... */
+	start.each(function() {
+		if ($(this).offset().top + this.offsetHeight >= top) {
+			ref1 = this.getAttribute("reference");
+			return false;
+		}
+		return true;
+	});
+
+	var last = null;
+	$(end).each(function() {
+		//alert($(this).offset().top);
+		if ($(this).offset().top >= bottom) {
+			if (!last) alert("Not last");
+			return false;
+		}
+		last = this;
+		return true;
+	});
+	ref2 = last.getAttribute("reference");
+	
+	if(!ref1 || !ref2) alert("Not ref1 or ref2 '" + ref1 + "' '" + ref2 + "'");
+
+	function extract_reference(ref) {
+		if(!ref.match(":")) ref += ":1";
+		var d = ref.match(/(.+) (\d+):(\d+)/);
+		if (d) return d;
+		
+		// single chapter book
+		var [whole, book, verse] = ref.match(/(.+):(\d+)/);
+		whole = whole.replace(":", " ");
+		return [whole, book, null, verse];
+	}
+			
+	var [whole1, book1, chapter1, verse1] = extract_reference(ref1);
+	var [whole2, book2, chapter2, verse2] = extract_reference(ref2);
+
+	var delim = "-";
+	if (book1 == book2)
+		if(chapter1 == chapter2 || !chapter2)
+			whole2 = verse2;
+		else
+			whole2 = chapter2 + ":" + verse2;
+	
+	$("div.reference_bar").text(whole1 + delim + whole2);
+}
+
+function create_reference_bar() {
+	$("body").prepend('<div class="reference_bar">This should give the current reference</div>');
+}
+
 $(document).ready(function() {
 	highlight_verse();
+	create_reference_bar();
+	$(window).scroll(function() {fill_reference_bar()});
+	$(window).resize(function() {fill_reference_bar()});
+
 /*	var [start, end] = get_current_verse_bounds();
 	scroll_to_current(start);*/
 	
