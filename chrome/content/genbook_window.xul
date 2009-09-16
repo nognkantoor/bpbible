@@ -19,15 +19,6 @@
 
   <!-- Dictionary content. -->
   <hbox id="appcontent" flex="1">
-    <vbox flex="1">
-      <browser id="browser"
-              disablehistory="true"
-              src="bpbible:" 
-              style="width: 100%;" 
-              type="content-primary" 
-              flex="1" />
-    </vbox>
-    <splitter collapse="after"><grippy /></splitter>
     <vbox style="width: 200px">
       <hbox id="reference_lookup_hbox">
         <textbox id="textbox_reference" 
@@ -44,6 +35,15 @@
         <treechildren id="genbook_tree_base">
         </treechildren>
       </tree>
+    </vbox>
+    <splitter collapse="before"><grippy /></splitter>
+    <vbox flex="1">
+      <browser id="browser"
+              disablehistory="true"
+              src="bpbible:" 
+              style="width: 100%;" 
+              type="content-primary" 
+              flex="1" />
     </vbox>
   </hbox>
 </window>
