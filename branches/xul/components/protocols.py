@@ -12,6 +12,7 @@ class BPBibleProtocol:
 	_reg_contractid_ =   "@mozilla.org/network/protocol;1?name=bpbible"
 
 	scheme = "bpbible"
+	defaultPort = 0
 	protocolFlags  = (nsIProtocolHandler.URI_NOAUTH | 
 					nsIProtocolHandler.URI_NORELATIVE | 
 				#// we could use URI_LOADABLE_BY_ANYONE and set
