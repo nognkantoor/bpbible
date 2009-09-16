@@ -107,8 +107,8 @@ class OSISParser(filterutils.ParserBase):
 					if d[0] != qID:
 						dprint(ERROR, "Mismatching closing quotes", d, qID)
 				self.write('</span>')
-			else:
-				print tag.toString()
+			#else:
+			#	print tag.toString()
 
 			# first check to see if we've been given an explicit mark
 			if (mark):
