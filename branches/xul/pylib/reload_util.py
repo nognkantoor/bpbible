@@ -1,27 +1,25 @@
 from xpcom import components
-def reboot_filtering():
-	import backend.osisparser as o
-	import backend.thmlparser as t
-	import protocol_handlers as p
-	import quotes as q
-	for item in q, o, t, p:
-		reload(item)
-	
-	print "Reloaded"
+filtering = "quotes backend.osisparser backend.thmlparser protocol_handlers"
+tooltip_bits = "frame_util tooltip_config protocols"
+trees = "gui.tree_view module_tree_view"
+ALL = "filtering tooltip_bits trees".split()
 
-def reboot_bits():
-	import tooltip_config as t	
-	import protocols as p
-	import frame_util as f
-	reboot_filtering()
-	for item in f, t, p:
-		reload(item)
+def reboot_section(name):
+	for item in globals()[name].split():
+		print "Reloading", item
+		# fromlist non-empty means for A.B B is returned, not A
+		# HACK: fromlist=True
+		m = __import__(item, fromlist=True)
+		reload(m)
 	
-	print "Reloaded"
+	print "Reloaded", name
+
+def reload_all():
+	for item in ALL:
+		reboot_section(item)
 
 def reload_chrome():
-	reboot_filtering()
-	reboot_bits()
+	reload_all()
 	components.classes["@mozilla.org/chrome/chrome-registry;1"] \
 			  .getService(components.interfaces.nsIXULChromeRegistry) \
 			  .reloadChrome()

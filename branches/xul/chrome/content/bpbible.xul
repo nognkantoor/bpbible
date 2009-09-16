@@ -104,10 +104,13 @@ We set windowtype here for XUSH... pretending to be firefox.
       <menu id="menu_debug" label="Debug">
         <menupopup id="menu_DebugPopup">
           <menuitem label="Reboot filtering"
-                    oncommand="do_reloading('reboot_filtering')">
+                    oncommand="do_reloading('filtering')">
           </menuitem>
-          <menuitem label="Reboot Bits"
-                    oncommand="do_reloading('reboot_bits')">
+          <menuitem label="Reboot tooltip Bits"
+                    oncommand="do_reloading('tooltip_bits')">
+          </menuitem>
+          <menuitem label="Reboot trees"
+                    oncommand="do_reloading('trees')">
           </menuitem>
           
           <menuitem label="Reload chrome"

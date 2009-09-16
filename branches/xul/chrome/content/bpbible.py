@@ -132,7 +132,11 @@ def propagate_setting_change(type, value):
 
 def do_reloading(func):
 	reload(reload_util)
-	reload_util.__dict__[func]()
+	d = reload_util.__dict__[func] 
+	if callable(d):
+		d()
+	else:
+		reload_util.reboot_section(func)
 
 def add_tooltip_handlers():
 	b = document.createElement("broadcaster")
