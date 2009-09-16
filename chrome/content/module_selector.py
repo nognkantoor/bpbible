@@ -15,9 +15,17 @@ def load_module_tree_view():
 	treeView.setup_tree_events(tree)
 	treeView.on_module_choice += on_module_choice
 	tree.addEventListener("contextmenu", check_context_menu, True)
+	x = document.getElementById("tree_filter")
+	if getattr(x, "searchButton", None) is None:
+		# xulrunner 1.9.0 doesn't have type=search, but that's ok
+		# we hook into oninput instead
+		x.setAttribute("oninput", x.getAttribute("oncommand"))
 
 def set_browser_text(text):
 	document.getElementById("bodycontent").innerHTML = text.replace("<!P>", "&lt;!P&gt;")
+
+def get_current_reference():
+	return document.getElementById("toolbar_location").value
 
 def on_module_choice(event_type, module, book):
 	module_name = module.Name()
@@ -29,7 +37,8 @@ def on_module_choice(event_type, module, book):
 			lookup_reference()
 	elif event_type == "dblclick":
 		if book.is_verse_keyed:
-			reference = document.getElementById("toolbar_location").value
+			reference = get_current_reference()
+
 			debug.dprint(debug.ERROR, 'Loading Bible window', module_name, reference)
 			url = ('chrome://bpbible/content/bible_window.xul?module_name=%s&reference=%s' %
 				(urllib.quote(module_name), urllib.quote(reference)))
@@ -58,3 +67,7 @@ def show_module_information():
 	window.open(
 		'chrome://bpbible/content/book_information_window.xul?module_name=%s' 
 		% selection.Name(), '', 'chrome,scrollbars,resizable');
+
+def filter_tree():
+	treeView.filter(document.getElementById("tree_filter").value)
+

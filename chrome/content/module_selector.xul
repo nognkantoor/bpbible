@@ -36,6 +36,10 @@
         <menuitem label="Show Information"
                   oncommand="show_module_information()" />
       </menupopup>
+      <!-- search is XULRunner >= 1.9.1, but it doesn't matter if we don't
+      have it - we just miss the icons -->
+      <textbox id="tree_filter" type="search" emptytext="Find Book..." 
+        oncommand="filter_tree()" timeout="1" />
       <tree id="module_tree" 
             flex="1" 
             hidecolumnpicker="true"
