@@ -80,6 +80,7 @@ class BasicTreeView(object):
 		self.treeBox = None
 		self.selection = None
 		self.visibleData = []
+		self._suppress_selection = False
 
 	def setup(self, root_items, is_root=False):
 		self.visibleData = []
@@ -131,8 +132,16 @@ class BasicTreeView(object):
 		self.tree.addEventListener("select", self.select_item, True)
 		self.tree.addEventListener("dblclick", self.double_click_on_item, True)
 
+	def select_item_without_event(self, item):
+		self._suppress_selection = True
+		try:
+			self.selection.select(item)
+		finally:
+			self._suppress_selection = False
+
 	def select_item(self, event):
-		self.on_selection("select", self.visibleData[self.tree.currentIndex])
+		if not self._suppress_selection:
+			self.on_selection("select", self.visibleData[self.tree.currentIndex])
 
 	# XXX: Double click isn't the right event.  You get double clicks even
 	# when you double click on the tree's scroll bars, and you don't get an
