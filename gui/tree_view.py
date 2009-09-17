@@ -329,3 +329,31 @@ class ListTreeView(object):
 	def getCellProperties(self, index, column, prop): pass
 	def getColumnProperties(self, column, element): pass
 	def canDrop(self, index, orientation): return False	
+
+	def scroll_to_row(self, row):
+		# scroll nicely to a row
+		# scrollToRow will scroll so that the given row is at the top, looks
+		# bad for the last row...
+		# ensureRowIsVisible ends up down the bottom
+		# this ends up about 1/5th of the way down, or where it is on screen
+		first = self.treeBox.getFirstVisibleRow()
+		last = self.treeBox.getLastVisibleRow()
+		# if it is already on the view, good
+		# note we still move it if it is last
+		if first <= row < last:
+			return
+		
+		rows_shown = self.treeBox.height / self.treeBox.rowHeight 
+
+		# this puts this row at the top
+		max_items = self.get_rowCount()
+		chosen_item = row - rows_shown * 0.2
+		if chosen_item < 0: 
+			chosen_item = 0
+		else:
+			if chosen_item + rows_shown > max_items:
+				chosen_item = max_items - rows_shown
+
+		self.treeBox.scrollToRow(chosen_item)
+
+

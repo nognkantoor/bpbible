@@ -71,9 +71,7 @@ def dictionary_textbox_input(event):
 		do_not_change_textbox_value = True
 		dictionary_list.view.selection.select(idx)
 		do_not_change_textbox_value = False
-		dictionary_list.boxObject.\
-			QueryInterface(components.interfaces.nsITreeBoxObject).\
-			scrollToRow(idx)
+		list_view.scroll_to_row(idx)
 
 def load_dictionary_entry_by_index(index):
 	browser = document.getElementById("browser")
