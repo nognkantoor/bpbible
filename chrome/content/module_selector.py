@@ -12,6 +12,7 @@ def load_module_tree_view():
 	treeView = ModuleTreeView()
 	tree = document.getElementById("module_tree")
 	tree.view = treeView
+	treeView.selection.select(0)
 	treeView.setup_tree_events(tree)
 	treeView.on_module_choice += on_module_choice
 	tree.addEventListener("contextmenu", check_context_menu, True)
@@ -30,6 +31,12 @@ def get_current_reference():
 def on_module_choice(event_type, module, book):
 	module_name = module.Name()
 	debug.dprint(debug.ERROR, "event type", event_type, "module", str(module), module_name, "book", str(book))
+	if event_type == "enter":
+		if book.is_verse_keyed:
+			event_type = "select"
+		else:
+			event_type = "dblclick"
+
 	if event_type == "select":
 		if book.is_verse_keyed:
 			debug.dprint(debug.ERROR, 'Changing current module to', module_name)
@@ -68,6 +75,41 @@ def show_module_information():
 		'chrome://bpbible/content/book_information_window.xul?module_name=%s' 
 		% selection.Name(), '', 'chrome,scrollbars,resizable');
 
+last_value = ""
 def filter_tree():
-	treeView.filter(document.getElementById("tree_filter").value)
+	global last_value
+	val = document.getElementById("tree_filter").value 
+	
+	# if it didn't change for whatever reason, don't worry
+	if val == last_value: return
+	treeView.selection.clearSelection()
+	treeView.filter(val)
+	treeView.selection.select(0)
+	last_value = val
 
+def tree_move(direction):
+	if not treeView.selection.count:
+		treeView.select_item_without_event(0)
+	
+	else:
+		ci = treeView.selection.currentIndex
+		ci += direction
+		if ci < 0 or ci >= treeView.get_rowCount():
+			return
+		
+		treeView.select_item_without_event(ci)
+		treeView.tree.boxObject.\
+			QueryInterface(components.interfaces.nsITreeBoxObject).\
+			ensureRowIsVisible(ci)
+
+def filter_keypress(event):
+	if event.charCode: return
+	if event.keyCode == event.DOM_VK_UP:
+		tree_move(-1)
+	if event.keyCode == event.DOM_VK_DOWN:
+		tree_move(1)
+	
+	# not sure which is best to use
+	if event.keyCode in (event.DOM_VK_ENTER, event.DOM_VK_RETURN):
+		treeView.on_selection("enter", 
+			treeView.visibleData[treeView.tree.currentIndex])
