@@ -43,6 +43,16 @@ class OSISParser(filterutils.ParserBase):
 		
 		return ""
 
+	def start_abbr(self, xmltag):
+		exp = xmltag.getAttribute("expansion")
+		if not exp:
+			dprint("WARNING: not exp")
+
+		self.write('<abbr title="%s">' % SW.URL.encode(exp).c_str())
+
+	def end_abbr(self, xmltag):
+		self.write("</abbr>")
+
 	def start_q(self, tag):
 		style, quote_mapping = quotes.get_quotes()
 		#print "Q", tag.toString()
@@ -59,7 +69,7 @@ class OSISParser(filterutils.ParserBase):
 
 			# Do this first so quote marks are included as WoC
 			if (who == "Jesus"):
-				self.write(self.u.wordsOfChristStart.c_str())
+				self.write("<span class='WoC'>")
 
 			# first check to see if we've been given an explicit mark
 			if mark:
@@ -120,7 +130,7 @@ class OSISParser(filterutils.ParserBase):
 
 			# Do this last so quote marks are included as WoC
 			if (who == "Jesus"):
-				self.write(self.u.wordsOfChristEnd.c_str())
+				self.write("</span>")
 
 					
 	end_q = start_q
@@ -204,12 +214,15 @@ class OSISParser(filterutils.ParserBase):
 
 	def start_w(self, xmltag):
 		self.strongs_bufs = []
+		self.morph_bufs = []
 		self.was_G3588 = None
 		# w lemma="strong:H03050" wn="008"
 	
-		lemmas = xmltag.getAttribute("lemma")
-		if (not lemmas or self.u.suspendTextPassThru):
+		lemmas = xmltag.getAttribute("lemma") or ""
+		if self.u.suspendTextPassThru:
+			#(not lemmas or 
 			#not	filterutils.filter_settings["strongs_headwords"]):
+			dprint(WARNING, "W while suspended?", xmltag.toString())
 			self.success = SW.INHERITED		
 			return
 
@@ -239,7 +252,6 @@ class OSISParser(filterutils.ParserBase):
 			
 			self.strongs_bufs.append(headword)
 			
-		self.morph_bufs = []
 		morph = xmltag.getAttribute("morph")
 		if morph:
 			for attrib in morph.split():
@@ -257,13 +269,13 @@ class OSISParser(filterutils.ParserBase):
 							SW.URL.encode(val).c_str(),
 							val2))
 		
-		if self.strongs_bufs:
+		if self.strongs_bufs or self.morph_bufs:
 			self.u.suspendLevel += 1
 			self.u.suspendTextPassThru = self.u.suspendLevel
 			
 	
 	def end_w(self, xmltag):
-		if self.strongs_bufs:
+		if self.strongs_bufs or self.morph_bufs:
 			self.u.suspendLevel -= 1
 			self.u.suspendTextPassThru = self.u.suspendLevel
 	
@@ -272,11 +284,11 @@ class OSISParser(filterutils.ParserBase):
 			# don't show empty 3588 tags
 			return
 			
-		if self.strongs_bufs:
+		if self.strongs_bufs or self.morph_bufs:
 			self.buf += '<span class="strongs-block"><span class="strongs_word">'
 			self.buf += self.u.lastSuspendSegment.c_str() or "&nbsp;"
 			self.buf += '</span><span class="strongs"><span class="strongs_headwords">'
-			self.buf += "".join(self.strongs_bufs)
+			self.buf += "".join(self.strongs_bufs) or "&nbsp;"
 			if self.morph_bufs:
 				self.buf += '</span><span class="strongs_morph">'
 				self.buf += "".join(self.morph_bufs)
@@ -390,7 +402,7 @@ class OSISParser(filterutils.ParserBase):
 		print "IN P"
 		self.buf += "<p>"
 		self.blocklevel_start()
-		if tag.isEmpty(): 
+		if xmltag.isEmpty(): 
 			self.end_p(xmltag)
 
 	def end_p(self, xmltag):
