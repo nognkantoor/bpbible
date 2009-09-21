@@ -87,7 +87,7 @@ def read_quotes():
 	
 			# TODO: we can optimize this by adding/removing stylesheet, rather
 			# than putting conditionals in rules
-			s.add('body[coloured_quotes="true"] %s {border-bottom: %dpx solid; -moz-border-bottom-colors: %s}' % (
+			s.add('body[colour_speakers="coloured_quotes"] %s {border-bottom: %dpx solid; -moz-border-bottom-colors: %s}' % (
 				' > '.join('.quote[who="%s"]' % n for q, e, c, n in stack),
 				len(stack) * 2,
 				' '.join(c + " " + c for q, e, c, n in reversed(stack))
@@ -104,5 +104,6 @@ def get_quotes():
 	if quotes is None:
 		quotes = read_quotes()
 	
+	#open("quotes.css", "w").write(quotes[0])
 	return quotes
 

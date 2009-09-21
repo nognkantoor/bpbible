@@ -8,7 +8,9 @@ from util import observerlist
 from util import classproperty
 from util.debug import dprint, WARNING, ERROR
 from util.unicode import to_str, to_unicode
+import cgi
 import os
+import display_options
 
 import config
 
@@ -133,6 +135,8 @@ class Book(object):
 		#only for bible keyed books
 		if not self.mod:
 			return None
+
+		raw = raw or display_options.options["raw"]
 		
 		if template is None and self.templatelist:
 			template = self.templatelist[-1]
@@ -377,15 +381,17 @@ class Book(object):
 					
 
 
-				# get our actual text
-				if raw:
-					text = rawentry.c_str().decode("utf-8", "replace")
+
 				
-				elif stripped:
+				if stripped:
 					text = mod.StripText(rawentry.c_str(), rawentry.length()).decode("utf-8", "replace")			
 
 				else:
-					text = render_text(rawentry.c_str(), rawentry.length())
+					text = render_text(rawentry.c_str(), rawentry.length()).decode("utf8", "replace")
+				
+				# get our actual text
+				if raw:
+					text = self.process_raw(rawentry.c_str(), text, versekey, mod)
 
 				user_comments = self.get_user_comments(versekey)
 
@@ -606,8 +612,8 @@ class Book(object):
 		if module.getConfigEntry("SourceType") in (None, "Plaintext"):
 			def render_text(*args):
 				text = module.RenderText(*args)
-				text = text.replace("\n", "<br />")
-				return re.sub(" ( +)", lambda x:"&nbsp;"*len(x.group(1)), text)
+				text = cgi.escape(text)
+				return '<span class="plaintext">%s</span>' % text
 
 		else:
 			if ord(module.Markup()) == SW.FMT_OSIS:
@@ -687,7 +693,18 @@ class Book(object):
 		# make sure it exists
 		os.stat(pp)
 		
-		return SW.Config(pp)		
+		return SW.Config(pp)
+	
+	def process_raw(self, text, rendered_text, key, module):
+		kt = key.getOSISRefRangeText() or key.getText()
+		kt = to_unicode(kt, module)
+		return u"""
+%s
+<div class='debug-raw-details'>
+	<span class='key'>%s</span>
+	<pre class='raw-rendered'>%s</pre>
+	<pre class='raw'>%s</pre>
+</div>""" % (rendered_text, cgi.escape(kt), cgi.escape(rendered_text), cgi.escape(text.decode("utf-8", "replace")))
 				
 class Commentary(Book):
 	type = "Commentaries"

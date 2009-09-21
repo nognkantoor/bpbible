@@ -2,6 +2,7 @@ import re
 from swlib.pysw import SW, TK, VerseList
 from backend.book import Book
 from util.unicode import to_str, to_unicode
+import display_options
 
 class TreeNode(object):
 	def __init__(self, parent, data): 
@@ -75,12 +76,16 @@ class GenBook(Book):
 		
 		d1 = d.copy()
 		
-		
+		raw = display_options.options["raw"]
+	
 		while True:
 			if stripped:
 				text = module.StripText(entry).decode("utf-8", "replace")
 			else:
-				text = render_text(entry)
+				text = render_text(entry).decode("utf-8", "replace")
+
+			if raw:
+				text = self.process_raw(entry, text, ref, module)
 
 			d1["reference"] = to_unicode(module.getKeyText(), module)
 			d1["reference_encoded"] = \

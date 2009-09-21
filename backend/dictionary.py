@@ -5,6 +5,7 @@ from util.unicode import to_str, to_unicode
 from util.debug import dprint, WARNING
 import re
 import datetime
+import display_options
 
 current_year = datetime.date.today().year
 
@@ -215,6 +216,8 @@ class Dictionary(Book):
 
 		assert not end_ref, "Dictionaries don't support ranges"
 
+		raw = raw or display_options.options["raw"]
+
 		render_text, render_start, render_end = self.get_rendertext()
 		#TODO: use render_start and render_end?
 		
@@ -229,7 +232,7 @@ class Dictionary(Book):
 		if stripped:
 			text = self.mod.StripText().decode("utf-8", "replace")
 		else:
-			text = render_text()
+			text = render_text().decode("utf-8", "replace")
 		
 		d = dict(
 			# render text so that we convert utf-8 into html
@@ -247,7 +250,8 @@ class Dictionary(Book):
 
 		d1 = d
 		if raw:
-			d1["text"] = self.mod.getRawEntry()
+			d1["text"] = self.process_raw(self.mod.getRawEntry(), text,
+											self.mod.getKey(), self.mod)
 		else:
 			d1["text"] = text
 
