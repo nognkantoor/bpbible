@@ -75,6 +75,7 @@ $(document).ready(function() {
 	create_reference_bar();
 	$(window).scroll(function() {fill_reference_bar()});
 	$(window).resize(function() {fill_reference_bar()});
+	fill_reference_bar();
 
 /*	var [start, end] = get_current_verse_bounds();
 	scroll_to_current(start);*/

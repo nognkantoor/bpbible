@@ -334,6 +334,18 @@ div.no_more_text {
 	color: #888;
 }
 
+div.page_segment[empty] {
+	height: 120px;
+	position: relative;
+}
+
+div.no_more_text.end-start {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+}
+
 div.segment.nocontent {
 	display: none;
 }

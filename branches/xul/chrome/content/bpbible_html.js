@@ -93,9 +93,12 @@ function get_scroll_offset() {
 	return window.innerHeight;
 }
 
+var reached_top = false;
 function load_above() {
+	var filler = $(".filler");
+	var filler_offset = filler.length > 0 ?  filler[0].offsetHeight: 0;
 	var cnt = 0;
-	const LOAD_OFFSET = get_scroll_offset();
+	const LOAD_OFFSET = get_scroll_offset() + filler_offset;
 	var ref =  $("#content").children()[0];
 	var ref_height = $(ref).offset().top;
 	while (window.scrollY < LOAD_OFFSET && cnt < 10) {
@@ -107,6 +110,11 @@ function load_above() {
 		if (diff != Math.ceil(diff)) 
 			d("Non-rounded pixel values in load_above: " + diff);
 		window.scrollBy(0, diff);
+		if (!c[0].getElementsByClassName("segment").length) {
+			reached_top = true;
+			toggle_filler(false);
+		}
+		ref_height = $(ref).offset().top;
 		
 		cnt++;
 	}
@@ -129,7 +137,7 @@ function load_below() {
 }
 
 var reentrancy_check = false;
-function ensure_sufficient_content(scroll_after) {
+function ensure_sufficient_content() {
 //	dump("Ensure sufficient content being called\n");
 	var ref =  $("#content").children()[0];
 	var ref_height = $(ref).offset().top;
@@ -147,10 +155,13 @@ function ensure_sufficient_content(scroll_after) {
 		return;
 	}
 
-	load_above();
+	// Loading underneath is reasonably safe, while loading above is tricky
+	// (as we have to scroll).
+	// I've found that in the TSK, we don't scroll to the right spot if these
+	// are the other way around...
 	load_below();
+	load_above();
 	
-	if(scroll_after) window.setTimeout(function() {scroll_to_current()}, 0);
 	reentrancy_check = false;	
 }
 
@@ -228,33 +239,53 @@ $(document).ready(function(){
 
 	// Scroll to current first; if this is big enough and we are far enough
 	// down, we may not have to load content above us.
-	scroll_to_current();
 
+	toggle_filler(true);
+	scroll_to_current();
 	$("body").bind("DOMAttrModified", function(event) {
 		if(event.attrName == "continuous_scrolling")
 			set_continuous(event.newValue == "true");
 	});
 
-	set_continuous($('body[continuous_scrolling="true"]').length, true);
+	set_continuous($('body[continuous_scrolling="true"]').length);
 	process_new_text($("#content"));
 	
 });
+
+function toggle_filler(to) {
+	/* we keep a friendly blank area around so that we can scroll to the top
+	 * of a chapter before the previous one has loaded and not jump around so
+	 * much */
+	var oldTop = $("#content").offset().top;
+	if (to) {
+		if (!reached_top && $(".filler").length == 0) {
+			$("body").prepend("<div class='filler'><div class='infiller'></div>Loading...</div>");
+			$("div.infiller").height(120);
+		}
+	} else {
+		d("removing it");
+		$(".filler").remove();
+	}
+
+	window.scrollBy(0, $("#content").offset().top - oldTop);
+	
+}
 
 function continuous_onsize() {ensure_sufficient_content()};
 function set_continuous(to) {
 //	alert("set", to);
 	if (!to) {
+		toggle_filler(false);
 		$(window).unbind('resize', continuous_onsize);
 		$(window).unbind('scroll', continuous_onsize);
 	} else {
+		toggle_filler(true);
 		$(window).scroll(continuous_onsize);
 		$(window).resize(continuous_onsize);
-	
-		// But make sure we do scroll at the end of our ensuring
-		// TODO: settings toggle shouldn't do the scrolling at the end...
-		ensure_sufficient_content(true);
+		ensure_sufficient_content();
 	}
 }
+
 function get_scroll_point() {
 	return {top:  window.innerHeight < 240 ? 
 		Math.max(window.innerHeight/2 - 40, 0) : 120,
@@ -277,6 +308,8 @@ function scroll_to_current(start) {
 	l -= offset.left;
 	
 	window.scrollTo(l, t);
+	d(t + "," + l);
+
 }
 
 
