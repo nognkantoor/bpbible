@@ -318,7 +318,7 @@ class BibleInterface(object):
 		markup_inserter = MarkupInserter(self)
 		
 		markup = SW.MyMarkup(markup_inserter, 
-			SW.FMT_HTMLHREF, SW.ENC_HTML)
+			SW.FMT_HTMLHREF)#, SW.ENC_HTML)
 		
 		#markup = SW.MarkupFilterMgr(SW.FMT_HTMLHREF, SW.ENC_HTML)
 		markup.thisown = False
