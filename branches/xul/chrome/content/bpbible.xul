@@ -75,6 +75,50 @@ We set windowtype here for XUSH... pretending to be firefox.
       </menu>
       <menu id="menu_DisplayOptions" label="Display">
         <menupopup id="popup_DisplayOptions">
+          <menuitem id="menu_headings" label="Headings" type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menuitem id="menu_cross_references" label="Cross References" type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menuitem id="menu_footnotes" label="Footnotes" type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menu id="submenu_strongs_numbers" label="Strong's Numbers">
+            <menupopup>
+              <menuitem id="menu_strongs_numbers"
+                        label="Show Strong's Numbers" 
+                        type="checkbox"
+                        oncommand="toggle_option(event)" />
+              <menuitem id="menu_morphology" 
+                        label="Morphology" 
+                        type="checkbox"
+                        oncommand="toggle_option(event)" />
+              <menuseparator />
+              <menuitem id="menu_strongs_blocked"
+                        label="Show Strong's Numbers underneath words"
+                        type="checkbox"
+                        oncommand="toggle_option(event)" />
+            </menupopup>
+          </menu>
+          <menuitem id="menu_morph_segmentation"
+                    label="Morph Segmentation"
+                    type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menu id="menu_colour_speakers" label="Colour code speakers">
+            <menupopup>
+              <menuitem id="menu_woc_in_red"
+                        label="Words of Christ in Red"
+                        type="radio"
+                        oncommand="toggle_option(event)" />
+              <menuitem id="menu_coloured_quotes" 
+                        label="Colour code by speaker" 
+                        type="radio"
+                        oncommand="toggle_option(event)" />
+              <menuitem id="menu_off"
+                        label="Off"
+                        type="radio"
+                        oncommand="toggle_option(event)" />
+            </menupopup>
+          </menu>
+          <menuseparator />
           <menuitem id="menu_columns" label="Column view" type="checkbox"
                     oncommand="toggle_option(event)" />
           <menuitem id="menu_verse_per_line" 
@@ -83,10 +127,6 @@ We set windowtype here for XUSH... pretending to be firefox.
                     oncommand="toggle_option(event)" />
           <menuitem id="menu_continuous_scrolling" 
                     label="Continuous Scrolling" 
-                    type="checkbox"
-                    oncommand="toggle_option(event)" />
-          <menuitem id="menu_coloured_quotes" 
-                    label="Colour quotations by speaker" 
                     type="checkbox"
                     oncommand="toggle_option(event)" />
         </menupopup>
@@ -115,6 +155,12 @@ We set windowtype here for XUSH... pretending to be firefox.
           
           <menuitem label="Reload chrome"
                     oncommand="do_reloading('reload_chrome')">
+          </menuitem>
+          <menuseparator />
+          <menuitem id="menu_raw"
+                    label="Output raw"
+                    type="checkbox"
+                    oncommand="toggle_option(event)">
           </menuitem>
         </menupopup>
       </menu>
