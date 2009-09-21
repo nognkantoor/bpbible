@@ -247,7 +247,6 @@ class PageFragmentHandler(PageProtocolHandler):
 			mod.increment(dir)
 			if mod.Error() == '\x00' and tk.getText():
 				new_ref = to_unicode(tk.getText(), mod)[1:] # trim off the leading /
-				print "Got new_ref", new_ref
 			else:
 				no_more = True
 			
