@@ -1,6 +1,6 @@
 from swlib.pysw import SW
 from backend.bibleinterface import biblemgr
-from tooltip_config import TextTooltipConfig, tooltip_settings, process_html_for_module, StrongsTooltipConfig
+from tooltip_config import TextTooltipConfig, tooltip_settings, process_html_for_module, StrongsTooltipConfig, BibleTooltipConfig
 from frame_util import get_module_for_frame, show_tooltip
 from backend.verse_template import VerseTemplate
 
@@ -108,10 +108,24 @@ protocol_handler.register_handler("sword", on_sword_opened)
 protocol_handler.register_hover("sword", on_sword_hover)
 
 def on_hover_bible(frame, href, url, x, y):
-	scrolled_values = frame.CalcScrolledPosition(x, y) 
-	screen_x, screen_y = frame.ClientToScreen(scrolled_values)
-	
-	frame.tooltip.show_bible_refs(frame, href, url, screen_x, screen_y)
+	# don't show a tooltip if there is no bible
+	if biblemgr.bible.mod is None:
+		return
+
+	ref = url.getHostName()
+	if ref:
+		references = [ref]
+	else:
+		values = url.getParameterValue("values")
+		if not values:
+			return
+
+		references = [
+			url.getParameterValue("val%s" % value)
+			for value in range(int(values))
+		]
+
+	show_tooltip(frame, BibleTooltipConfig(references))
 
 def on_hover_get_config(frame, href, url):
 	print "ON HOVER", href
