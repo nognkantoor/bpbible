@@ -106,19 +106,48 @@ def set_menu_items():
 			dprint(ERROR, "Couldn't find menu item for option ", option)
 			continue
 
-		if options[option]:
-			menu_item.setAttribute("checked", "true")
+		if options.item_types[option] == str:
+			print menu_item.tagName
+			assert menu_item.tagName == "menu"
+			cn = menu_item.firstChild.firstChild
+			while cn:
+				if "menu_" + options[option] == cn.id:
+					cn.setAttribute("checked", "true")
+					break
+
+				cn = cn.nextSibling
+
+			else:
+				dprint(ERROR, "Couldn't find submenu item for option", 
+					option, options[option])
+
+		else:
+			assert menu_item.tagName == "menuitem"
+
+			if options[option]:
+				menu_item.setAttribute("checked", "true")
 
 def toggle_option(event):
-	checked = event.target.hasAttribute("checked")
+	value = event.target.hasAttribute("checked")
 
 	# strip off menu_
-	option = event.target.id[5:]
-	options[option] = checked
-	propagate_setting_change(option, "true" if checked else "false")
+	t = event.target
+	option = t.id[5:]
+
+	pp = t.parentNode.parentNode.id
+	if pp not in ("menu_DisplayOptions", "menu_debug"):
+		value = option
+		
+		# strip off menu_
+		option = pp[5:]
+
+	options[option] = value
+	propagate_setting_change(option, get_js_option_value(option))
 
 def propagate_setting_change(type, value):
-	assert isinstance(value, str), "Wasn't a string"
+	if not isinstance(value, str):
+		raise TypeError("Wasn't a string (%r)" % value)
+
 	wm = components.classes["@mozilla.org/appshell/window-mediator;1"]\
 				   .getService(components.interfaces.nsIWindowMediator);  
 	enumerator = wm.getEnumerator("")
