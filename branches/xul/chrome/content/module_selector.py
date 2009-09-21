@@ -82,9 +82,10 @@ def filter_tree():
 	
 	# if it didn't change for whatever reason, don't worry
 	if val == last_value: return
-	treeView.selection.clearSelection()
-	treeView.filter(val)
-	treeView.selection.select(0)
+	shown = treeView.filter(val)
+	if shown:
+		treeView.selection.select(0)
+
 	last_value = val
 
 def tree_move(direction):

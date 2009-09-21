@@ -119,10 +119,14 @@ class BasicTreeView(object):
 			root = self.model.null_item()
 
 		l = len(self.visibleData)
+		if l:
+			self.selection.clearSelection()
+
 		self.visibleData = list(root.children)
 		diff = len(root.children) - l
 		self.rowCountChanged(0, diff)
 		self.expand_all()
+		return len(self.visibleData)
 
 	def expand_all(self):
 		self.expand_items(self.visibleData, recursive=True)
