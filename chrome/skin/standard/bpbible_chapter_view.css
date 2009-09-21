@@ -91,7 +91,6 @@ div.segment, div.no_more_text.end-start {
 	z-index: 100;
 	text-align: right;
 	height: 1.5em;
-	text-decoration: bold;
 	padding: 0.1em 0.5em;
 }
 
