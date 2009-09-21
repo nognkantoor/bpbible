@@ -370,7 +370,7 @@ class Book(object):
 								"replace"
 							)
 						else:
-							heading = render_text(heading)
+							heading = render_text(heading).decode("utf8", "replace")
 
 					if not nh:
 						heading = '<h6 class="heading" canonical="%s">%s</h6>\n' % (canonical, heading)
@@ -531,7 +531,7 @@ class Book(object):
 			[SW.Buf(number)][SW.Buf(field)].c_str()
 
 		# put it through the render filter before returning it
-		return mod.RenderText(data)
+		return mod.RenderText(data).decode("utf8", "replace")
 
 
 	def GetReferenceFromMod(self, mod, ref, max_verses = -1):
