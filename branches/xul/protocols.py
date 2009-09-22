@@ -251,8 +251,6 @@ def on_hover_get_config(frame, href, url):
 		if not value:
 			return
 
-		tooltip_config.mod = module
-		
 		#make this plain
 		#template = VerseTemplate(header = "$range<br>", 
 		#body = '<font color = "blue"><small><sup>$versenumber</sup></small></font> $text')
@@ -270,7 +268,7 @@ def on_hover_get_config(frame, href, url):
 
 			value = value.split("; ")
 			
-			context = frame.reference
+			context = ""#frame.reference XUL TODO: use frame reference
 			
 			# Gen books have references that are really tree keys...
 			if not isinstance(context, basestring):

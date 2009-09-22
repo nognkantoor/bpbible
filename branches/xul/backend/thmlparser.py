@@ -1,6 +1,7 @@
 from backend import filterutils
 from swlib.pysw import SW, GetVerseStr, GetBestRange
 from util.debug import dprint, MESSAGE
+from util.unicode import to_unicode
 
 class ThMLParser(filterutils.ParserBase):
 	def start_scripRef(self, xmltag):
@@ -11,7 +12,7 @@ class ThMLParser(filterutils.ParserBase):
 			self.success = SW.INHERITED
 			return
 		
-		self.start_tag = xmltag
+		self.scripRef_passage = xmltag.getAttribute("passage")
 		self.u.suspendTextPassThru = True
 	
 	def end_scripRef(self, xmltag):
@@ -21,7 +22,7 @@ class ThMLParser(filterutils.ParserBase):
 			self.success = SW.INHERITED
 			return
 
-		refList = self.start_tag.getAttribute("passage")
+		refList = self.scripRef_passage
 		if self.u.module.Type() == "Biblical Texts":
 			#self.success = SW.INHERITED
 			if refList:
@@ -54,7 +55,7 @@ class ThMLParser(filterutils.ParserBase):
 			last = GetVerseStr(self.u.key.getText())
 			for item in refList.split(";"):
 				vref = item
-				vref = GetBestRange(vref, context=last, use_bpbible_locale=True)
+				vref = GetBestRange(to_unicode(vref), context=last, use_bpbible_locale=True)
 				items.append('<a href="bible:%s">%s</a>' %(vref, item))
 				last = vref
 			self.buf += "; ".join(items)
@@ -102,7 +103,7 @@ class ThMLParser(filterutils.ParserBase):
 				for reference in references
 			))
 		self.__dict__ = my_internal_dict
-		table = u'<table class="harmonytable">%s%s</table>' % (header_row, body_row)
+		table = u'<table class="harmonytable chapterview">%s%s</table>' % (header_row, body_row)
 		self.buf += table.encode("utf8")
 
 	def end_harmonytable(self, xmltag):

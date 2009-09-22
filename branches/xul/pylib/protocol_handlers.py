@@ -2,7 +2,7 @@ from backend.bibleinterface import biblemgr
 from swlib.pysw import SW, VK
 import os
 import config
-from util.debug import dprint, ERROR
+from util.debug import dprint, ERROR, is_debugging
 from display_options import all_options, get_js_option_value
 from util.string_util import convert_rtf_to_html
 from util.unicode import try_unicode, to_unicode
@@ -21,8 +21,8 @@ doQuit(True)
 </script>
             	
 </head>
-<body dir="%(dir)s" %(bodyattrs)s>
-	<div id="content">
+<body %(bodyattrs)s>
+	<div id="content" class="%(contentclass)s">
 	<!-- <p> -->
 	%(content)s
 	<!-- </p> -->
@@ -38,16 +38,7 @@ class ProtocolHandler(object):
 		return "No content specified"
 	
 	def _get_html(self, module, content, bodyattrs="", timer="", 
-		stylesheets=[], scripts=[]):
-		dir = {
-			SW.DIRECTION_BIDI: "bidi",
-			SW.DIRECTION_LTR:  "ltr",
-			SW.DIRECTION_RTL:  "rtl",
-		}.get(ord(module.Direction()))
-		if not dir: 
-			print "Unknown text direction"
-			dir = "ltr"
-
+		stylesheets=[], scripts=[], contentclass=""):
 		resources = []
 		skin_prefixs = ["skin/standard", "skin"]
 		script_prefixs = ["content", "content"]
@@ -67,11 +58,11 @@ class ProtocolHandler(object):
 
 		text = BASE_HTML % dict(
 			lang=module.Lang(),
-			dir=dir, 
 			head='\n'.join(resources),
 			bodyattrs=bodyattrs, 
 			content=content, 
-			timer=timer)
+			timer=timer,
+			contentclass=contentclass)
 		
 		try:
 			open("tmp.html", "w").write(text.encode("utf8"))
@@ -85,6 +76,8 @@ class NullProtocolHandler(ProtocolHandler):
 		return "<html><body>Content not loaded</body></html>"
 
 class PageProtocolHandler(ProtocolHandler):
+	bible_stylesheets = ("bpbible_html.css", "bpbible_chapter_view.css", 
+						"bpbible://content/quotes_skin/")
 	def _get_document_parts(self, path):
 		ref = SW.URL.decode(path).c_str()
 		assert ref, "No reference"
@@ -97,7 +90,7 @@ class PageProtocolHandler(ProtocolHandler):
 		import time
 		t = default_timer()
 
-		stylesheets = ["bpbible_html.css"]
+		stylesheets = list(self.bible_stylesheets)
 		scripts = ["jquery-1.3.2.js", "highlight.js", "bpbible_html.js",
 				  "hyphenate.js", "columns.js"]
 
@@ -106,12 +99,15 @@ class PageProtocolHandler(ProtocolHandler):
 		module = book.mod
 		if book.chapter_view:
 			scripts.append("bpbible_html_chapter_view.js")
-			stylesheets.append("bpbible_chapter_view.css")
-			stylesheets.append("bpbible://content/quotes_skin/")
+			#stylesheets.append("bpbible_chapter_view.css")
+			#stylesheets.append("bpbible://content/quotes_skin/")
 		else:
 			scripts.append("bpbible_html_page_view.js")
 			stylesheets.append("bpbible_page_view.css")			
 	
+		if is_debugging():
+			stylesheets.append("bpbible_html_debug.css")
+
 		if book.is_verse_keyed:
 			if book.chapter_view:
 				if do_current_ref:
@@ -145,11 +141,6 @@ class PageProtocolHandler(ProtocolHandler):
 			c = ''
 		c = c.replace("<!P>", "</p><p>")
 
-		options = []
-		for option in all_options():
-			options.append('%s="%s"' % (option, get_js_option_value(option)))
-
-		options.append('module="%s"' % module.Name())
 		clas = ""
 		if not c:
 			clas = " nocontent"
@@ -158,15 +149,36 @@ class PageProtocolHandler(ProtocolHandler):
 
 		return dict(
 			module=module, content=c,
-			bodyattrs=' '.join(options),
+			bodyattrs=self._get_body_attrs(module),
 			stylesheets=stylesheets,
 			scripts=scripts,
 			timer="<div class='timer'>Time taken: %.3f (ref_id %s)</div>" % (default_timer() - t, ref_id))
+
+	def _get_body_attrs(self, module):
+		options = []
+		for option in all_options():
+			options.append((option, get_js_option_value(option)))
+
+		options.append(("module", module.Name()))
+		dir = {
+			SW.DIRECTION_BIDI: "bidi",
+			SW.DIRECTION_LTR:  "ltr",
+			SW.DIRECTION_RTL:  "rtl",
+		}.get(ord(module.Direction()))
+
+		if not dir: 
+			print "Unknown text direction"
+			dir = "ltr"
+
+		options.append(("dir", dir))
+		return ' '.join('%s="%s"' % option for option in options)
+	
 	
 	def get_document(self, path):
 		#print "Getting document", path
 		d = self._get_document_parts(path)
 		d["content"] = '<div class="page_segment" id="original_segment">%s</div>' % d["content"]
+		d["contentclass"] = "chapterview"
 		return self._get_html(**d)
 
 class PageFragmentHandler(PageProtocolHandler):
@@ -308,7 +320,7 @@ class QuotesHandler(ProtocolHandler):
 		style, mapping = quotes.get_quotes()
 		return style
 
-class TooltipConfigHandler(ProtocolHandler):
+class TooltipConfigHandler(PageProtocolHandler):
 	registered = {}
 	upto = 0
 
@@ -322,7 +334,8 @@ class TooltipConfigHandler(ProtocolHandler):
 	def get_document(self, path):
 		config = self.registered.pop(path)
 		return self._get_html(config.get_module(), config.get_text(),
-		stylesheets = ["bpbible_html.css"])
+				stylesheets=self.bible_stylesheets,
+				bodyattrs=self._get_body_attrs(config.get_module()))
 
 handlers = {
 	"page": PageProtocolHandler(), 

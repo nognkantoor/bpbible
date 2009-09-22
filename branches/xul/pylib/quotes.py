@@ -87,7 +87,7 @@ def read_quotes():
 	
 			# TODO: we can optimize this by adding/removing stylesheet, rather
 			# than putting conditionals in rules
-			s.add('body[colour_speakers="coloured_quotes"] %s {border-bottom: %dpx solid; -moz-border-bottom-colors: %s}' % (
+			s.add('body[colour_speakers="coloured_quotes"] .chapterview %s {border-bottom: %dpx solid; -moz-border-bottom-colors: %s}' % (
 				' > '.join('.quote[who="%s"]' % n for q, e, c, n in stack),
 				len(stack) * 2,
 				' '.join(c + " " + c for q, e, c, n in reversed(stack))

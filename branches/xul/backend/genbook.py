@@ -82,7 +82,10 @@ class GenBook(Book):
 			if stripped:
 				text = module.StripText(entry).decode("utf-8", "replace")
 			else:
-				text = render_text(entry).decode("utf-8", "replace")
+				# we can't specify entry here for the same reasons as in
+				# book.py
+				text = render_text(#entry
+				).decode("utf-8", "replace")
 
 			if raw:
 				text = self.process_raw(entry, text, ref, module)

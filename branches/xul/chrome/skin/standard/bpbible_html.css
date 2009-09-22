@@ -300,35 +300,6 @@ div.page_segment {
 
 /*SUB, SUP { line-height: 0; } */
 
-/* Debug */
-div.timer {
-	position: fixed;
-	right: 0px;
-	border: thin solid black;
-	background-color: hsla(0, 100%, 50%, .35);
-	display: none;
-}
-
-body > div.timer {
-	position: fixed;
-	bottom: 0px;
-	display: block;
-}
-
-div.page_segment:hover div.timer {
-	top: 0px;
-	position: absolute;
-	padding: 1px;
-	margin: 2px;
-	-moz-border-radius: 5px;
-	display: block;
-}
-
-[dir="rtl"] div.timer {
-	left: 0px;
-	right: inherit;
-}
-
 div.no_more_text {
 	font-style: italic;
 	color: #888;
@@ -353,6 +324,7 @@ div.segment.nocontent {
 /* Styling for the gospel harmony reference tables. */
 table.harmonytable	{
 	border-collapse: collapse;
+	width: 100%;
 }
 
 table.harmonytable th, table.harmonytable td	{
@@ -368,31 +340,7 @@ table.harmonytable td {
 	vertical-align: text-top;
 }
 
-div.debug-raw-details {
-	background-color: gray;
-	border: 1px black solid;
-}
-
-div.debug-raw-details .key::before {
-	content: "Key: ";
-}
-
-div.debug-raw-details .raw-rendered::before {
-	content: "Rendered: ";
-}
-
-div.debug-raw-details .raw::before {
-	content: "Raw: ";
-}
-
-div.debug-raw-details .key {
-	border-bottom: 1px solid #444;
-}
-div.debug-raw-details .raw-rendered {
-	color: maroon;
-	white-space: pre-wrap;
-}
-
-div.debug-raw-details .raw {
-	white-space: pre-wrap;
+/* debugging features */
+div.timer, div.debug-raw-details {
+	display: none;
 }

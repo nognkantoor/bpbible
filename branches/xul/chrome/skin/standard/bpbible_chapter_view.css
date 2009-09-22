@@ -1,5 +1,5 @@
 /* Chapter and verse numbers */
-a.chapternumber {
+.chapterview a.chapternumber {
 	float: left;
 	display: block;
 	line-height: 130%;
@@ -9,11 +9,11 @@ a.chapternumber {
 	color: hsl(240, 35%, 60%);
 }
 
-[dir="rtl"] a.chapternumber {
+[dir="rtl"] .chapterview a.chapternumber {
 	float: right;
 }
 
-a.versenumber {
+.chapterview a.versenumber {
 	-moz-margin-end: 2px;
 	text-decoration: none;
 	font-size: small;
@@ -23,36 +23,36 @@ a.versenumber {
 	
 }
 
-a.currentverse, a.versenumber:hover {
+.chapterview a.currentverse, .chapterview a.versenumber:hover {
 	color: hsl(120, 35%, 50%);
 }
 
-a.currentverse.chapternumber, a.chapternumber:hover {
+.chapterview a.currentverse.chapternumber, .chapterview a.chapternumber:hover {
 	color: hsl(120, 35%, 60%);
 }
 
-br.verse_per_line {
+.chapterview br.verse_per_line {
 	display: none;
 }
 
-body[verse_per_line="true"] br.verse_per_line {
+body[verse_per_line="true"] .chapterview br.verse_per_line {
 	display: inline;
 }
 
 /* Paragraphs */
-p {
+.chapterview p {
 	text-indent: 1em;
 	margin-bottom: 1px;
 	margin-top: 1px;	
 }
 
-body[verse_per_line="true"] p {
+body[verse_per_line="true"] .chapterview p {
 	text-indent: 0em;
 	margin: 1em 0;
 }
 
-blockquote.lg > a.versenumber, 
-blockquote.lg > span.highlight > a.versenumber
+.chapterview blockquote.lg > a.versenumber, 
+.chapterview blockquote.lg > span.highlight > a.versenumber
 {
 	position: relative;
 	float: left;
@@ -60,22 +60,22 @@ blockquote.lg > span.highlight > a.versenumber
 	line-height: inherit;
 }
 
-blockquote.lg a.chapternumber
+.chapterview blockquote.lg a.chapternumber
 {
 	-moz-margin-start: -2em;
 	line-height: 100%;
 	font-size: 150%;
 }
 
-[dir="rtl"] blockquote.lg > a.versenumber,
-[dir="rtl"] blockquote.lg > span.highlight > a.versenumber
+[dir="rtl"] .chapterview blockquote.lg > a.versenumber,
+[dir="rtl"] .chapterview blockquote.lg > span.highlight > a.versenumber
 {
 	left: 0em;
 	float: right;
 	right: -2.5em;
 }
 
-div.segment, div.no_more_text.end-start {
+.chapterview div.segment, .chapterview div.no_more_text.end-start {
 	border-bottom: solid 1px #ddd;
 	padding-bottom: 0.5em;
 	margin-bottom: 0.5em;
@@ -94,6 +94,6 @@ div.segment, div.no_more_text.end-start {
 	padding: 0.1em 0.5em;
 }
 
-span.quote {
+.chapterview span.quote:not([who="NULL"]) {
 	border-bottom: 1px dotted green;
 }

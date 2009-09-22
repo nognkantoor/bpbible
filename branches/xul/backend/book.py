@@ -343,16 +343,22 @@ class Book(object):
 					osisRef = osisRef,
 				)	
 				
+				# usually RenderText flushes this out, but we haven't called
+				# that yet - but we definitely don't want extraneous headings
+				mod.getEntryAttributesMap().clear()
+
 				# we want to do our pre-verse content first, but we can't
 				# without running it through the optionFilter first.
 				# we'll then have to run it through again after, otherwise our
 				# entryattributes may go walkabout
-				if not raw:
-					mod.optionFilter(rawentry, versekey)
+				if raw: rawentry_str = rawentry.c_str()
+				mod.optionFilter(rawentry, versekey)
+				if raw: option_filtered = rawentry.c_str()
 				
 				headings = self.get_headings(internal_reference, mod)
 				#versekey = VK.castTo(key)
 				heading_dicts = []
+				raw_headings = []
 				for heading, canonical in headings:
 					# the new-style pre-verse content lives wrapped up in
 					# <div>'s - it will contain the <title>, but the div will
@@ -363,18 +369,19 @@ class Book(object):
 					# employ a heuristic - if it starts with an <, it is a new
 					# one...
 					nh = heading.startswith("<")
-					if not raw:
-						if stripped:
-							heading = mod.StripText(heading).decode(
-								"utf8",
-								"replace"
-							)
-						else:
-							heading = render_text(heading).decode("utf8", "replace")
+					if stripped:
+						heading = mod.StripText(heading).decode(
+							"utf8",
+							"replace"
+						)
+					else:
+						heading = render_text(heading).decode("utf8", "replace")
 
 					if not nh:
 						heading = '<h6 class="heading" canonical="%s">%s</h6>\n' % (canonical, heading)
 
+					if raw:
+						raw_headings.append(heading)
 					heading_dict = dict(heading=heading, canonical=canonical)
 					heading_dict.update(body_dict)
 					heading_dicts.append(heading_dict)
@@ -387,11 +394,15 @@ class Book(object):
 					text = mod.StripText(rawentry.c_str(), rawentry.length()).decode("utf-8", "replace")			
 
 				else:
-					text = render_text(rawentry.c_str(), rawentry.length()).decode("utf8", "replace")
+					# we can't use rawentry due to a static local buffer in
+					# swmodule.c; breaks gospel harmonies
+					text = (render_text(#rawentry.c_str(), rawentry.length()
+									   ).decode("utf8", "replace"))
 				
 				# get our actual text
 				if raw:
-					text = self.process_raw(rawentry.c_str(), text, versekey, mod)
+					text = self.process_raw(rawentry_str, text, versekey, mod,
+						raw_headings, option_filtered)
 
 				user_comments = self.get_user_comments(versekey)
 
@@ -695,16 +706,26 @@ class Book(object):
 		
 		return SW.Config(pp)
 	
-	def process_raw(self, text, rendered_text, key, module):
+	def process_raw(self, text, rendered_text, key, module, 
+		headings=(), option_filtered=""):
 		kt = key.getOSISRefRangeText() or key.getText()
 		kt = to_unicode(kt, module)
+		if headings:
+			headings = "<ul class='raw-headings'>%s</ul>" % (
+				'\n'.join("<li>%s</li>" % cgi.escape(heading) for heading in headings))
+		else:
+			headings = ""
+
+		if option_filtered:
+			option_filtered = "<pre class='raw-option-filtered'>%s</pre>" % cgi.escape(option_filtered.decode("utf-8", "replace"))
 		return u"""
 %s
-<div class='debug-raw-details'>
-	<span class='key'>%s</span>
+<div class='debug-raw-details' key='%s'>
 	<pre class='raw-rendered'>%s</pre>
+	%s
 	<pre class='raw'>%s</pre>
-</div>""" % (rendered_text, cgi.escape(kt), cgi.escape(rendered_text), cgi.escape(text.decode("utf-8", "replace")))
+	%s
+</div>""" % (rendered_text, cgi.escape(kt), cgi.escape(rendered_text), headings, cgi.escape(text.decode("utf-8", "replace")), option_filtered)
 				
 class Commentary(Book):
 	type = "Commentaries"
