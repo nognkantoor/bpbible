@@ -41,6 +41,17 @@ bible_entries = [
 	("Genesis 1:1",
 	"""Time:long long ago
 I'n the beginning God cree-ated the heavens and the 1,2345 earth."""),
+	("Genesis 3:1", """
+   spacing test     with <some />   <tags     />
+
+   New lines
+
+   Etc.!!!!
+   /
+  /
+ /
+/
+: )"""),
 	("Genesis 5:3",
 	"""Et Dieu vit la lumi\xe8re, qu'elle \xe9tait bonne; et Dieu s\xe9para la
 lumi\xe8re d'avec les t\xe9n\xe8bres."""),
@@ -50,6 +61,8 @@ lumi\xe8re d'avec les t\xe9n\xe8bres."""),
 
 
 ]
+
+harmony_entries = [("Start", "Testament<harmonytable refs='Gen1:1'></harmonytable>"), ("End", "<harmonytable refs='Gen.1.3'></harmonytable>")]
 
 items = dict(
 	genbook=(
@@ -116,6 +129,35 @@ Encoding=%(sword_encoding)s
 ModDrv=RawText
 """, 
 		bible_entries
+	),	plain_bible=(
+		"modules/%(modulename)s",
+		"",
+		SW.RawText,
+		SW.VerseKey,
+		"""\
+[%(modulename)s]
+DataPath=./modules/%(modulename)s
+Description=A test of %(modulename)s - lumi\xe8re
+Encoding=%(sword_encoding)s
+ModDrv=RawText
+""", 
+		bible_entries
+	),
+	gospel_harmony=(
+		"modules/%(modulename)s",
+		"/%(modulename)s",
+		SW.RawGenBook,
+		SW.Key,
+		"""\
+[%(modulename)s]
+DataPath=./modules/%(modulename)s/%(modulename)s
+Description=A test of %(modulename)s - lumi\xe8re
+SourceType=ThML
+Encoding=%(sword_encoding)s
+ModDrv=RawGenBook
+Category=Gospel Harmonies
+""", 
+		harmony_entries
 	),
 	
 )
