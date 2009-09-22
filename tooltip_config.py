@@ -1,6 +1,7 @@
-from backend.verse_template import VerseTemplate
+from backend.verse_template import VerseTemplate, SmartVerseTemplate
 from util.configmgr import config_manager
 from backend.bibleinterface import biblemgr
+import config
 
 
 tooltip_settings = config_manager.add_section("Tooltip")
@@ -195,10 +196,9 @@ class BibleTooltipConfig(TooltipConfig):
 
 	def get_text(self):
 		try:
-			template = VerseTemplate(
+			template = SmartVerseTemplate(
 				header="<a href='nbible:$internal_range'><b>$range</b></a><br>",
-				body=u'<glink href="nbible:$internal_reference">'
-					u'<small><sup>$versenumber</sup></small></glink> $text ')
+				body=u'%s $text ' % (config.verse_number % ''))
 
 			#no footnotes
 			if tooltip_settings["plain_xrefs"]:
@@ -211,7 +211,7 @@ class BibleTooltipConfig(TooltipConfig):
 				for item in biblemgr.bible.GetReferences(self.references)
 			)
 
-			return text
+			return "<div class='chapterview'>%s</div>" % text
 
 		finally:
 			if tooltip_settings["plain_xrefs"]:

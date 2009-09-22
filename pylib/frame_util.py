@@ -23,6 +23,7 @@ def show_tooltip(window, config):
 	if not tt.firstChild:
 		print "Creating iframe"
 		inner = window.document.createElement("browser")
+		inner.setAttribute("tooltip", "aHTMLTooltip")
 		#inner.setAttribute("src", "chrome://bpbible/content/tooltip.xul")
 		inner.setAttribute("flex", "1")
 		tt.appendChild(inner)

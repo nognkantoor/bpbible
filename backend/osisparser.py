@@ -23,7 +23,7 @@ class OSISParser(filterutils.ParserBase):
 		self._quotes_data = []
 
 	def write_quote(self, qID, who):
-		self.write("<span class='quote' qID='%s' who='%s' title='%s'>" % (qID,
+		self.write('<span class="quote" qID="%s" who="%s" title="%s">' % (qID,
 		who, who))
 
 	def blocklevel_start(self):
