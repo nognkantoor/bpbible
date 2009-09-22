@@ -78,7 +78,7 @@ def do_load():
 	set_menu_items()
 	util.dom_util.document = document
 	lookup_reference()
-	add_tooltip_handlers()
+
 	#window.open('chrome://bpbible/content/module_selector.xul', '', 
 	#			'chrome,scrollbars,resizable');
 	
@@ -180,3 +180,5 @@ def add_tooltip_handlers():
 	tt.id = "tooltippanel"
 	tt.setAttribute("noautofocus", "true")
 	document.documentElement.appendChild(tt)
+
+window.addEventListener("load", add_tooltip_handlers, False)
