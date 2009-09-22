@@ -30,9 +30,9 @@ function fill_reference_bar() {
 
 	var last = null;
 	$(end).each(function() {
-		//alert($(this).offset().top);
+		//d($(this).offset().top);
 		if ($(this).offset().top >= bottom) {
-			if (!last) alert("Not last");
+			if (!last) d("Not last");
 			return false;
 		}
 		last = this;
@@ -40,7 +40,7 @@ function fill_reference_bar() {
 	});
 	ref2 = last.getAttribute("reference");
 	
-	if(!ref1 || !ref2) alert("Not ref1 or ref2 '" + ref1 + "' '" + ref2 + "'");
+	if(!ref1 || !ref2) d("Not ref1 or ref2 '" + ref1 + "' '" + ref2 + "'");
 
 	function extract_reference(ref) {
 		if(!ref.match(":")) ref += ":1";
