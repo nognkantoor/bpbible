@@ -16,6 +16,10 @@
         onload="on_load();">
 
   <script type="application/x-python" 
+          src="chrome://bpbible/content/bpbible.py" />
+  <script type="application/javascript" 
+          src="chrome://bpbible/content/bpbible.js" />
+  <script type="application/x-python" 
           src="chrome://bpbible/content/dictionary_window.py" />
 
   <!-- Dictionary content. -->

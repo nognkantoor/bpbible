@@ -18,6 +18,8 @@
           src="chrome://bpbible/content/module_selector.py" />
   <script type="application/x-python" 
           src="chrome://bpbible/content/bpbible.py" />
+  <script type="application/javascript" 
+          src="chrome://bpbible/content/bpbible.js" />
 
   <toolbox>
     <toolbar id="toolbar_explorer" mode="icons" style="width:300px;">
