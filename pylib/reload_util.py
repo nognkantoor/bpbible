@@ -1,7 +1,7 @@
 from xpcom import components
-filtering = "quotes backend.osisparser backend.thmlparser protocol_handlers"
-tooltip_bits = "frame_util tooltip_config protocols"
-trees = "gui.tree_view module_tree_view"
+filtering = "quotes backend.filterutils backend.osisparser backend.thmlparser protocol_handlers"
+tooltip_bits = filtering + " config frame_util tooltip_config protocols"
+trees = "gui.tree_view module_tree_view genbook_tree_view"
 ALL = "filtering tooltip_bits trees".split()
 
 def reboot_section(name):
