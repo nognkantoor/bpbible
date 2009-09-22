@@ -3,6 +3,17 @@ Function to be run when the BPBible window is loaded.
 */
 function onLoad() {
 	window.gFindBar = document.getElementById('FindToolbar');
+	var browser = document.getElementById("browser");
+	browser.setAttribute("tooltip", "aHTMLTooltip");
+	var tt = document.createElement("tooltip")
+	tt.id="aHTMLTooltip" 
+	tt.addEventListener("popupshowing",
+		function(event) {
+			var done = FillInHTMLTooltip(document.tooltipNode);
+			if (!done) event.preventDefault();
+		}, false);
+	
+	browser.parentNode.insertBefore(tt, browser);
 }
 
 window.addEventListener("load", onLoad, false);

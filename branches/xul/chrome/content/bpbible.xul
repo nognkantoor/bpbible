@@ -189,17 +189,12 @@ We set windowtype here for XUSH... pretending to be firefox.
   </toolbox>
 
   <vbox id="appcontent" flex="1">
-    <tooltip script-type="application/javascript" 
-             id="aHTMLTooltip" 
-             onpopupshowing="return FillInHTMLTooltip(document.tooltipNode);" 
-      />  
     <browser id="browser"
              disablehistory="true"
              src="bpbible:"
              style="width: 100%;"
              flex="1" 
              type="content-primary"
-             tooltip="aHTMLTooltip"
              />
   </vbox>
   <vbox id="browser-bottombox">
