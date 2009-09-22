@@ -3,3 +3,7 @@ panel > datepicker {
   margin: 0;
   border: none;
 }
+
+#dictionary_textbox {
+	margin: 0px;
+}
