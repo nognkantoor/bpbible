@@ -46,6 +46,6 @@ class GenbookTreeView(BasicTreeView):
 			
 			index = self.visibleData.index(tree_item)
 			self.selection.select(index)
-			self.treeBox.scrollToRow(index)
+			self.scroll_to_row(index)
 		
 		look_for(root_item, 0)
