@@ -198,44 +198,20 @@ def on_hover_get_config(frame, href, url):
 
 
 		elif type == "x":
-			#make this plain
-			template = VerseTemplate(
-			header="<a href='nbible:$internal_range'><b>$range</b></a><br>",
-			body=u'<glink href="nbible:$internal_reference">'
-				u'<small><sup>$versenumber</sup></small></glink> $text ')
-			try:
-				#no footnotes
-				if tooltip_settings["plain_xrefs"]:
-					biblemgr.temporary_state(biblemgr.plainstate)
-				
-				#apply template
-				biblemgr.bible.templatelist.append(template)
+			#find reference list
+			reflist = bible.GetFootnoteData(module, passage, value, "refList")
+			#it seems note may be as following - 
+			#ESV: John.3.1.xref_i "See Luke 24:20"
+			#treat as footnote then. not sure if this is intended behaviour
+			#could lead to weird things
+			if reflist:
+				return BibleTooltipConfig(reflist.split("; "))
 
-				#find reference list
-				reflist = bible.GetFootnoteData(module, passage, value, "refList")
-				#it seems note may be as following - 
-				#ESV: John.3.1.xref_i "See Luke 24:20"
-				#treat as footnote then. not sure if this is intended behaviour
-				#could lead to weird things
-				data = ""
-				if(not reflist):
-					data = bible.GetFootnoteData(module, passage, value, "body")
-				else:
-					reflist = reflist.split("; ")
-					#get refs
-					verselist = bible.GetReferencesFromMod(module, reflist)
-					data += '<hr>'.join(
-						process_html_for_module(module, ref)
-						for ref in verselist
-					)
-
-				return text_config(data, module)
-
-			finally:
-				#put it back how it was
-				if tooltip_settings["plain_xrefs"]:
-					biblemgr.restore_state()
-				biblemgr.bible.templatelist.pop()
+			else:
+				return text_config(
+					bible.GetFootnoteData(module, passage, value, "body"), 
+					module
+				)
 
 
 	elif action=="showRef":
@@ -245,53 +221,20 @@ def on_hover_get_config(frame, href, url):
 			return
 		value = url.getParameterValue("value") #passage
 		module = biblemgr.get_module(url.getParameterValue("module"))
-		if not module:
-			module = biblemgr.bible.mod
 
 		if not value:
 			return
 
-		#make this plain
-		#template = VerseTemplate(header = "$range<br>", 
-		#body = '<font color = "blue"><small><sup>$versenumber</sup></small></font> $text')
-		template = VerseTemplate(
-			header="<a href='bible:$internal_range'><b>$range</b></a><br>", 
-			body=u'<glink href="nbible:$internal_reference">'
-				u'<small><sup>$versenumber</sup></small></glink> $text ')
+		value = value.split("; ")
+		
+		context = ""#frame.reference XUL TODO: use frame reference
+		
+		# Gen books have references that are really tree keys...
+		if not isinstance(context, basestring):
+			context = "%s" % context
 
-		try:
-			if tooltip_settings["plain_xrefs"]: 
-				#no footnotes
-				biblemgr.temporary_state(biblemgr.plainstate)
-				#apply template
-			biblemgr.bible.templatelist.append(template)
-
-			value = value.split("; ")
-			
-			context = ""#frame.reference XUL TODO: use frame reference
-			
-			# Gen books have references that are really tree keys...
-			if not isinstance(context, basestring):
-				context = "%s" % context
-
-			
-			#get refs
-			refs = bible.GetReferencesFromMod(module, value, 
-				context=context)
-
-			data = '<hr>'.join(
-				process_html_for_module(module, ref)
-				for ref in refs
-			)
-
-			#set tooltip text
-			return text_config(data)
-
-		finally:
-			#put it back how it was
-			if tooltip_settings["plain_xrefs"]:
-				biblemgr.restore_state()
-			biblemgr.bible.templatelist.pop()
+		#get refs
+		return BibleTooltipConfig(value, context=context, mod=module)
 
 	dprint(WARNING, "Unknown action", action, href)
 

@@ -22,10 +22,8 @@ class TooltipConfig(object):
 		self.scroll_to_current = False
 
 	def get_module(self):
-		if self.book:
-			return self.book.mod
-
-		return self.mod
+		assert self.mod or self.book
+		return self.mod or self.book.mod
 
 	def another(self):
 		"""Possibly duplicate this config if it stores any state, otherwise
@@ -135,14 +133,16 @@ class StrongsTooltipConfig(TooltipConfig):
 	
 	
 class BibleTooltipConfig(TooltipConfig):
-	def __init__(self, references=None):
-		super(BibleTooltipConfig, self).__init__(mod=None, book=biblemgr.bible)
+	def __init__(self, references=None, context="", mod=None):
+		super(BibleTooltipConfig, self).__init__(mod=mod, book=biblemgr.bible)
 		self.references = references
 		self.toolbar = None
 		self.is_bound = False
+		self.context = context
 	
 	def another(self):
-		return BibleTooltipConfig(self.references)
+		return BibleTooltipConfig(self.references, context=self.context, 
+			mod=self.module)
 
 	def bind_to_toolbar(self, toolbar):
 		if not toolbar.permanent: return
@@ -208,7 +208,8 @@ class BibleTooltipConfig(TooltipConfig):
 
 			text = "<hr>".join(
 				process_html_for_module(biblemgr.bible.mod, item)
-				for item in biblemgr.bible.GetReferences(self.references)
+				for item in biblemgr.bible.GetReferences(
+					self.references, context=self.context)
 			)
 
 			return "<div class='chapterview'>%s</div>" % text
