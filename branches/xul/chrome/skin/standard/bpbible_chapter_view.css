@@ -94,6 +94,6 @@ body[verse_per_line="true"] .chapterview p {
 	padding: 0.1em 0.5em;
 }
 
-.chapterview span.quote:not([who="NULL"]) {
+body[colour_speakers="coloured_quotes"] .chapterview span.quote {
 	border-bottom: 1px dotted green;
 }

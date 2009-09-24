@@ -22,17 +22,20 @@ class OSISParser(filterutils.ParserBase):
 		self._quotes = []
 		self._quotes_data = []
 
-	def write_quote(self, qID, who):
-		self.write('<span class="quote" qID="%s" who="%s" title="%s">' % (qID,
-		who, who))
+	def write_quote(self, qID, who, start):
+		if who == "NULL": return
+		if start:
+			self.write('<span class="quote" qID="%s" who="%s" title="%s">' % (qID, who, who))
+		else:
+			self.write("</span>")
 
 	def blocklevel_start(self):
 		for qID, who in self._quotes_data:
-			self.write_quote(qID, who)
+			self.write_quote(qID, who, True)
 			
 	def blocklevel_end(self):
-		for item in self._quotes_data:	
-			self.write("</span>")
+		for qID, who in self._quotes_data:	
+			self.write_quote(qID, who, False)
 
 	def block_start(self):
 		self.reset()
@@ -85,7 +88,7 @@ class OSISParser(filterutils.ParserBase):
 				if not d:
 					dprint(WARNING, "No who found for qID", qID)
 
-				self.write_quote(qID, d)
+				self.write_quote(qID, d, True)
 				self._quotes_data.append((qID, d))
 			else:
 				#print "non-sid Start", tag.toString()
@@ -116,7 +119,8 @@ class OSISParser(filterutils.ParserBase):
 					d = self._quotes_data.pop()
 					if d[0] != qID:
 						dprint(ERROR, "Mismatching closing quotes", d, qID)
-				self.write('</span>')
+
+					self.write_quote(d[0], d[1], False)
 			#else:
 			#	print tag.toString()
 
@@ -264,7 +268,7 @@ class OSISParser(filterutils.ParserBase):
 				if val[0] == 'T' and val[1] in "GH" and val[2] in "0123456789":
 					val2 = val2[2:]
 				if not self.u.suspendTextPassThru:
-					self.morph_bufs.append("<a class=\"morph\" href=\"morph://%s/%s\">(%s)</a>"%(
+					self.morph_bufs.append("<a class=\"morph\" href=\"morph://%s/%s\">%s</a>"%(
 							SW.URL.encode(morph).c_str(),
 							SW.URL.encode(val).c_str(),
 							val2))
