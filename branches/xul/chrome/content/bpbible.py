@@ -133,9 +133,8 @@ def toggle_option(event):
 	# strip off menu_
 	t = event.target
 	option = t.id[5:]
-
-	pp = t.parentNode.parentNode.id
-	if pp not in ("menu_DisplayOptions", "menu_debug"):
+	if option not in options.items:
+		pp = t.parentNode.parentNode.id
 		value = option
 		
 		# strip off menu_
