@@ -62,13 +62,19 @@ strongs_re = re.compile(r"([HG])(\d+)(!\w)?")
 word_re = re.compile(r" \d+ +([^ ]+)")
 
 
-headwords_module = None
-strongsgreek = strongshebrew = None
-strongs_cache = {}
-strongs_cacher = None
-registered = False
+# make reloading not clear out some of our variables
+try:
+	headwords_module
+except: 
+	headwords_module = None
+	strongsgreek = strongshebrew = None
+
+	registered = False
+
 tag = SW.XMLTag()
 
+strongs_cache = {}
+strongs_cacher = None
 class ParserBase(object):
 	def __init__(self):
 		super(ParserBase, self).__init__()
@@ -165,7 +171,7 @@ class ParserBase(object):
 			word = display_number
 
 		#TODO handle extra...
-		item = '<a class="strongs_headword" href="strongs://%s/%s">&lt;%s&gt;</a>' % (modlang, number, word)
+		item = '<a class="strongs_headword" href="strongs://%s/%s">%s</a>' % (modlang, number, word)
 		strongs_cache[value] = item
 		
 		
