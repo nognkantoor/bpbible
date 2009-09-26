@@ -14,16 +14,30 @@ def get_module_for_frame(window):
 def get_book_for_frame(window):
 	return biblemgr.get_module_book_wrapper(_get_modulename(window))
 
+import weakref
+window_timer = weakref.WeakKeyDictionary()
 firer = None
+def clear_tooltip(window):
+	if window in window_timer:
+		window.clearTimeout(window_timer[window])
+	
 def show_tooltip(window, config):
-	print config
+	t = window.setTimeout(300, _show_tooltip, window, config)
+	clear_tooltip(window)
+	window_timer[window] = t
+
+def _show_tooltip(window, config):
 	tt = window.document.getElementById("tooltippanel")
 	assert tt
 	tt.removeAttribute("hidden")
+	if tt.firstChild:
+		tt.removeChild(tt.firstChild)
+
 	if not tt.firstChild:
 		print "Creating iframe"
 		inner = window.document.createElement("browser")
 		inner.setAttribute("tooltip", "aHTMLTooltip")
+		inner.setAttribute("disablehistory", "true")
 		#inner.setAttribute("src", "chrome://bpbible/content/tooltip.xul")
 		inner.setAttribute("flex", "1")
 		tt.appendChild(inner)

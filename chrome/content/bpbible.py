@@ -60,6 +60,11 @@ def process_tooltip():
 	pt = document.getElementById("process_tooltip")
 	d = pt.getAttribute("href")
 	firer = pt.getAttribute("firer")
+	leaving = pt.getAttribute("leaving") == "true"
+	if leaving:
+		frame_util.clear_tooltip(window)
+		return
+
 	f = window.content.document.getElementById(firer)
 	if not f:
 		print "No firer found????", firer
