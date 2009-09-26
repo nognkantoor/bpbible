@@ -198,34 +198,40 @@ function load_text(item, before) {
 	return $(t);
 }
 
+function dispatch_event(firer, leaving) {
+	d("Dispatching event\n");
+	var element = document.createElement("MyExtensionDataElement");
+	element.setAttribute("id", "process_tooltip");
+	element.setAttribute("href", firer.getAttribute("href"));
+	element.setAttribute("leaving", leaving ? "true" : "false");
+	var hadId = Boolean(firer.id);
+	if (hadId) {
+		alert("Had ID?!?");
+		var old_id = firer.getAttribute("id");
+	} else {
+		firer.id = "firer";
+	}
+	element.setAttribute("firer", firer.id);
+	document.documentElement.appendChild(element);
+
+	var evt = document.createEvent("Event");
+	evt.initEvent("process_tooltip", true, false);
+	element.dispatchEvent(evt);
+
+	/* I hope/presume that dispatchEvent is synchronous... :D */
+	element.parentNode.removeChild(element);
+	if (!hadId) {
+		firer.id = "";
+	}
+}
+
 function process_new_text(c) {
-	c.find('a[href]').bind("mouseenter", function(){
-		//load_text();
-
+	c.find('a[href]').bind("mouseleave", function(){
+		dispatch_event(this, true);
+	});
 		
-		d("Dispatching event\n");
-		var element = document.createElement("MyExtensionDataElement");
-		element.setAttribute("id", "process_tooltip");
-		element.setAttribute("href", this.getAttribute("href"));
-		var hadId = Boolean(this.id);
-		if (hadId) {
-			alert("Had ID?!?");
-			var old_id = this.getAttribute("id");
-		} else {
-			this.id = "firer";
-		}
-		element.setAttribute("firer", this.id);
-		document.documentElement.appendChild(element);
-
-		var evt = document.createEvent("Event");
-		evt.initEvent("process_tooltip", true, false);
-		element.dispatchEvent(evt);
-
-		/* I hope/presume that dispatchEvent is synchronous... :D */
-		element.parentNode.removeChild(element);
-		if (!hadId) {
-			this.id = "";
-		}
+	c.find('a[href]').bind("mouseenter", function(){
+		dispatch_event(this, false);
 	});
 }
 	

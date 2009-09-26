@@ -21,6 +21,7 @@ window.addEventListener("load", onLoad, false);
 document.addEventListener("process_tooltip", function(evt) { 
 	var broadcaster = document.getElementById(evt.target.id);
 	broadcaster.setAttribute("firer", evt.target.getAttribute("firer"));
+	broadcaster.setAttribute("leaving", evt.target.getAttribute("leaving"));
 	broadcaster.removeAttribute("href");
 	broadcaster.setAttribute("href", 
 		evt.target.getAttribute("href"));
