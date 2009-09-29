@@ -146,12 +146,12 @@ class BasicTreeView(TreeViewBase):
 		if not root:
 			root = self.model.null_item()
 
-		l = len(self.visibleData)
-		if l:
+		length = len(self.visibleData)
+		if length:
 			self.selection.clearSelection()
 
 		self.visibleData = list(root.children)
-		diff = len(root.children) - l
+		diff = len(root.children) - length
 		self.rowCountChanged(0, diff)
 		self.expand_all()
 		return len(self.visibleData)
