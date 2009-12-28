@@ -7,14 +7,14 @@ def is_gtk():
 	return "wxGTK" in wx.PlatformInfo
 
 def is_msw():
-	if sys.platform == "linux2":
+	if sys.platform == "linux2" or sys.platform == "darwin":
 		return False
 	return True
 	import wx
 	return "wxMSW" in wx.PlatformInfo
 
 def is_mac():
-	return True
+	return sys.platform == "darwin"
 	import wx
 	return "wxMac" in wx.PlatformInfo
 
