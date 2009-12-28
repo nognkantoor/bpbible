@@ -1,4 +1,5 @@
 import cgi
+import reload_util
 from swlib import pysw
 from backend.bibleinterface import biblemgr
 import mozutils
@@ -10,7 +11,6 @@ import util.dom_util
 from xpcom import components
 
 from util.debug import is_debugging
-import reload_util
 import frame_util
 
 def bpbible_doCommand(event):
@@ -18,7 +18,7 @@ def bpbible_doCommand(event):
 	print "Performing command", item_name
 	if item_name == "menu_FileQuitItem":
 		mozutils.doQuit(forceQuit=False)
-	elif item_name == "menu_About":
+	elif item_name == "aboutName":
 		arguments = None
 		window.openDialog("chrome://bpbible/content/about.xul", "about", "centerscreen,modal", arguments)
 	elif item_name == "menu_Extensions":
