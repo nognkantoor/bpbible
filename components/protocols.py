@@ -1,5 +1,8 @@
 import xpcom
 from xpcom import components
+
+# make sure python paths are set
+import reload_util
 import protocol_handlers
 import mozutils
 

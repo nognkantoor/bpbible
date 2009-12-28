@@ -2,6 +2,9 @@ import xpcom
 from xpcom import shutdown
 from xpcom import components
 
+# make sure python paths are set
+import reload_util
+
 import config
 # we have to import some of these first so they are registered
 from backend import bibleinterface
