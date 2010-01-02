@@ -145,7 +145,7 @@ class OSISParser(filterutils.ParserBase):
 			"bold": ("<b>", "</b>"),
 			"italic": ("<i>", "</i>"),
 			"sub": ("<sub>", "</sub>"),
-			"sup": ("<sup>", "</sup>"),
+			"super": ("<sup>", "</sup>"),
 			"underline": ("<u>", "</u>"),
 			"small-caps": ('<span class="small-caps">', "</span>"),
 		}
