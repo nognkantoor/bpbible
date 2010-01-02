@@ -2,6 +2,7 @@
 
 <?xml-stylesheet href="chrome://bpbible/skin/bpbible.css" type="text/css"?>
 <?xml-stylesheet href="chrome://bpbible/skin/dictionary_window.css" type="text/css"?>
+<?xul-overlay href="chrome://bpbible/content/menu_overlay.xul"?>
 
 <!DOCTYPE window SYSTEM "chrome://bpbible/locale/bpbible.dtd">
 

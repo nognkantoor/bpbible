@@ -1,10 +1,15 @@
 /* Important! Need to import the global skin to get default styling. */
 @import url("chrome://global/skin/");
+
+/* we allow OS specific css; this will os_specific.css is overridable in the
+ * chrome.manifest file. At the moment mac.css is there for macs.
+ */
+@import url("chrome://bpbible/skin/os_specific.css");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
-window {
+/*window {
   font-family: arial;
-}
+}*/
 
 tree {
 	margin: 0; /* Under windows this is 0 4px by default - don't know why... */

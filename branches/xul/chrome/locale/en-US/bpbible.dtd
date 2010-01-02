@@ -23,3 +23,21 @@
 
 <!ENTITY moduleSelector.title    "Books">
 <!ENTITY moduleInformation.title "Book Information">
+
+<!-- the following are borrowed from firefox -->
+<!ENTITY preferencesCmdMac.label        "Preferences…">
+<!ENTITY preferencesCmdMac.commandkey   ",">
+
+<!ENTITY servicesMenuMac.label          "Services">
+
+<!ENTITY hideThisAppCmdMac.label        "Hide &brandShortName;">
+<!ENTITY hideThisAppCmdMac.commandkey   "H">
+
+<!ENTITY hideOtherAppsCmdMac.label      "Hide Others">
+<!ENTITY hideOtherAppsCmdMac.commandkey "H">
+
+<!ENTITY showAllAppsCmdMac.label        "Show All">
+
+<!ENTITY quitApplicationCmdMac.label    "Quit &brandShortName;">
+<!ENTITY quitApplicationCmdMac.key      "Q">
+
