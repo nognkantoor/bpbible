@@ -5,3 +5,7 @@ locale   branding en-US         locale/en-US/brand/
 content  branding 				content/brand
 
 style    chrome://global/content/console.xul chrome://bpbible/content/error_console_style.css
+
+overlay chrome://bpbible/content/menu_overlay.xul chrome://bpbible/content/mac_menu_overlay.xul os=Darwin
+
+override chrome://bpbible/skin/os_specific.css chrome://bpbible/skin/mac.css os=Darwin

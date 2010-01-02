@@ -1,0 +1,136 @@
+<!DOCTYPE window [
+<!ENTITY % brandDTD SYSTEM "chrome://branding/locale/brand.dtd">
+%brandDTD;
+<!ENTITY % bpbibleDTD SYSTEM "chrome://bpbible/locale/bpbible.dtd">
+%bpbibleDTD;
+]>
+
+<overlay id="menu-overlay" xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+         script-type="application/x-python"
+         >
+  <script src="bpbible_menus.py" />
+  <toolbox>
+    <menubar id="menubar_explorer" class="chromeclass-menubar" position="1">
+      <menu id="menu_file" label="&file.label;" accesskey="&file.accesskey;">
+        <menupopup id="popup_file">
+          <menuitem label="View all books" oncommand="window.open('chrome://bpbible/content/module_selector.xul', '', 'chrome,scrollbars,resizable');" />
+          <menuitem id="menu_FileQuitItem"
+                    label="&fileExit.label;"
+                    accesskey="&fileExit.accesskey;"
+                    oncommand="bpbible_doCommand(event)"
+                    key="key_exit" />
+        </menupopup>
+      </menu>
+      <menu id="menu_DisplayOptions" label="Display">
+        <menupopup id="popup_DisplayOptions">
+          <menuitem id="menu_headings" label="Headings" type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menuitem id="menu_cross_references" label="Cross References" type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menuitem id="menu_footnotes" label="Footnotes" type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menu id="submenu_strongs_numbers" label="Strong's Numbers">
+            <menupopup>
+              <menuitem id="menu_strongs_numbers"
+                        label="Show Strong's Numbers" 
+                        type="checkbox"
+                        oncommand="toggle_option(event)" />
+              <menuitem id="menu_morphology" 
+                        label="Morphology" 
+                        type="checkbox"
+                        oncommand="toggle_option(event)" />
+              <menuseparator />
+              <menuitem id="menu_strongs_blocked"
+                        label="Show Strong's Numbers underneath words"
+                        type="checkbox"
+                        oncommand="toggle_option(event)" />
+            </menupopup>
+          </menu>
+          <menuitem id="menu_morph_segmentation"
+                    label="Morph Segmentation"
+                    type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menu id="menu_colour_speakers" label="Colour code speakers">
+            <menupopup>
+              <menuitem id="menu_woc_in_red"
+                        label="Words of Christ in Red"
+                        type="radio"
+                        name="colour"
+                        oncommand="toggle_option(event)" />
+              <menuitem id="menu_coloured_quotes" 
+                        label="Colour code by speaker" 
+                        type="radio"
+                        name="colour"
+                        oncommand="toggle_option(event)" />
+              <menuitem id="menu_off"
+                        label="Off"
+                        type="radio"
+                        name="colour"
+                        oncommand="toggle_option(event)" />
+            </menupopup>
+          </menu>
+          <menuseparator />
+          <menuitem id="menu_columns" label="Column view" type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menuitem id="menu_verse_per_line" 
+                    label="Verse Per Line" 
+                    type="checkbox"
+                    oncommand="toggle_option(event)" />
+          <menuitem id="menu_continuous_scrolling" 
+                    label="Continuous Scrolling" 
+                    type="checkbox"
+                    oncommand="toggle_option(event)" />
+        </menupopup>
+      </menu>
+      <menu id="menu_tools" label="&tools.label;" accesskey="&tools.accesskey;">
+        <!-- Replicate the Firefox Tools popup exactly, so that we can use
+             the overlays of PyShell and similar extensions.
+        -->
+        <menupopup id="menu_ToolsPopup">
+          <menuitem label="Error Console" 
+                    oncommand="window.open('chrome://global/content/console.xul', '', 'chrome,dialog=no,toolbar,resizable')" />
+<!--      <menuitem id="menu_preferences" label="&preferencesCmdMac.label;" key="key_preferencesCmdMac" oncommand="openPreferences();"/>-->
+
+        </menupopup>
+      </menu>
+      <menu id="menu_debug" label="Debug">
+        <menupopup id="menu_DebugPopup">
+          <menuitem label="Reboot filtering"
+                    oncommand="do_reloading('filtering')">
+          </menuitem>
+          <menuitem label="Reboot tooltip Bits"
+                    oncommand="do_reloading('tooltip_bits')">
+          </menuitem>
+          <menuitem label="Reboot trees"
+                    oncommand="do_reloading('trees')">
+          </menuitem>
+          
+          <menuitem label="Reload chrome"
+                    oncommand="do_reloading('reload_chrome')">
+          </menuitem>
+          <menuseparator />
+          <menuitem id="menu_raw"
+                    label="Output raw"
+                    type="checkbox"
+                    oncommand="toggle_option(event)">
+          </menuitem>
+        </menupopup>
+      </menu>
+      <menu id="menu_help" label="&help.label;" accesskey="&help.accesskey;">
+        <menupopup id="popup_help">
+          <menuitem id="menu_Extensions"
+                    label="&extensions.label;"
+                    accesskey="&extensions.accesskey;"
+                    oncommand="bpbible_doCommand(event)" />
+      
+          <menuitem id="aboutName"
+                    label="&helpAbout.label;"
+                    accesskey="&helpAbout.accesskey;"
+                    oncommand="bpbible_doCommand(event)" />
+        </menupopup>
+      </menu>
+    </menubar>
+  </toolbox>
+</overlay>

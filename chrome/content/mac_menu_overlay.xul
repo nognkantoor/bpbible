@@ -1,0 +1,33 @@
+<!DOCTYPE window [
+<!ENTITY % brandDTD SYSTEM "chrome://branding/locale/brand.dtd">
+%brandDTD;
+<!ENTITY % bpbibleDTD SYSTEM "chrome://bpbible/locale/bpbible.dtd">
+%bpbibleDTD;
+]>
+<overlay id="mac-menu-overlay" xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <keyset><!-- id="macKeySet"> -->
+  <!-- These are used to build the Application menu under Cocoa widgets -->
+    <key id="key_preferencesCmdMac"
+         key="&preferencesCmdMac.commandkey;"
+         modifiers="accel"/>
+    <key id="key_hideThisAppCmdMac"
+         key="&hideThisAppCmdMac.commandkey;"
+         modifiers="accel"/>
+    <key id="key_hideOtherAppsCmdMac"
+         key="&hideOtherAppsCmdMac.commandkey;"
+         modifiers="accel,alt"/>
+    <key id="key_quitApplication" key="&quitApplicationCmdMac.key;" command="cmd_quitApplication" modifiers="accel"/>
+  </keyset>
+  
+  <menu id="menu_ToolsPopup">
+    <menuitem id="menu_mac_services" label="&servicesMenuMac.label;"/>
+    <menuitem id="menu_mac_hide_app" label="&hideThisAppCmdMac.label;" key="key_hideThisAppCmdMac"/>
+    <menuitem id="menu_mac_hide_others" label="&hideOtherAppsCmdMac.label;" key="key_hideOtherAppsCmdMac"/>
+    <menuitem id="menu_mac_show_all" label="&showAllAppsCmdMac.label;"/>
+  </menu>
+  <menuitem id="menu_FileQuitItem"
+            label="&quitApplicationCmdMac.label;"
+            key="key_quitApplication"/>
+</overlay>

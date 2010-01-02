@@ -13,18 +13,6 @@ from xpcom import components
 from util.debug import is_debugging
 import frame_util
 
-def bpbible_doCommand(event):
-	item_name = event.target.id
-	print "Performing command", item_name
-	if item_name == "menu_FileQuitItem":
-		mozutils.doQuit(forceQuit=False)
-	elif item_name == "aboutName":
-		arguments = None
-		window.openDialog("chrome://bpbible/content/about.xul", "about", "centerscreen,modal", arguments)
-	elif item_name == "menu_Extensions":
-		arguments = None
-		window.openDialog("chrome://mozapps/content/extensions/extensions.xul?type=extensions", "about", "centerscreen,modal", arguments)		
-
 def handle_location_keypress(event):
 	if event.keyCode == event.DOM_VK_RETURN:
 		lookup_reference()
@@ -80,7 +68,6 @@ def process_tooltip():
 	protocol_handler.on_hover(window, d, 0, 0)
 	
 def do_load():
-	set_menu_items()
 	util.dom_util.document = document
 	lookup_reference()
 
@@ -103,73 +90,6 @@ def initialise_module_name(reference_item):
 			#reference_item.value = parameters["reference"][0]
 	dprint(ERROR, "Initialising module name to %s" % module_name)
 	window.mod_name = module_name
-
-def set_menu_items():
-	for option in all_options():
-		menu_item = document.getElementById("menu_%s" % option)
-		if not menu_item:
-			dprint(ERROR, "Couldn't find menu item for option ", option)
-			continue
-
-		if options.item_types[option] == str:
-			print menu_item.tagName
-			assert menu_item.tagName == "menu"
-			cn = menu_item.firstChild.firstChild
-			while cn:
-				if "menu_" + options[option] == cn.id:
-					cn.setAttribute("checked", "true")
-					break
-
-				cn = cn.nextSibling
-
-			else:
-				dprint(ERROR, "Couldn't find submenu item for option", 
-					option, options[option])
-
-		else:
-			assert menu_item.tagName == "menuitem"
-
-			if options[option]:
-				menu_item.setAttribute("checked", "true")
-
-def toggle_option(event):
-	value = event.target.hasAttribute("checked")
-
-	# strip off menu_
-	t = event.target
-	option = t.id[5:]
-	if option not in options.items:
-		pp = t.parentNode.parentNode.id
-		value = option
-		
-		# strip off menu_
-		option = pp[5:]
-
-	options[option] = value
-	propagate_setting_change(option, get_js_option_value(option))
-
-def propagate_setting_change(type, value):
-	if not isinstance(value, str):
-		raise TypeError("Wasn't a string (%r)" % value)
-
-	wm = components.classes["@mozilla.org/appshell/window-mediator;1"]\
-				   .getService(components.interfaces.nsIWindowMediator);  
-	enumerator = wm.getEnumerator("")
-	while enumerator.hasMoreElements():
-		win = enumerator.getNext()
-		print win.location.href
-		if win.content and win.content.location.protocol == "bpbible:":
-			body = win.content.document.body
-			body.setAttribute(type, value)
-
-
-def do_reloading(func):
-	reload(reload_util)
-	d = reload_util.__dict__[func] 
-	if callable(d):
-		d()
-	else:
-		reload_util.reboot_section(func)
 
 def add_tooltip_handlers():
 	b = document.createElement("broadcaster")
