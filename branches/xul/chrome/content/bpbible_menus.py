@@ -49,11 +49,17 @@ def set_menu_popup_state(event):
 	set_menu_items(event.target.ownerDocument)
 
 def set_init_menu_items():
-	popup = document.getElementById("popup_DisplayOptions")
-	assert popup
-	popup.addEventListener("popupshowing", set_menu_popup_state, False)
 	if not (sys.platform == 'darwin' or document.documentElement.hasAttribute("has-menu")):
-		document.getElementById("menubar_explorer").setAttribute("hidden", "true")
+		mb = document.getElementById("menubar_explorer")
+		mb.setAttribute("hidden", "true")
+		p = mb.parentNode
+		p.removeChild(mb)
+		if p.childNodes.length == 0:
+			p.setAttribute("hidden", "true")
+	else:
+		popup = document.getElementById("popup_DisplayOptions")
+		assert popup
+		popup.addEventListener("popupshowing", set_menu_popup_state, False)
 
 window.addEventListener("load", set_init_menu_items, False)
 
