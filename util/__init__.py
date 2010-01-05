@@ -98,3 +98,6 @@ class overridableproperty(object):
 def _(x):
 	return x
 
+def N_(text):
+	"""Mark text as i18n'able, but don't translate it yet"""
+	return text
