@@ -65,9 +65,6 @@ We set windowtype here for XUSH... pretending to be firefox.
     <observes element="browser" attribute="src" onbroadcast="dump('src changed')" />
   </commandset>
 
-
-
-  <!-- Menus, that's Python code in the "oncommand" section. -->
   <toolbox id="toolbox_explorer">
     <toolbar id="toolbar_explorer" mode="icons" class="chromeclass-toolbar">
       <textbox id="toolbar_location" 
