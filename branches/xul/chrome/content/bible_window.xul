@@ -22,7 +22,7 @@
   <script type="application/javascript" 
           src="chrome://bpbible/content/bpbible.js" />
 
-  <toolbox>
+  <toolbox id="toolbox_explorer">
     <toolbar id="toolbar_explorer" mode="icons" style="width:300px;">
       <textbox id="toolbar_location" 
                value="Genesis 1" 

@@ -16,6 +16,7 @@
         windowtype="navigator:browser"        
         onload="on_load();">
 
+  <toolbox id="toolbox_explorer" />
   <script type="application/x-python" 
           src="chrome://bpbible/content/bpbible.py" />
   <script type="application/javascript" 

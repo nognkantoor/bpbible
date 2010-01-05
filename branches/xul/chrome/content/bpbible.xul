@@ -29,6 +29,7 @@ We set windowtype here for XUSH... pretending to be firefox.
         script-type="application/x-python"
         persist="screenX screenY width height"
         windowtype="navigator:browser"
+        has-menu="true"
         onload="do_load();">
 
   <script type="application/x-python" 
