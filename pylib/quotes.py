@@ -15,6 +15,12 @@ def compute_colour(item,
 	alpha=1, 
 	lum_range=range(30, 45), 
 	sat_range=range(50, 100)):
+	if item == "God" or item == "Lord":
+		return "hsla(287, 100%%, 60%%, %s)" % alpha #8B00B2"
+	
+	if item == "Jesus":
+		return "hsla(360, 100%%, 70%%, %s)" % alpha
+
 	# Compute a hash of the hostname, 
 	# and clamp it to the 0-360 range allowed for the hue.
 	hue = djb2hash(item) % 360 + 60
