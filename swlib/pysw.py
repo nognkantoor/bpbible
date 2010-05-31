@@ -272,13 +272,6 @@ class VK(SW.VerseKey):#, object):
 	@classproperty
 	def books(cls): return books
 
-	@staticmethod
-	def get_bounds(vk):
-		if vk.isBoundSet():
-			return vk.LowerBound(), vk.UpperBound()
-		else:
-			return vk, vk
-
 	@property
 	def v_books(self):
 		if LIB_1512_COMPAT:
@@ -583,9 +576,9 @@ class LocalizedVK(EncodedVK):
 	def getText(self):
 		if LIB_SUPPORTS_SINGLE_CHAPTER_BOOKS:
 			if self.getChapterMax() == 1:
-				return u"%s %s" % (self.getBookName(), 
+				return u"%s %d" % (self.getBookName(), 
 					process_digits(
-						str(self.Verse()),
+						self.Verse(),
 						userOutput=True
 					))
 
@@ -984,52 +977,14 @@ class VerseList(list):
 		return "; ".join(item.text for item in self)
 
 	def VerseInRange(self, verse):#, range, context="", vklist=None):
-		"""
-		>>> from swlib.pysw import VerseList
-		>>> list = VerseList("Genesis 2:1 - 3")
-		>>> list.VerseInRange("Genesis 2:1")
-		True
-		>>> list.VerseInRange("Genesis 2:1 - 3")
-		True
-		>>> list.VerseInRange("Genesis 2:2 - 3")
-		True
-		>>> list.VerseInRange("Genesis 2:1 - 2")
-		True
-		>>> list.VerseInRange("Genesis 2:1 - 4")
-		False
-		>>> list.VerseInRange("Genesis 2:3 - 4")
-		False
-		>>> list.VerseInRange("Genesis 2:5")
-		False
-
-		>>> list = VerseList("Genesis 2:1 - 3, 5 - 6")
-		>>> list.VerseInRange("Genesis 2:1")
-		True
-		>>> list.VerseInRange("Genesis 2:2 - 3")
-		True
-		>>> list.VerseInRange("Genesis 2:2 - 3")
-		True
-		>>> list.VerseInRange("Genesis 2:5")
-		True
-		>>> list.VerseInRange("Genesis 2:5-6")
-		True
-		>>> list.VerseInRange("Genesis 2:4-6")
-		False
-		>>> list.VerseInRange("Genesis 2:1-6")
-		False
-		"""
 		#if not(vklist): #lastrange and range==lastrange):
 		#	vklist=GetVKs(range, context)
 		try:
-			vk = VerseList(verse)[0]
-			vk_lower, vk_upper = VK.get_bounds(vk)
+			vk=VK(verse)
 		except VerseParsingError, e:
 			return False
-
-		for verse_key in self: #vklist:
-			verse_key_lower, verse_key_upper = VK.get_bounds(verse_key)
-			if (verse_key_lower.compare(vk_lower) <= 0
-					and verse_key_upper.compare(vk_upper) >= 0):
+		for a in self: #vklist:
+			if(vk>=a[0] and vk<=a[-1]):
 				return True
 		return False
 
@@ -1057,17 +1012,17 @@ class VerseList(list):
 		... # TODO: is this correct? 
 		... #should we need headings on for this to work?
 		'Psalms 58:0-1'
-		>>> GetBestRange("Matthew 24v27-30,44", userInput=True)
+		>>> GetBestRange("Matthew 24v27-30,44")
 		'Matthew 24:27-30,44'
-		>>> GetBestRange("Matthew 24 27", userInput=True)
+		>>> GetBestRange("Matthew 24 27")
 		'Matthew 24:27'
-		>>> GetBestRange("Matthew 24:27 28", userInput=True)
+		>>> GetBestRange("Matthew 24:27 28")
 		'Matthew 24:27,28'
 		>>> GetBestRange("Genesis 2 ")
 		'Genesis 2'
 		>>> GetBestRange("Genesis 2:3 ")
 		'Genesis 2:3'
-		>>> GetBestRange("Genesis 2 3", userInput=True)
+		>>> GetBestRange("Genesis 2 3")
 		'Genesis 2:3'
 		>>> GetBestRange("Matthew 5:3")
 		'Matthew 5:3'
@@ -1085,7 +1040,7 @@ class VerseList(list):
 		'Mark 15:23'
 		>>> GetBestRange("Jude 1:5")
 		'Jude 1:5'
-		>>> GetBestRange("Jude 5", userInput=True)
+		>>> GetBestRange("Jude 5")
 		'Jude 1:5'
 		>>> GetBestRange("Gen 3:23,24")
 		'Genesis 3:23,24'
@@ -1484,7 +1439,7 @@ def get_locale(lang, additional=None):
 	if not locale.getName() or locale.getName() == "en_US":
 		return False, SW.Locale(""), "UTF-8"
 	
-	assert locale.getEncoding() == "UTF-8", "Only UTF-8 locales supported (locale was %s)" % locale.getName()
+	assert locale.getEncoding() == "UTF-8", "Only UTF-8 locales supported"
 	return True, locale, locale.getEncoding()
 
 def change_locale(lang, abbrev_lang, additional=None):
